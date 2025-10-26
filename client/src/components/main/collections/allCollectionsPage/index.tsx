@@ -17,7 +17,7 @@ const AllCollectionsPage = () => {
   return (
     <div className='collections-page'>
       <div className='collections-header'>
-        <h1 className='collections-title'>{usernameBeingViewed}'s Collections</h1>
+        <h1 className='collections-title'>{usernameBeingViewed}'s Collectionsc LOLOLOL</h1>
         {isOwner && (
           <button className='collections-create-btn' onClick={handleCreateCollection}>
             Create Collection
