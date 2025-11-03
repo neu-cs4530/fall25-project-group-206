@@ -28,6 +28,8 @@ export const saveUser = async (user: User): Promise<UserResponse> => {
       username: result.username,
       dateJoined: result.dateJoined,
       biography: result.biography,
+      followers: [],
+      following: [],
     };
 
     return safeUser;
@@ -147,5 +149,113 @@ export const updateUser = async (
     return updatedUser;
   } catch (error) {
     return { error: `Error occurred when updating user: ${error}` };
+  }
+};
+
+/**
+ * Toggles the follow status between two users.
+ * If the current user is following the target user, they will unfollow.
+ * If the current user is not following the target user, they will follow.
+ *
+ * @param {string} currentUsername - The username of the user performing the action.
+ * @param {string} targetUsername - The username of the user to follow/unfollow.
+ * @returns {Promise<UserResponse>} - Resolves with the updated current user object or an error message.
+ */
+export const toggleFollowUser = async (
+  currentUsername: string,
+  targetUsername: string,
+): Promise<UserResponse> => {
+  try {
+    // Prevent users from following themselves
+    if (currentUsername === targetUsername) {
+      throw Error('Cannot follow yourself');
+    }
+
+    const currentUser: DatabaseUser | null = await UserModel.findOne({ username: currentUsername });
+    const targetUser: DatabaseUser | null = await UserModel.findOne({ username: targetUsername });
+
+    if (!currentUser || !targetUser) {
+      throw Error('User not found');
+    }
+
+    const isFollowing = currentUser.following.includes(targetUser._id);
+
+    if (isFollowing) {
+      // Unfollow: Remove targetUser from currentUser's following
+      currentUser.following = currentUser.following.filter(
+        id => id.toString() !== targetUser._id.toString(),
+      );
+
+      // Remove currentUser from targetUser's followers
+      targetUser.followers = targetUser.followers.filter(
+        id => id.toString() !== currentUser._id.toString(),
+      );
+    } else {
+      // Follow: Add targetUser to currentUser's following
+      currentUser.following.push(targetUser._id);
+
+      // Add currentUser to targetUser's followers
+      targetUser.followers.push(currentUser._id);
+    }
+
+    // Return safe user without password
+    const safeUser: SafeDatabaseUser = {
+      _id: currentUser._id,
+      username: currentUser.username,
+      dateJoined: currentUser.dateJoined,
+      biography: currentUser.biography,
+      followers: currentUser.followers,
+      following: currentUser.following,
+    };
+
+    return safeUser;
+  } catch (error) {
+    return { error: `Error occurred when toggling follow: ${error}` };
+  }
+};
+
+/**
+ * Retrieves the list of followers for a specific user.
+ *
+ * @param {string} username - The username of the user whose followers to retrieve.
+ * @returns {Promise<UsersResponse>} - Resolves with an array of follower user objects or an error message.
+ */
+export const getFollowers = async (username: string): Promise<UsersResponse> => {
+  try {
+    const user = await UserModel.findOne({ username }).populate<{ followers: SafeDatabaseUser[] }>(
+      'followers',
+      '-password',
+    );
+
+    if (!user) {
+      throw Error('User not found');
+    }
+
+    return user.followers;
+  } catch (error) {
+    return { error: `Error occurred when fetching followers: ${error}` };
+  }
+};
+
+/**
+ * Retrieves the list of users that a specific user is following.
+ *
+ * @param {string} username - The username of the user whose following list to retrieve.
+ * @returns {Promise<UsersResponse>} - Resolves with an array of following user objects or an error message.
+ */
+export const getFollowing = async (username: string): Promise<UsersResponse> => {
+  try {
+    const user = await UserModel.findOne({ username }).populate<{ following: SafeDatabaseUser[] }>(
+      'following',
+      '-password',
+    );
+
+    if (!user) {
+      throw Error('User not found');
+    }
+
+    return user.following;
+  } catch (error) {
+    return { error: `Error occurred when fetching following: ${error}` };
   }
 };
