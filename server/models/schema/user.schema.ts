@@ -8,6 +8,9 @@ import { Schema } from 'mongoose';
  * - `username`: The username of the user.
  * - `password`: The encrypted password securing the user's account.
  * - `dateJoined`: The date the user joined the platform.
+ *  - `biography`: A brief biography of the user.
+ *  - `followers`: An array of users representing users who follow this user.
+ *  - `following`: An array of users representing users this user follows.
  */
 const userSchema: Schema = new Schema(
   {
@@ -25,6 +28,14 @@ const userSchema: Schema = new Schema(
     biography: {
       type: String,
       default: '',
+    },
+    followers: {
+      type: [Schema.Types.ObjectId],
+      ref: 'User',
+    },
+    following: {
+      type: [Schema.Types.ObjectId],
+      ref: 'User',
     },
   },
   { collection: 'User' },

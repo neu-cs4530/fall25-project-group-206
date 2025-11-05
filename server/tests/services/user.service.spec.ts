@@ -7,6 +7,9 @@ import {
   loginUser,
   saveUser,
   updateUser,
+  toggleFollowUser,
+  getFollowers,
+  getFollowing,
 } from '../../services/user.service';
 import { SafeDatabaseUser, User, UserCredentials } from '../../types/types';
 import { user, safeUser } from '../mockData.models';
@@ -261,6 +264,8 @@ describe('updateUser', () => {
     _id: new mongoose.Types.ObjectId(),
     username: user.username,
     dateJoined: user.dateJoined,
+    followers: user.followers,
+    following: user.following,
   };
 
   const updates: Partial<User> = {
@@ -346,5 +351,287 @@ describe('updateUser', () => {
     const updatedError = await updateUser(user.username, biographyUpdates);
 
     expect('error' in updatedError).toBe(true);
+  });
+});
+
+describe('toggleFollowUser', () => {
+  const currentUser: SafeDatabaseUser = {
+    _id: new mongoose.Types.ObjectId(),
+    ...user,
+    followers: [],
+    following: [],
+  };
+
+  const targetUser: SafeDatabaseUser = {
+    username: 'targetUser',
+    dateJoined: new Date(),
+    biography: 'Target user bio',
+    followers: [],
+    following: [],
+    _id: new mongoose.Types.ObjectId(),
+  };
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
+  it('should follow a user when not already following', async () => {
+    const mockCurrentUser = {
+      ...currentUser,
+      following: [],
+      save: jest.fn().mockResolvedValue(true),
+    };
+
+    const mockTargetUser = {
+      ...targetUser,
+      followers: [],
+      save: jest.fn().mockResolvedValue(true),
+    };
+
+    jest
+      .spyOn(UserModel, 'findOne')
+      .mockResolvedValueOnce(mockCurrentUser)
+      .mockResolvedValueOnce(mockTargetUser);
+
+    const result = await toggleFollowUser(currentUser.username, targetUser.username);
+
+    expect('error' in result).toBe(false);
+    expect(mockCurrentUser.following).toContain(mockTargetUser._id);
+    expect(mockTargetUser.followers).toContain(mockCurrentUser._id);
+  });
+
+  it('should unfollow a user when already following', async () => {
+    const mockCurrentUser = {
+      ...currentUser,
+      following: [targetUser._id],
+    };
+
+    const mockTargetUser = {
+      ...targetUser,
+      followers: [currentUser._id],
+    };
+
+    jest
+      .spyOn(UserModel, 'findOne')
+      .mockResolvedValueOnce(mockCurrentUser)
+      .mockResolvedValueOnce(mockTargetUser);
+
+    const result = await toggleFollowUser(currentUser.username, targetUser.username);
+
+    expect('error' in result).toBe(false);
+    expect(mockCurrentUser.following).toHaveLength(0);
+    expect(mockTargetUser.followers).toHaveLength(0);
+  });
+
+  it('should return error when trying to follow yourself', async () => {
+    const result = await toggleFollowUser(currentUser.username, currentUser.username);
+
+    expect('error' in result).toBe(true);
+    if ('error' in result) {
+      expect(result.error).toContain('Cannot follow yourself');
+    }
+  });
+
+  it('should return error when current user is not found', async () => {
+    jest.spyOn(UserModel, 'findOne').mockResolvedValueOnce(null);
+
+    const result = await toggleFollowUser(currentUser.username, targetUser.username);
+
+    expect('error' in result).toBe(true);
+    if ('error' in result) {
+      expect(result.error).toContain('User not found');
+    }
+  });
+
+  it('should return error when target user is not found', async () => {
+    jest
+      .spyOn(UserModel, 'findOne')
+      .mockResolvedValueOnce({ ...currentUser })
+      .mockResolvedValueOnce(null);
+
+    const result = await toggleFollowUser(currentUser.username, targetUser.username);
+
+    expect('error' in result).toBe(true);
+    if ('error' in result) {
+      expect(result.error).toContain('User not found');
+    }
+  });
+
+  it('should return error when database error occurs', async () => {
+    jest.spyOn(UserModel, 'findOne').mockRejectedValueOnce(new Error('Database error'));
+
+    const result = await toggleFollowUser(currentUser.username, targetUser.username);
+
+    expect('error' in result).toBe(true);
+  });
+});
+
+describe('getFollowers', () => {
+  const follower1: SafeDatabaseUser = {
+    _id: new mongoose.Types.ObjectId(),
+    username: 'follower1',
+    dateJoined: new Date(),
+    biography: 'Follower 1 bio',
+    followers: [],
+    following: [],
+  };
+
+  const follower2: SafeDatabaseUser = {
+    _id: new mongoose.Types.ObjectId(),
+    username: 'follower2',
+    dateJoined: new Date(),
+    biography: 'Follower 2 bio',
+    followers: [],
+    following: [],
+  };
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
+  it('should return list of followers for a user', async () => {
+    const mockUser = {
+      username: user.username,
+      followers: [follower1, follower2],
+    };
+
+    jest.spyOn(UserModel, 'findOne').mockReturnValue({
+      populate: jest.fn().mockResolvedValue(mockUser),
+    } as any);
+
+    const result = await getFollowers(user.username);
+
+    expect('error' in result).toBe(false);
+    if (!('error' in result)) {
+      expect(result).toHaveLength(2);
+      expect(result[0].username).toBe('follower1');
+      expect(result[1].username).toBe('follower2');
+    }
+  });
+
+  it('should return empty array when user has no followers', async () => {
+    const mockUser = {
+      username: user.username,
+      followers: [],
+    };
+
+    jest.spyOn(UserModel, 'findOne').mockReturnValue({
+      populate: jest.fn().mockResolvedValue(mockUser),
+    } as any);
+
+    const result = await getFollowers(user.username);
+
+    expect('error' in result).toBe(false);
+    if (!('error' in result)) {
+      expect(result).toHaveLength(0);
+    }
+  });
+
+  it('should return error when user is not found', async () => {
+    jest.spyOn(UserModel, 'findOne').mockReturnValue({
+      populate: jest.fn().mockResolvedValue(null),
+    } as any);
+
+    const result = await getFollowers(user.username);
+
+    expect('error' in result).toBe(true);
+    if ('error' in result) {
+      expect(result.error).toContain('User not found');
+    }
+  });
+
+  it('should return error when database error occurs', async () => {
+    jest.spyOn(UserModel, 'findOne').mockReturnValue({
+      populate: jest.fn().mockRejectedValue(new Error('Database error')),
+    } as any);
+
+    const result = await getFollowers(user.username);
+
+    expect('error' in result).toBe(true);
+  });
+});
+
+describe('getFollowing', () => {
+  const following1: SafeDatabaseUser = {
+    _id: new mongoose.Types.ObjectId(),
+    username: 'following1',
+    dateJoined: new Date(),
+    biography: 'Following 1 bio',
+    followers: [],
+    following: [],
+  };
+
+  const following2: SafeDatabaseUser = {
+    _id: new mongoose.Types.ObjectId(),
+    username: 'following2',
+    dateJoined: new Date(),
+    biography: 'Following 2 bio',
+    followers: [],
+    following: [],
+  };
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
+  it('should return list of users that a user is following', async () => {
+    const mockUser = {
+      username: user.username,
+      following: [following1, following2],
+    };
+
+    jest.spyOn(UserModel, 'findOne').mockReturnValue({
+      populate: jest.fn().mockResolvedValue(mockUser),
+    } as any);
+
+    const result = await getFollowing(user.username);
+
+    expect('error' in result).toBe(false);
+    if (!('error' in result)) {
+      expect(result).toHaveLength(2);
+      expect(result[0].username).toBe('following1');
+      expect(result[1].username).toBe('following2');
+    }
+  });
+
+  it('should return empty array when user is not following anyone', async () => {
+    const mockUser = {
+      username: user.username,
+      following: [],
+    };
+
+    jest.spyOn(UserModel, 'findOne').mockReturnValue({
+      populate: jest.fn().mockResolvedValue(mockUser),
+    } as any);
+
+    const result = await getFollowing(user.username);
+
+    expect('error' in result).toBe(false);
+    if (!('error' in result)) {
+      expect(result).toHaveLength(0);
+    }
+  });
+
+  it('should return error when user is not found', async () => {
+    jest.spyOn(UserModel, 'findOne').mockReturnValue({
+      populate: jest.fn().mockResolvedValue(null),
+    } as any);
+
+    const result = await getFollowing(user.username);
+
+    expect('error' in result).toBe(true);
+    if ('error' in result) {
+      expect(result.error).toContain('User not found');
+    }
+  });
+
+  it('should return error when database error occurs', async () => {
+    jest.spyOn(UserModel, 'findOne').mockReturnValue({
+      populate: jest.fn().mockRejectedValue(new Error('Database error')),
+    } as any);
+
+    const result = await getFollowing(user.username);
+
+    expect('error' in result).toBe(true);
   });
 });

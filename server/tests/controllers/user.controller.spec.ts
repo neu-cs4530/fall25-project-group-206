@@ -8,18 +8,24 @@ const mockUser: User = {
   username: 'user1',
   password: 'password',
   dateJoined: new Date('2024-12-03'),
+  followers: [],
+  following: [],
 };
 
 const mockSafeUser: SafeDatabaseUser = {
   _id: new mongoose.Types.ObjectId(),
   username: 'user1',
   dateJoined: new Date('2024-12-03'),
+  followers: [],
+  following: [],
 };
 
 const mockUserJSONResponse = {
   _id: mockSafeUser._id.toString(),
   username: 'user1',
   dateJoined: new Date('2024-12-03').toISOString(),
+  followers: [],
+  following: [],
 };
 
 const saveUserSpy = jest.spyOn(util, 'saveUser');
@@ -28,6 +34,9 @@ const updatedUserSpy = jest.spyOn(util, 'updateUser');
 const getUserByUsernameSpy = jest.spyOn(util, 'getUserByUsername');
 const getUsersListSpy = jest.spyOn(util, 'getUsersList');
 const deleteUserByUsernameSpy = jest.spyOn(util, 'deleteUserByUsername');
+const toggleFollowSpy = jest.spyOn(util, 'toggleFollowUser');
+const getFollowersSpy = jest.spyOn(util, 'getFollowers');
+const getFollowingSpy = jest.spyOn(util, 'getFollowing');
 
 describe('Test userController', () => {
   describe('POST /signup', () => {
@@ -48,6 +57,8 @@ describe('Test userController', () => {
         ...mockReqBody,
         biography: mockReqBody.biography,
         dateJoined: expect.any(Date),
+        followers: [],
+        following: [],
       });
     });
 
@@ -435,6 +446,116 @@ describe('Test userController', () => {
       expect(response.status).toBe(500);
       expect(response.text).toContain(
         'Error when updating user biography: Error: Error updating user',
+      );
+    });
+  });
+
+  describe('POST /toggleFollow', () => {
+    it('should successfully toggle follow status given correct arguments', async () => {
+      const mockReqBody = {
+        currentUsername: 'user1',
+        targetUsername: 'user2',
+      };
+
+      // Mock a successful toggleFollowUser call
+      toggleFollowSpy.mockResolvedValueOnce(mockSafeUser);
+
+      const response = await supertest(app).post('/api/user/toggleFollow').send(mockReqBody);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual(mockUserJSONResponse);
+      // Ensure toggleFollowUser is called with the correct args
+      expect(toggleFollowSpy).toHaveBeenCalledWith('user1', 'user2');
+    });
+
+    it('should return 400 for request missing currentUsername', async () => {
+      const mockReqBody = {
+        targetUsername: 'user2',
+      };
+
+      const response = await supertest(app).post('/api/user/toggleFollow').send(mockReqBody);
+
+      expect(response.status).toBe(400);
+      expect(response.text).toBe('Both currentUsername and targetUsername are required');
+    });
+
+    it('should return 400 for request missing targetUsername', async () => {
+      const mockReqBody = {
+        currentUsername: 'user1',
+      };
+
+      const response = await supertest(app).post('/api/user/toggleFollow').send(mockReqBody);
+
+      expect(response.status).toBe(400);
+      expect(response.text).toBe('Both currentUsername and targetUsername are required');
+    });
+
+    it('should return 500 if toggleFollowUser returns an error', async () => {
+      const mockReqBody = {
+        currentUsername: 'user1',
+        targetUsername: 'user2',
+      };
+
+      // Simulate a DB error
+      toggleFollowSpy.mockResolvedValueOnce({ error: 'Error toggling follow' });
+
+      const response = await supertest(app).post('/api/user/toggleFollow').send(mockReqBody);
+
+      expect(response.status).toBe(500);
+      expect(response.text).toContain('Error when toggling follow: Error: Error toggling follow');
+    });
+  });
+
+  describe('GET /getFollowers/:username', () => {
+    it('should successfully get followers given correct arguments', async () => {
+      const mockFollowers = [mockSafeUser];
+
+      // Mock a successful getFollowers call
+      getFollowersSpy.mockResolvedValueOnce(mockFollowers);
+
+      const response = await supertest(app).get(`/api/user/${mockUser.username}/followers`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual([mockUserJSONResponse]);
+      // Ensure getFollowers is called with the correct args
+      expect(getFollowersSpy).toHaveBeenCalledWith(mockUser.username);
+    });
+
+    it('should return 500 if getFollowers returns an error', async () => {
+      // Simulate a DB error
+      getFollowersSpy.mockResolvedValueOnce({ error: 'Error getting followers' });
+      const response = await supertest(app).get(`/api/user/${mockUser.username}/followers`);
+
+      expect(response.status).toBe(500);
+      expect(response.text).toContain(
+        'Error when getting followers: Error: Error getting followers',
+      );
+    });
+  });
+
+  describe('GET /getFollowing/:username', () => {
+    it('should successfully get following given correct arguments', async () => {
+      const mockFollowing = [mockSafeUser];
+
+      // Mock a successful getFollowing call
+      getFollowingSpy.mockResolvedValueOnce(mockFollowing);
+
+      const response = await supertest(app).get(`/api/user/${mockUser.username}/following`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual([mockUserJSONResponse]);
+      // Ensure getFollowing is called with the correct args
+      expect(getFollowingSpy).toHaveBeenCalledWith(mockUser.username);
+    });
+
+    it('should return 500 if getFollowing returns an error', async () => {
+      // Simulate a DB error
+      getFollowingSpy.mockResolvedValueOnce({ error: 'Error getting following' });
+      const response = await supertest(app).get(`/api/user/${mockUser.username}/following`);
+
+      expect(response.status).toBe(500);
+      expect(response.text).toContain(
+        'Error when getting following: Error: Error getting following',
       );
     });
   });

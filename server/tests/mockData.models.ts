@@ -204,10 +204,14 @@ export const user: User = {
   username: 'user1',
   password: 'password',
   dateJoined: new Date('2024-12-03'),
+  followers: [],
+  following: [],
 };
 
 export const safeUser: SafeDatabaseUser = {
   _id: new ObjectId(),
   username: 'user1',
   dateJoined: new Date('2024-12-03'),
+  followers: [],
+  following: [],
 };

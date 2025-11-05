@@ -21,6 +21,8 @@ export interface UserCredentials {
 export interface User extends UserCredentials {
   dateJoined: Date;
   biography?: string;
+  followers: ObjectId[];
+  following: ObjectId[];
 }
 
 /**
