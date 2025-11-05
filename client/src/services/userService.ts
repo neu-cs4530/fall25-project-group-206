@@ -123,6 +123,59 @@ const updateBiography = async (
   return res.data;
 };
 
+/**
+ * Toggles the follow status between the current user and target user.
+ * If currently following, will unfollow. If not following, will follow.
+ *
+ * @param currentUsername - The username of the user performing the action
+ * @param targetUsername - The username of the user to follow/unfollow
+ * @returns A promise that resolves to the updated current user data
+ * @throws {Error} If the request to the server is unsuccessful
+ */
+const toggleFollowUser = async (
+  currentUsername: string,
+  targetUsername: string,
+): Promise<SafeDatabaseUser> => {
+  const res = await api.post(`${USER_API_URL}/toggleFollow`, {
+    currentUsername,
+    targetUsername,
+  });
+  if (res.status !== 200) {
+    throw new Error('Error when toggling follow status');
+  }
+  return res.data;
+};
+
+/**
+ * Retrieves the list of followers for a specific user.
+ *
+ * @param username - The username of the user whose followers to retrieve
+ * @returns A promise that resolves to an array of follower user objects
+ * @throws {Error} If the request to the server is unsuccessful
+ */
+const getFollowers = async (username: string): Promise<SafeDatabaseUser[]> => {
+  const res = await api.get(`${USER_API_URL}/${username}/followers`);
+  if (res.status !== 200) {
+    throw new Error('Error when fetching followers');
+  }
+  return res.data;
+};
+
+/**
+ * Retrieves the list of users that a specific user is following.
+ *
+ * @param username - The username of the user whose following list to retrieve
+ * @returns A promise that resolves to an array of following user objects
+ * @throws {Error} If the request to the server is unsuccessful
+ */
+const getFollowing = async (username: string): Promise<SafeDatabaseUser[]> => {
+  const res = await api.get(`${USER_API_URL}/${username}/following`);
+  if (res.status !== 200) {
+    throw new Error('Error when fetching following');
+  }
+  return res.data;
+};
+
 export {
   getUsers,
   getUserByUsername,
@@ -131,4 +184,7 @@ export {
   deleteUser,
   resetPassword,
   updateBiography,
+  toggleFollowUser,
+  getFollowers,
+  getFollowing,
 };
