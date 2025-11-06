@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toggleFollowUser } from '../services/userService';
 import useUserContext from './useUserContext';
 import useLoginContext from './useLoginContext';
@@ -46,6 +46,10 @@ const useFollowButton = (targetUsername: string, initialIsFollowing: boolean) =>
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    setIsFollowing(initialIsFollowing);
+  }, [initialIsFollowing]);
 
   return {
     isFollowing,
