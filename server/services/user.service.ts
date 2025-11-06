@@ -198,14 +198,31 @@ export const toggleFollowUser = async (
       targetUser.followers.push(currentUser._id);
     }
 
+    // Saved changes to the database for both users using findByIdAndUpdate
+    const savedCurrent = await UserModel.findByIdAndUpdate(
+      currentUser._id,
+      { followers: currentUser.followers, following: currentUser.following },
+      { new: true },
+    ).select('-password');
+
+    await UserModel.findByIdAndUpdate(
+      targetUser._id,
+      { followers: targetUser.followers, following: targetUser.following },
+      { new: true },
+    ).select('-password');
+
+    if (!savedCurrent) {
+      throw Error('Error persisting follow changes for current user');
+    }
+
     // Return safe user without password
     const safeUser: SafeDatabaseUser = {
-      _id: currentUser._id,
-      username: currentUser.username,
-      dateJoined: currentUser.dateJoined,
-      biography: currentUser.biography,
-      followers: currentUser.followers,
-      following: currentUser.following,
+      _id: savedCurrent._id,
+      username: savedCurrent.username,
+      dateJoined: savedCurrent.dateJoined,
+      biography: savedCurrent.biography,
+      followers: savedCurrent.followers,
+      following: savedCurrent.following,
     };
 
     return safeUser;

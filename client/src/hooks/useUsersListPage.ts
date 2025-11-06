@@ -11,7 +11,7 @@ import { getUsers } from '../services/userService';
  * @returns setUserFilter - Function to set the filtering value of the user search.
  */
 const useUsersListPage = () => {
-  const { socket } = useUserContext();
+  const { socket, user: currentUser } = useUserContext();
 
   const [userFilter, setUserFilter] = useState<string>('');
   const [userList, setUserList] = useState<SafeDatabaseUser[]>([]);
@@ -84,7 +84,7 @@ const useUsersListPage = () => {
     return () => {
       socket.off('userUpdate', handleModifiedUserUpdate);
     };
-  }, [socket]);
+  }, [socket, currentUser.following]);
 
   const filteredUserlist = userList.filter(user => user.username.includes(userFilter));
   return { userList: filteredUserlist, setUserFilter };
