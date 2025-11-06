@@ -1,16 +1,26 @@
+import * as React from 'react';
 import './index.css';
 import useFollowingList from '../../../hooks/useFollowingList';
 import { Link } from 'react-router-dom';
 
 interface FollowingListProps {
   username: string;
+  /** flip this boolean to force a refetch after follow/unfollow */
+  refreshTrigger?: boolean;
 }
 
 /**
  * Component to display a list of users that a user is following.
  */
-const FollowingList = ({ username }: FollowingListProps) => {
-  const { following, isLoading, error } = useFollowingList(username);
+const FollowingList = ({ username, refreshTrigger }: FollowingListProps) => {
+  const { following, isLoading, error, refetch } = useFollowingList(username);
+
+  // Re-fetch whenever the trigger flips
+  React.useEffect(() => {
+    if (typeof refreshTrigger !== 'undefined') {
+      refetch();
+    }
+  }, [refreshTrigger, refetch]);
 
   if (isLoading) {
     return <div className='following-list loading'>Loading following...</div>;

@@ -35,6 +35,8 @@ const ProfileSettings: React.FC = () => {
   } = useProfileSettings();
 
   const { user: currentUser } = useUserContext();
+  const [refreshFollowers, setRefreshFollowers] = React.useState(false);
+  const [refreshFollowing, setRefreshFollowing] = React.useState(false);
 
   // Determine initial follow state when viewing another user's profile
   const initialIsFollowing = Boolean(
@@ -42,6 +44,15 @@ const ProfileSettings: React.FC = () => {
       userData &&
       currentUser.following.some(id => id.toString() === userData._id.toString()),
   );
+
+  const onToggleFollow = async () => {
+    try {
+      await handleToggleFollow();
+    } finally {
+      setRefreshFollowers(v => !v);
+      setRefreshFollowing(v => !v);
+    }
+  };
 
   const {
     isFollowing,
@@ -130,7 +141,7 @@ const ProfileSettings: React.FC = () => {
               <div className='follow-actions'>
                 <button
                   className={`button ${isFollowing ? 'button-secondary' : 'button-primary'}`}
-                  onClick={handleToggleFollow}
+                  onClick={onToggleFollow}
                   disabled={followLoading}>
                   {isFollowing ? 'Unfollow' : 'Follow'}
                 </button>
@@ -180,8 +191,8 @@ const ProfileSettings: React.FC = () => {
             {/* Followers / Following lists */}
             {userData && (
               <div className='follow-lists'>
-                <FollowersList username={userData.username} />
-                <FollowingList username={userData.username} />
+                <FollowersList username={userData.username} refreshTrigger={refreshFollowers} />
+                <FollowingList username={userData.username} refreshTrigger={refreshFollowing} />
               </div>
             )}
           </>

@@ -39,6 +39,7 @@ const useFollowingList = (username: string) => {
     following,
     isLoading,
     error,
+    refetch: fetchFollowing,
   };
 };
 

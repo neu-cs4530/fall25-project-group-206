@@ -39,6 +39,7 @@ const useFollowersList = (username: string) => {
     followers,
     isLoading,
     error,
+    refetch: fetchFollowers,
   };
 };
 
