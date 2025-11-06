@@ -1,5 +1,8 @@
 import './index.css';
+import { useState } from 'react';
 import { SafeDatabaseUser } from '../../../../types/types';
+import useFollowButton from '../../../../hooks/useFollowButton';
+import useUserContext from '../../../../hooks/useUserContext';
 
 /**
  * Interface representing the props for the User component.
@@ -21,15 +24,50 @@ interface UserProps {
  */
 const UserCardView = (props: UserProps) => {
   const { user, handleUserCardViewClickHandler } = props;
+  const { user: currentUser } = useUserContext();
+
+  // Check if current user is following this user
+  const isFollowing = currentUser.following.some(id => id.toString() === user._id.toString());
+
+  const isOwnProfile = currentUser.username === user.username;
+
+  const {
+    isFollowing: followingState,
+    isLoading,
+    handleToggleFollow,
+  } = useFollowButton(user.username, isFollowing);
+
+  const [followerCount, setFollowerCount] = useState<number>(user.followers.length);
+
+  const handleFollowClick = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the card click
+
+    const newFollowingState = await handleToggleFollow();
+
+    // Update local follower count immediately based on new following state
+    setFollowerCount(prev => (newFollowingState ? prev + 1 : Math.max(0, prev - 1)));
+  };
 
   return (
     <div className='user right_padding' onClick={() => handleUserCardViewClickHandler(user)}>
       <div className='user_mid'>
         <div className='userUsername'>{user.username}</div>
+        {user.biography && <div className='userBio'>{user.biography}</div>}
       </div>
       <div className='userStats'>
         <div>joined {new Date(user.dateJoined).toUTCString()}</div>
+        <div>
+          {followerCount} followers · {user.following.length} following
+        </div>
       </div>
+      {!isOwnProfile && (
+        <button
+          className={`follow-btn ${followingState ? 'following' : ''}`}
+          onClick={handleFollowClick}
+          disabled={isLoading}>
+          {isLoading ? 'Loading...' : followingState ? 'Following' : 'Follow'}
+        </button>
+      )}
     </div>
   );
 };
