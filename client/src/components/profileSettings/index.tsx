@@ -3,6 +3,10 @@ import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './index.css';
 import useProfileSettings from '../../hooks/useProfileSettings';
+import useUserContext from '../../hooks/useUserContext';
+import useFollowButton from '../../hooks/useFollowButton';
+import FollowersList from './FollowersList';
+import FollowingList from './FollowingList';
 
 const ProfileSettings: React.FC = () => {
   const {
@@ -29,6 +33,33 @@ const ProfileSettings: React.FC = () => {
     handleDeleteUser,
     handleViewCollectionsPage,
   } = useProfileSettings();
+
+  const { user: currentUser } = useUserContext();
+  const [refreshFollowers, setRefreshFollowers] = React.useState(false);
+  const [refreshFollowing, setRefreshFollowing] = React.useState(false);
+
+  // Determine initial follow state when viewing another user's profile
+  const initialIsFollowing = Boolean(
+    currentUser &&
+      userData &&
+      currentUser.following.some(id => id.toString() === userData._id.toString()),
+  );
+
+  const onToggleFollow = async () => {
+    try {
+      await handleToggleFollow();
+    } finally {
+      setRefreshFollowers(v => !v);
+      setRefreshFollowing(v => !v);
+    }
+  };
+
+  const {
+    isFollowing,
+    isLoading: followLoading,
+    error: followError,
+    handleToggleFollow,
+  } = useFollowButton(userData ? userData.username : '', initialIsFollowing);
 
   if (loading) {
     return (
@@ -105,6 +136,19 @@ const ProfileSettings: React.FC = () => {
               View Collections
             </button>
 
+            {/* Follow / Unfollow button (only shown when viewing someone else's profile) */}
+            {!canEditProfile && currentUser && userData && (
+              <div className='follow-actions'>
+                <button
+                  className={`button ${isFollowing ? 'button-secondary' : 'button-primary'}`}
+                  onClick={onToggleFollow}
+                  disabled={followLoading}>
+                  {isFollowing ? 'Unfollow' : 'Follow'}
+                </button>
+                {followError && <span className='error-message'>{followError}</span>}
+              </div>
+            )}
+
             {/* ---- Reset Password Section ---- */}
             {canEditProfile && (
               <>
@@ -142,6 +186,14 @@ const ProfileSettings: React.FC = () => {
                   Delete This User
                 </button>
               </>
+            )}
+
+            {/* Followers / Following lists */}
+            {userData && (
+              <div className='follow-lists'>
+                <FollowersList username={userData.username} refreshTrigger={refreshFollowers} />
+                <FollowingList username={userData.username} refreshTrigger={refreshFollowing} />
+              </div>
             )}
           </>
         ) : (
