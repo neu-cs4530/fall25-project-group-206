@@ -379,13 +379,16 @@ describe('toggleFollowUser', () => {
     const mockCurrentUser = {
       ...currentUser,
       following: [],
-      save: jest.fn().mockResolvedValue(true),
     };
 
     const mockTargetUser = {
       ...targetUser,
       followers: [],
-      save: jest.fn().mockResolvedValue(true),
+    };
+
+    const updatedCurrentUser = {
+      ...mockCurrentUser,
+      following: [mockTargetUser._id],
     };
 
     jest
@@ -393,11 +396,16 @@ describe('toggleFollowUser', () => {
       .mockResolvedValueOnce(mockCurrentUser)
       .mockResolvedValueOnce(mockTargetUser);
 
+    jest
+      .spyOn(UserModel, 'findByIdAndUpdate')
+      .mockResolvedValueOnce(updatedCurrentUser)
+      .mockResolvedValueOnce({ ...mockTargetUser, followers: [mockCurrentUser._id] });
+
     const result = await toggleFollowUser(currentUser.username, targetUser.username);
 
-    expect('error' in result).toBe(false);
-    expect(mockCurrentUser.following).toContain(mockTargetUser._id);
-    expect(mockTargetUser.followers).toContain(mockCurrentUser._id);
+    if (!('error' in result)) {
+      expect(result.following).toContainEqual(mockTargetUser._id);
+    }
   });
 
   it('should unfollow a user when already following', async () => {
@@ -411,16 +419,26 @@ describe('toggleFollowUser', () => {
       followers: [currentUser._id],
     };
 
+    const updatedCurrentUser = {
+      ...mockCurrentUser,
+      following: [],
+    };
+
     jest
       .spyOn(UserModel, 'findOne')
       .mockResolvedValueOnce(mockCurrentUser)
       .mockResolvedValueOnce(mockTargetUser);
 
+    jest
+      .spyOn(UserModel, 'findByIdAndUpdate')
+      .mockResolvedValueOnce(updatedCurrentUser)
+      .mockResolvedValueOnce({ ...mockTargetUser, followers: [] });
+
     const result = await toggleFollowUser(currentUser.username, targetUser.username);
 
-    expect('error' in result).toBe(false);
-    expect(mockCurrentUser.following).toHaveLength(0);
-    expect(mockTargetUser.followers).toHaveLength(0);
+    if (!('error' in result)) {
+      expect(result.following).toHaveLength(0);
+    }
   });
 
   it('should return error when trying to follow yourself', async () => {

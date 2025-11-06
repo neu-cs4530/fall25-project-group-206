@@ -215,7 +215,7 @@ export const toggleFollowUser = async (
       throw Error('Error persisting follow changes for current user');
     }
 
-    // Return safe user without password (reflects persisted state)
+    // Return safe user without password
     const safeUser: SafeDatabaseUser = {
       _id: savedCurrent._id,
       username: savedCurrent.username,
