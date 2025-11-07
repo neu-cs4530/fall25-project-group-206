@@ -50,20 +50,30 @@ const BookmarksPage = () => {
       {/* COLLECTIONS SECTION */}
       {collections.length > 0 && (
         <>
-          <h2 className='bookmark-section-title'>Collections</h2>
-          <div className='bookmarks-list'>
+          <h2 className="bookmark-section-title">Collections</h2>
+          <div className="bookmarks-list">
             {collections.map(bookmark => {
-              const c = bookmark.populatedTarget;
-              if (!c) return null;
+              const c = bookmark.populatedTarget as {
+                _id?: string;
+                username?: string;
+                name?: string;
+                description?: string;
+                isPrivate?: boolean;
+                questions?: unknown[];
+              } | null;
+
+              if (!c?._id) return null;
+
               return (
                 <div
-                  key={c._id.toString()}
-                  className='bookmark-card'
-                  onClick={() => handleCollectionClick(c._id.toString(), c.username)}>
-                  <h3 className='bookmark-name'>{c.name}</h3>
-                  <p className='bookmark-description'>{c.description}</p>
-                  <p className='bookmark-meta'>
-                    {c.isPrivate ? 'Private' : 'Public'} • {c.questions?.length || 0} Questions
+                  key={c._id}
+                  className="bookmark-card"
+                  onClick={() => handleCollectionClick(c._id!, c.username ?? '')}
+                >
+                  <h3 className="bookmark-name">{c.name ?? 'Unnamed Collection'}</h3>
+                  <p className="bookmark-description">{c.description ?? ''}</p>
+                  <p className="bookmark-meta">
+                    {c.isPrivate ? 'Private' : 'Public'} • {c.questions?.length ?? 0} Questions
                   </p>
                 </div>
               );
@@ -71,24 +81,34 @@ const BookmarksPage = () => {
           </div>
         </>
       )}
+
 
       {/* COMMUNITIES SECTION */}
       {communities.length > 0 && (
         <>
-          <h2 className='bookmark-section-title'>Communities</h2>
-          <div className='bookmarks-list'>
+          <h2 className="bookmark-section-title">Communities</h2>
+          <div className="bookmarks-list">
             {communities.map(bookmark => {
-              const comm = bookmark.populatedTarget;
-              if (!comm) return null;
+              const comm = bookmark.populatedTarget as {
+                _id?: string;
+                name?: string;
+                description?: string;
+                visibility?: string;
+                participants?: unknown[];
+              } | null;
+
+              if (!comm?._id) return null;
+
               return (
                 <div
-                  key={comm._id.toString()}
-                  className='bookmark-card'
-                  onClick={() => handleCommunityClick(comm._id.toString())}>
-                  <h3 className='bookmark-name'>{comm.name}</h3>
-                  <p className='bookmark-description'>{comm.description}</p>
-                  <p className='bookmark-meta'>
-                    {comm.visibility} • {comm.participants.length} participants
+                  key={comm._id}
+                  className="bookmark-card"
+                  onClick={() => handleCommunityClick(comm._id!)}
+                >
+                  <h3 className="bookmark-name">{comm.name ?? 'Unnamed Community'}</h3>
+                  <p className="bookmark-description">{comm.description ?? ''}</p>
+                  <p className="bookmark-meta">
+                    {comm.visibility ?? 'Unknown'} • {comm.participants?.length ?? 0} participants
                   </p>
                 </div>
               );
@@ -96,23 +116,30 @@ const BookmarksPage = () => {
           </div>
         </>
       )}
-
       {/* USERS SECTION */}
       {users.length > 0 && (
         <>
-          <h2 className='bookmark-section-title'>Users</h2>
-          <div className='bookmarks-list'>
+          <h2 className="bookmark-section-title">Users</h2>
+          <div className="bookmarks-list">
             {users.map(bookmark => {
-              const u = bookmark.populatedTarget;
-              if (!u) return null;
+              const u = bookmark.populatedTarget as {
+                _id?: string;
+                username?: string;
+                bio?: string;
+                reputation?: number;
+              } | null;
+
+              if (!u?._id) return null;
+
               return (
                 <div
-                  key={u._id.toString()}
-                  className='bookmark-card'
-                  onClick={() => handleUserClick(u.username)}>
-                  <h3 className='bookmark-name'>{u.username}</h3>
-                  <p className='bookmark-description'>{u.bio || 'No description available.'}</p>
-                  <p className='bookmark-meta'>Reputation: {u.reputation ?? 0}</p>
+                  key={u._id}
+                  className="bookmark-card"
+                  onClick={() => handleUserClick(u.username ?? '')}
+                >
+                  <h3 className="bookmark-name">{u.username ?? 'Unknown User'}</h3>
+                  <p className="bookmark-description">{u.bio ?? 'No description available.'}</p>
+                  <p className="bookmark-meta">Reputation: {u.reputation ?? 0}</p>
                 </div>
               );
             })}
