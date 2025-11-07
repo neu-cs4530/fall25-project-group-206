@@ -145,6 +145,7 @@ export interface ClientToServerEvents {
  * - `chatUpdate`: Server sends updated chat.
  * - `communityUpdate`: Server sends updated community.
  * - `collectionUpdate`: Server sends updated collection.
+ * - `bookmarkUpdate`: Server sends updated bookmark.
  */
 export interface ServerToClientEvents {
   questionUpdate: (question: PopulatedDatabaseQuestion) => void;

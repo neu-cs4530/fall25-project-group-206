@@ -24,11 +24,12 @@ export interface DatabaseBookmark extends Bookmark {
 }
 
 /**
- * Represents a bookmark populated with its target entity.
- * - `populatedTarget`: The full document of the bookmarked item (collection, community, or user).
+ * Represents a bookmark with populated target entity data.
+ * - `populatedTarget`: The populated data of the bookmarked entity.
+ * Can be a Collection, Community, User, or null if not populated.
  */
 export interface PopulatedDatabaseBookmark extends DatabaseBookmark {
-  populatedTarget?: any;
+  populatedTarget?: Record<string, unknown> | null;
 }
 
 /**
