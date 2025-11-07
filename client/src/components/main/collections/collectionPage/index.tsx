@@ -2,7 +2,7 @@ import QuestionView from '../../questionPage/question';
 import useCollectionPage from '../../../../hooks/useCollectionPage';
 import './index.css';
 import DeleteCollectionButton from '../deleteCollectionButton';
-import { useBookmarkToggle } from '../../../../hooks/useBookmarkToggle';
+import useBookmarkToggle from '../../../../hooks/useBookmarkToggle';
 import { Star, StarOff } from 'lucide-react';
 
 /**
@@ -13,8 +13,11 @@ const CollectionPage = () => {
   const { collection, isOwner } = useCollectionPage();
 
   // Integrate bookmark hook (for collections)
-  const { isBookmarked, loading: bookmarkLoading, handleToggleBookmark } =
-    useBookmarkToggle(collection?._id?.toString() ?? '', 'Collection');
+  const {
+    isBookmarked,
+    loading: bookmarkLoading,
+    handleToggleBookmark,
+  } = useBookmarkToggle(collection?._id?.toString() ?? '', 'Collection');
 
   if (!collection) {
     return <div className='loading'>Loading...</div>;

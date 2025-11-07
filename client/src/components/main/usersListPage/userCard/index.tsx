@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { SafeDatabaseUser } from '../../../../types/types';
 import useFollowButton from '../../../../hooks/useFollowButton';
 import useUserContext from '../../../../hooks/useUserContext';
-import { useBookmarkToggle } from '../../../../hooks/useBookmarkToggle';
+import useBookmarkToggle from '../../../../hooks/useBookmarkToggle';
 import { Star, StarOff } from 'lucide-react';
 
 /**
@@ -40,10 +40,11 @@ const UserCardView = (props: UserProps) => {
     handleToggleFollow,
   } = useFollowButton(user.username, isFollowing);
 
-  const { isBookmarked, loading: bookmarkLoading, handleToggleBookmark } = useBookmarkToggle(
-    user._id.toString(),
-    'User',
-  );
+  const {
+    isBookmarked,
+    loading: bookmarkLoading,
+    handleToggleBookmark,
+  } = useBookmarkToggle(user._id.toString(), 'User');
 
   const [followerCount, setFollowerCount] = useState<number>(user.followers.length);
 

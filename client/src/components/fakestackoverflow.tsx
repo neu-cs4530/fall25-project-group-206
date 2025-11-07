@@ -25,6 +25,11 @@ import CollectionPage from './main/collections/collectionPage';
 import NewCollectionPage from './main/collections/newCollectionPage';
 import BookmarksPage from './main/bookmarks';
 
+/**
+ * ProtectedRoute component ensures that only authenticated users can access certain routes.
+ * @param param0 - The props for the component.
+ * @returns A JSX element representing the protected route.
+ */
 const ProtectedRoute = ({
   user,
   socket,
