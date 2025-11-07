@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { UserCredentials, SafeDatabaseUser } from '../types/types';
+import { UserRegistration, UserCredentials, SafeDatabaseUser } from '../types/types';
 import api from './config';
 
 const USER_API_URL = `/api/user`;
@@ -37,7 +37,7 @@ const getUserByUsername = async (username: string): Promise<SafeDatabaseUser> =>
  * @returns {Promise<User>} The newly created user object.
  * @throws {Error} If an error occurs during the signup process.
  */
-const createUser = async (user: UserCredentials): Promise<SafeDatabaseUser> => {
+const createUser = async (user: UserRegistration): Promise<SafeDatabaseUser> => {
   try {
     const res = await api.post(`${USER_API_URL}/signup`, user);
     return res.data;
