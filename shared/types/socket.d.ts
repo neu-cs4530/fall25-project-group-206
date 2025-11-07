@@ -159,4 +159,5 @@ export interface ServerToClientEvents {
   chatUpdate: (chat: ChatUpdatePayload) => void;
   communityUpdate: (community: CommunityUpdatePayload) => void;
   collectionUpdate: (community: CollectionUpdatePayload) => void;
+  bookmarkUpdate: (bookmark: PopulatedDatabaseBookmark) => void;
 }

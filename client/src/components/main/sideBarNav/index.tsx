@@ -28,12 +28,14 @@ const SideBarNav = () => {
         className={({ isActive }) => `menu_button ${isActive ? 'menu_selected' : ''}`}>
         Questions
       </NavLink>
+
       <NavLink
         to='/tags'
         id='menu_tag'
         className={({ isActive }) => `menu_button ${isActive ? 'menu_selected' : ''}`}>
         Tags
       </NavLink>
+
       <NavLink
         to='/messaging'
         id='menu_messaging'
@@ -41,6 +43,7 @@ const SideBarNav = () => {
         onClick={toggleOptions}>
         Messaging
       </NavLink>
+
       {showOptions && (
         <div className='additional-options'>
           <NavLink
@@ -55,29 +58,41 @@ const SideBarNav = () => {
           </NavLink>
         </div>
       )}
+
       <NavLink
         to='/users'
         id='menu_users'
         className={({ isActive }) => `menu_button ${isActive ? 'menu_selected' : ''}`}>
         Users
       </NavLink>
+
       <NavLink
         to='/games'
         id='menu_games'
         className={({ isActive }) => `menu_button ${isActive ? 'menu_selected' : ''}`}>
         Games
       </NavLink>
+
       <NavLink
         to='/communities'
         id='menu_communities'
         className={({ isActive }) => `menu_button ${isActive ? 'menu_selected' : ''}`}>
         Communities
       </NavLink>
+
       <NavLink
         to={`/collections/${user.username}`}
         id='menu_collections'
         className={({ isActive }) => `menu_button ${isActive ? 'menu_selected' : ''}`}>
         My Collections
+      </NavLink>
+
+      {/* Bookmarks link */}
+      <NavLink
+        to={`/bookmarks/${user.username}`}
+        id='menu_bookmarks'
+        className={({ isActive }) => `menu_button ${isActive ? 'menu_selected' : ''}`}>
+        Bookmarks
       </NavLink>
     </div>
   );

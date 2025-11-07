@@ -1,4 +1,5 @@
 export * from './answer';
+export * from './bookmark';
 export * from './chat';
 export * from './comment';
 export * from './game';

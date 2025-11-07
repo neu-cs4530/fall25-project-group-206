@@ -1,8 +1,6 @@
 /* eslint no-console: "off" */
 
 // The server should run on localhost port 8000.
-// This is where you should start writing server-side code for this application.
-// startServer() is a function that starts the server
 import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
@@ -24,12 +22,14 @@ import chatController from './controllers/chat.controller';
 import gameController from './controllers/game.controller';
 import collectionController from './controllers/collection.controller';
 import communityController from './controllers/community.controller';
+import bookmarkController from './controllers/bookmark.controller'; // ✅ NEW
 
 const MONGO_URL = `${process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017'}/fake_so`;
 const PORT = parseInt(process.env.PORT || '8000');
 
 const app = express();
 const server = http.createServer(app);
+
 // allow requests from the local dev client or the production client only
 const socket: FakeSOSocket = new Server(server, {
   path: '/socket.io',
@@ -86,20 +86,20 @@ try {
   // Custom Error Handler for express-openapi-validator errors
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-    // Format error response for validation errors
     if (err.status && err.errors) {
       res.status(err.status).json({
         message: 'Request Validation Failed',
         errors: err.errors,
       });
     } else {
-      next(err); // Pass through other errors
+      next(err);
     }
   });
 } catch (e) {
   console.error('Failed to load or initialize OpenAPI Validator:', e);
 }
 
+// Register all controllers
 app.use('/api/question', questionController(socket));
 app.use('/api/tags', tagController());
 app.use('/api/answer', answerController(socket));
@@ -110,10 +110,10 @@ app.use('/api/chat', chatController(socket));
 app.use('/api/games', gameController(socket));
 app.use('/api/collection', collectionController(socket));
 app.use('/api/community', communityController(socket));
+app.use('/api/bookmark', bookmarkController(socket));
 
 const openApiDocument = yaml.parse(fs.readFileSync('./openapi.yaml', 'utf8'));
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
 console.log('Swagger UI is available at /api/docs');
 
-// Export the app instance
 export { app, server, startServer };

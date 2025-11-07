@@ -36,3 +36,24 @@
 .community-card-actions {
   margin-top: 1rem;
 }
+
+.bookmark-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  margin-left: 6px;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  display: flex;
+  align-items: center;
+}
+
+.bookmark-icon-btn:hover {
+  transform: scale(1.15);
+  opacity: 0.9;
+}
+
+.bookmark-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
