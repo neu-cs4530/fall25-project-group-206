@@ -50,8 +50,8 @@ const BookmarksPage = () => {
       {/* COLLECTIONS SECTION */}
       {collections.length > 0 && (
         <>
-          <h2 className="bookmark-section-title">Collections</h2>
-          <div className="bookmarks-list">
+          <h2 className='bookmark-section-title'>Collections</h2>
+          <div className='bookmarks-list'>
             {collections.map(bookmark => {
               const c = bookmark.populatedTarget as {
                 _id?: string;
@@ -67,12 +67,11 @@ const BookmarksPage = () => {
               return (
                 <div
                   key={c._id}
-                  className="bookmark-card"
-                  onClick={() => handleCollectionClick(c._id!, c.username ?? '')}
-                >
-                  <h3 className="bookmark-name">{c.name ?? 'Unnamed Collection'}</h3>
-                  <p className="bookmark-description">{c.description ?? ''}</p>
-                  <p className="bookmark-meta">
+                  className='bookmark-card'
+                  onClick={() => handleCollectionClick(c._id!, c.username ?? '')}>
+                  <h3 className='bookmark-name'>{c.name ?? 'Unnamed Collection'}</h3>
+                  <p className='bookmark-description'>{c.description ?? ''}</p>
+                  <p className='bookmark-meta'>
                     {c.isPrivate ? 'Private' : 'Public'} • {c.questions?.length ?? 0} Questions
                   </p>
                 </div>
@@ -82,12 +81,11 @@ const BookmarksPage = () => {
         </>
       )}
 
-
       {/* COMMUNITIES SECTION */}
       {communities.length > 0 && (
         <>
-          <h2 className="bookmark-section-title">Communities</h2>
-          <div className="bookmarks-list">
+          <h2 className='bookmark-section-title'>Communities</h2>
+          <div className='bookmarks-list'>
             {communities.map(bookmark => {
               const comm = bookmark.populatedTarget as {
                 _id?: string;
@@ -102,12 +100,11 @@ const BookmarksPage = () => {
               return (
                 <div
                   key={comm._id}
-                  className="bookmark-card"
-                  onClick={() => handleCommunityClick(comm._id!)}
-                >
-                  <h3 className="bookmark-name">{comm.name ?? 'Unnamed Community'}</h3>
-                  <p className="bookmark-description">{comm.description ?? ''}</p>
-                  <p className="bookmark-meta">
+                  className='bookmark-card'
+                  onClick={() => handleCommunityClick(comm._id!)}>
+                  <h3 className='bookmark-name'>{comm.name ?? 'Unnamed Community'}</h3>
+                  <p className='bookmark-description'>{comm.description ?? ''}</p>
+                  <p className='bookmark-meta'>
                     {comm.visibility ?? 'Unknown'} • {comm.participants?.length ?? 0} participants
                   </p>
                 </div>
@@ -119,8 +116,8 @@ const BookmarksPage = () => {
       {/* USERS SECTION */}
       {users.length > 0 && (
         <>
-          <h2 className="bookmark-section-title">Users</h2>
-          <div className="bookmarks-list">
+          <h2 className='bookmark-section-title'>Users</h2>
+          <div className='bookmarks-list'>
             {users.map(bookmark => {
               const u = bookmark.populatedTarget as {
                 _id?: string;
@@ -134,12 +131,11 @@ const BookmarksPage = () => {
               return (
                 <div
                   key={u._id}
-                  className="bookmark-card"
-                  onClick={() => handleUserClick(u.username ?? '')}
-                >
-                  <h3 className="bookmark-name">{u.username ?? 'Unknown User'}</h3>
-                  <p className="bookmark-description">{u.bio ?? 'No description available.'}</p>
-                  <p className="bookmark-meta">Reputation: {u.reputation ?? 0}</p>
+                  className='bookmark-card'
+                  onClick={() => handleUserClick(u.username ?? '')}>
+                  <h3 className='bookmark-name'>{u.username ?? 'Unknown User'}</h3>
+                  <p className='bookmark-description'>{u.bio ?? 'No description available.'}</p>
+                  <p className='bookmark-meta'>Reputation: {u.reputation ?? 0}</p>
                 </div>
               );
             })}

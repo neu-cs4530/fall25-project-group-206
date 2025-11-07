@@ -29,17 +29,14 @@ export interface DatabaseBookmark extends Bookmark {
  * Can be a Collection, Community, User, or null if not populated.
  */
 export interface PopulatedDatabaseBookmark extends DatabaseBookmark {
-  populatedTarget?:
-    | {
-        _id?: string;
-        name?: string;
-        username?: string;
-        participants?: unknown[];
-        [key: string]: unknown;
-      }
-    | null;
+  populatedTarget?: {
+    _id?: string;
+    name?: string;
+    username?: string;
+    participants?: unknown[];
+    [key: string]: unknown;
+  } | null;
 }
-
 
 /**
  * Represents a bookmark response type.
