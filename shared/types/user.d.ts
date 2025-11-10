@@ -23,6 +23,7 @@ export interface User extends UserCredentials {
   biography?: string;
   followers: ObjectId[];
   following: ObjectId[];
+  allowOpenMessaging?: boolean;
 }
 
 /**
