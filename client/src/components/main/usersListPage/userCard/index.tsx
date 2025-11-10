@@ -4,7 +4,6 @@ import { SafeDatabaseUser } from '../../../../types/types';
 import useFollowButton from '../../../../hooks/useFollowButton';
 import useUserContext from '../../../../hooks/useUserContext';
 import useBookmarkToggle from '../../../../hooks/useBookmarkToggle';
-import { Star, StarOff } from 'lucide-react';
 
 /**
  * Interface representing the props for the User component.
