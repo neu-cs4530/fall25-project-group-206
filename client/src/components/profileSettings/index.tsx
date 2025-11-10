@@ -60,6 +60,7 @@ const ProfileSettings: React.FC = () => {
     userData ? userData._id.toString() : '',
     'User',
   );
+
   const {
     isFollowing,
     isLoading: followLoading,

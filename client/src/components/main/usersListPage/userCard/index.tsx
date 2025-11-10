@@ -30,6 +30,11 @@ const UserCardView = (props: UserProps) => {
   // Check if current user is following this user
   const isFollowing = currentUser.following.some(id => id.toString() === user._id.toString());
 
+  // Check if this user follows the current user
+  const followsYou = user.following.some(id => id.toString() === currentUser._id.toString());
+
+  const isMutualFollow = isFollowing && followsYou;
+
   const isOwnProfile = currentUser.username === user.username;
 
   // Hooks for follow + bookmark logic
@@ -55,6 +60,16 @@ const UserCardView = (props: UserProps) => {
       <div className='user_mid'>
         <div className='userHeader'>
           <div className='userUsername'>{user.username}</div>
+          <div className='followsYou'>
+            {!isOwnProfile && (
+              <>
+                {isMutualFollow && <span className='mutual-badge'>Mutual</span>}
+                {!isMutualFollow && followsYou && (
+                  <span className='follows-you-badge'>Follows you</span>
+                )}
+              </>
+            )}
+          </div>
         </div>
         <div></div>
         {user.biography && <div className='userBio'>{user.biography}</div>}
