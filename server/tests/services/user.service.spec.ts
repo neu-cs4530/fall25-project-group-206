@@ -670,6 +670,7 @@ describe('updateMessagingSetting', () => {
   const baseSafeUser: SafeDatabaseUser = {
     _id: new mongoose.Types.ObjectId(),
     username: user.username,
+    email: user.email,
     dateJoined: user.dateJoined,
     followers: user.followers,
     following: user.following,
