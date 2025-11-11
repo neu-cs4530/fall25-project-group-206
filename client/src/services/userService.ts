@@ -31,19 +31,6 @@ const getUserByUsername = async (username: string): Promise<SafeDatabaseUser> =>
 };
 
 /**
- * Function to get users via ID
- *
- * @throws Error if there is an issue fetching users.
- */
-const getUserByID = async (id: string): Promise<SafeDatabaseUser> => {
-  const res = await api.get(`${USER_API_URL}/getUserByID/${id}`);
-  if (res.status !== 200) {
-    throw new Error('Error when fetching user by ID');
-  }
-  return res.data;
-};
-
-/**
  * Sends a POST request to create a new user account.
  *
  * @param user - The user credentials (username and password) for signup.
@@ -219,14 +206,14 @@ const updateMessagingSetting = async (
  */
 export const canSendMessage = async (
   currentUser: SafeDatabaseUser,
-  targetUserID: string,
+  targetUsername: string,
 ): Promise<boolean> => {
   // Can't message yourself
-  if (currentUser._id.toString() === targetUserID.toString()) {
+  if (currentUser.username.toString() === targetUsername.toString()) {
     return false;
   }
 
-  const targetUser = await getUserByID(targetUserID);
+  const targetUser = await getUserByUsername(targetUsername);
 
   // If target has open messaging enabled, anyone can message them
   if (targetUser.allowOpenMessaging) {
@@ -246,7 +233,6 @@ export const canSendMessage = async (
 
 export {
   getUsers,
-  getUserByID,
   getUserByUsername,
   loginUser,
   createUser,

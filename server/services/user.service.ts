@@ -39,26 +39,6 @@ export const saveUser = async (user: User): Promise<UserResponse> => {
 };
 
 /**
- * Retrieves a user from the database by their ID.
- *
- * @param {string} id - The ID of the user to find.
- * @returns {Promise<UserResponse>} - Resolves with the found user object (without the password) or an error message.
- */
-export const getUserbyID = async (id: string): Promise<UserResponse> => {
-  try {
-    const user: SafeDatabaseUser | null = await UserModel.findById(id).select('-password');
-
-    if (!user) {
-      throw Error('User not found');
-    }
-
-    return user;
-  } catch (error) {
-    return { error: `Error occurred when finding user by ID: ${error}` };
-  }
-};
-
-/**
  * Retrieves a user from the database by their username.
  *
  * @param {string} username - The username of the user to find.

@@ -4,14 +4,12 @@ import {
   User,
   UserCredentials,
   UserByUsernameRequest,
-  UserByIDRequest,
   FakeSOSocket,
   UpdateBiographyRequest,
 } from '../types/types';
 import {
   deleteUserByUsername,
   getUserByUsername,
-  getUserbyID,
   getUsersList,
   loginUser,
   saveUser,
@@ -102,27 +100,6 @@ const userController = (socket: FakeSOSocket) => {
       res.status(200).json(user);
     } catch (error) {
       res.status(500).send(`Error when getting user by username: ${error}`);
-    }
-  };
-
-  /**
-   * Retrieves a user by their ID.
-   * @param req The request containing the ID as a route parameter.
-   * @param res The response, either returning the user or an error.
-   * @returns A promise resolving to void.
-   */
-  const getUserByID = async (req: UserByIDRequest, res: Response): Promise<void> => {
-    try {
-      const { username } = req.params;
-
-      const user = await getUserbyID(username);
-      if ('error' in user) {
-        throw Error(user.error);
-      }
-
-      res.status(200).json(user);
-    } catch (error) {
-      res.status(500).send(`Error when getting user by ID: ${error}`);
     }
   };
 
@@ -329,7 +306,6 @@ const userController = (socket: FakeSOSocket) => {
   router.post('/signup', createUser);
   router.post('/login', userLogin);
   router.patch('/resetPassword', resetPassword);
-  router.get('/getUserByID/:username', getUserByID);
   router.get('/getUser/:username', getUser);
   router.get('/getUsers', getUsers);
   router.delete('/deleteUser/:username', deleteUser);
