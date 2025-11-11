@@ -8,6 +8,8 @@ import {
   UsersResponse,
 } from '../types/types';
 import bcrypt from 'bcrypt';
+import * as speakeasy from 'speakeasy';
+import * as QRCode from 'qrcode';
 
 /**
  * Saves a new user to the database.
@@ -284,5 +286,159 @@ export const getFollowing = async (username: string): Promise<UsersResponse> => 
     return user.following;
   } catch (error) {
     return { error: `Error occurred when fetching following: ${error}` };
+  }
+};
+
+/**
+ * Updates the allowOpenMessaging setting for a user
+ *
+ * @param username - The username of the user
+ * @param allowOpenMessaging - The new setting value
+ * @returns Promise<UserResponse>
+ */
+export const updateMessagingSetting = async (
+  username: string,
+  allowOpenMessaging: boolean,
+): Promise<UserResponse> => {
+  try {
+    const updatedUser = await UserModel.findOneAndUpdate(
+      { username },
+      { $set: { allowOpenMessaging } },
+      { new: true },
+    ).select('-password');
+
+    if (!updatedUser) {
+      throw Error('Error updating messaging setting');
+    }
+
+    return updatedUser;
+  } catch (error) {
+    return { error: `Error occurred when updating messaging setting: ${error}` };
+  }
+};
+
+/**
+ * Generates a 2FA secret for a user
+ *
+ * @param username - The username of the user
+ * @returns Object containing the secret and QR code URL
+ */
+export const generate2FASecret = async (username: string) => {
+  try {
+    const secret = speakeasy.generateSecret({
+      name: `FakeStackOverflow (${username})`,
+      length: 32,
+    });
+
+    // Generate QR code as data URL
+    const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url!);
+
+    return {
+      secret: secret.base32,
+      qrCode: qrCodeUrl,
+    };
+  } catch (error) {
+    throw new Error('Error generating 2FA secret');
+  }
+};
+
+/**
+ * Enables 2FA for a user after verifying the token
+ *
+ * @param username - The username of the user
+ * @param secret - The 2FA secret
+ * @param token - The 6-digit token from authenticator app
+ * @returns Promise<UserResponse>
+ */
+export const enable2FA = async (
+  username: string,
+  secret: string,
+  token: string,
+): Promise<UserResponse> => {
+  try {
+    // Verify the token first
+    const verified = speakeasy.totp.verify({
+      secret: secret,
+      encoding: 'base32',
+      token: token,
+    });
+
+    if (!verified) {
+      throw new Error('Invalid token');
+    }
+
+    // Update user with 2FA enabled and save secret
+    const updatedUser = await UserModel.findOneAndUpdate(
+      { username },
+      {
+        $set: {
+          twoFactorEnabled: true,
+          twoFactorSecret: secret,
+        },
+      },
+      { new: true },
+    ).select('-password -twoFactorSecret');
+
+    if (!updatedUser) {
+      throw new Error('User not found');
+    }
+
+    return updatedUser;
+  } catch (error) {
+    return { error: `Error enabling 2FA: ${error}` };
+  }
+};
+
+/**
+ * Disables 2FA for a user
+ *
+ * @param username - The username of the user
+ * @returns Promise<UserResponse>
+ */
+export const disable2FA = async (username: string): Promise<UserResponse> => {
+  try {
+    const updatedUser = await UserModel.findOneAndUpdate(
+      { username },
+      {
+        $set: {
+          twoFactorEnabled: false,
+          twoFactorSecret: null,
+        },
+      },
+      { new: true },
+    ).select('-password -twoFactorSecret');
+
+    if (!updatedUser) {
+      throw new Error('User not found');
+    }
+
+    return updatedUser;
+  } catch (error) {
+    return { error: `Error disabling 2FA: ${error}` };
+  }
+};
+
+/**
+ * Verifies a 2FA token
+ *
+ * @param username - The username of the user
+ * @param token - The 6-digit token from authenticator app
+ * @returns boolean - true if valid
+ */
+export const verify2FAToken = async (username: string, token: string): Promise<boolean> => {
+  try {
+    const user = await UserModel.findOne({ username });
+
+    if (!user || !user.twoFactorSecret) {
+      return false;
+    }
+
+    return speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token: token,
+    });
+  } catch (error) {
+    return false;
   }
 };

@@ -42,6 +42,18 @@ const userSchema: Schema = new Schema(
       type: [Schema.Types.ObjectId],
       ref: 'User',
     },
+    allowOpenMessaging: {
+      type: Boolean,
+      default: false, // Default to requiring mutual follows
+    },
+    twoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    twoFactorSecret: {
+      type: String,
+      default: null,
+    },
   },
   { collection: 'User' },
 );

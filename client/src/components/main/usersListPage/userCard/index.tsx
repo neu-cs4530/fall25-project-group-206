@@ -4,7 +4,6 @@ import { SafeDatabaseUser } from '../../../../types/types';
 import useFollowButton from '../../../../hooks/useFollowButton';
 import useUserContext from '../../../../hooks/useUserContext';
 import useBookmarkToggle from '../../../../hooks/useBookmarkToggle';
-import { Star, StarOff } from 'lucide-react';
 
 /**
  * Interface representing the props for the User component.
@@ -31,6 +30,11 @@ const UserCardView = (props: UserProps) => {
   // Check if current user is following this user
   const isFollowing = currentUser.following.some(id => id.toString() === user._id.toString());
 
+  // Check if this user follows the current user
+  const followsYou = user.following.some(id => id.toString() === currentUser._id.toString());
+
+  const isMutualFollow = isFollowing && followsYou;
+
   const isOwnProfile = currentUser.username === user.username;
 
   // Hooks for follow + bookmark logic
@@ -40,23 +44,15 @@ const UserCardView = (props: UserProps) => {
     handleToggleFollow,
   } = useFollowButton(user.username, isFollowing);
 
-  const {
-    isBookmarked,
-    loading: bookmarkLoading,
-    handleToggleBookmark,
-  } = useBookmarkToggle(user._id.toString(), 'User');
+  const { handleToggleBookmark } = useBookmarkToggle(user._id.toString(), 'User');
 
   const [followerCount, setFollowerCount] = useState<number>(user.followers.length);
 
   const handleFollowClick = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering the card click
     const newFollowingState = await handleToggleFollow();
-    setFollowerCount(prev => (newFollowingState ? prev + 1 : Math.max(0, prev - 1)));
-  };
-
-  const handleBookmarkClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Don’t navigate when clicking the star
     handleToggleBookmark();
+    setFollowerCount(prev => (newFollowingState ? prev + 1 : Math.max(0, prev - 1)));
   };
 
   return (
@@ -64,19 +60,18 @@ const UserCardView = (props: UserProps) => {
       <div className='user_mid'>
         <div className='userHeader'>
           <div className='userUsername'>{user.username}</div>
-          <button
-            className='bookmark-icon-btn'
-            onClick={handleBookmarkClick}
-            disabled={bookmarkLoading}
-            title={isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'}>
-            {isBookmarked ? (
-              <StarOff size={18} color='#facc15' fill='#facc15' strokeWidth={2} />
-            ) : (
-              <Star size={18} color='#9ca3af' strokeWidth={2} />
+          <div className='followsYou'>
+            {!isOwnProfile && (
+              <>
+                {isMutualFollow && <span className='mutual-badge'>Mutual</span>}
+                {!isMutualFollow && followsYou && (
+                  <span className='follows-you-badge'>Follows you</span>
+                )}
+              </>
             )}
-          </button>
+          </div>
         </div>
-
+        <div></div>
         {user.biography && <div className='userBio'>{user.biography}</div>}
       </div>
 

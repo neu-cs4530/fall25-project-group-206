@@ -175,6 +175,167 @@ const getFollowing = async (username: string): Promise<SafeDatabaseUser[]> => {
   }
   return res.data;
 };
+/**
+ * Updates the messaging setting for a user.
+ *
+ * @param username - The username of the user
+ * @param allowOpenMessaging - Whether to allow open messaging (true) or require mutual follows (false)
+ * @returns A promise that resolves to the updated user data
+ * @throws {Error} If the request to the server is unsuccessful
+ */
+const updateMessagingSetting = async (
+  username: string,
+  allowOpenMessaging: boolean,
+): Promise<SafeDatabaseUser> => {
+  const res = await api.patch(`${USER_API_URL}/updateMessagingSetting`, {
+    username,
+    allowOpenMessaging,
+  });
+  if (res.status !== 200) {
+    throw new Error('Error when updating messaging setting');
+  }
+  return res.data;
+};
+
+/**
+ * Determines if currentUser can send a message to targetUser
+ *
+ * @param currentUser - The user attempting to send a message
+ * @param targetUser - The user receiving the message
+ * @returns boolean - true if messaging is allowed
+ */
+export const canSendMessage = async (
+  currentUser: SafeDatabaseUser,
+  targetUsername: string,
+): Promise<boolean> => {
+  // Can't message yourself
+  if (currentUser.username.toString() === targetUsername.toString()) {
+    return false;
+  }
+
+  const targetUser = await getUserByUsername(targetUsername);
+
+  // If target has open messaging enabled, anyone can message them
+  if (targetUser.allowOpenMessaging) {
+    return true;
+  }
+
+  // Otherwise, require mutual following
+  const currentUserFollowsTarget = currentUser.following.some(
+    id => id.toString() === targetUser._id.toString(),
+  );
+  const targetFollowsCurrentUser = targetUser.followers.some(
+    id => id.toString() === currentUser._id.toString(),
+  );
+
+  return currentUserFollowsTarget && targetFollowsCurrentUser;
+};
+
+/**
+ * Generates a 2FA secret and QR code for a user.
+ *
+ * @param username - The username of the user to generate 2FA secret for
+ * @returns A promise that resolves to an object containing the secret and QR code
+ * @throws {Error} If the request to the server is unsuccessful
+ */
+const generate2FASecret = async (username: string): Promise<{ secret: string; qrCode: string }> => {
+  try {
+    const res = await api.post(`${USER_API_URL}/2fa/generate`, { username });
+    if (res.status !== 200) {
+      throw new Error('Error when generating 2FA secret');
+    }
+    return res.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(`Error generating 2FA secret: ${error.response.data}`);
+    } else {
+      throw new Error('Error when generating 2FA secret');
+    }
+  }
+};
+
+/**
+ * Enables 2FA for a user after verifying the token.
+ *
+ * @param username - The username of the user
+ * @param secret - The 2FA secret to save
+ * @param token - The 6-digit token from the authenticator app
+ * @returns A promise that resolves to the updated user data
+ * @throws {Error} If the request to the server is unsuccessful or token is invalid
+ */
+const enable2FA = async (
+  username: string,
+  secret: string,
+  token: string,
+): Promise<SafeDatabaseUser> => {
+  try {
+    const res = await api.post(`${USER_API_URL}/2fa/enable`, {
+      username,
+      secret,
+      token,
+    });
+    if (res.status !== 200) {
+      throw new Error('Error when enabling 2FA');
+    }
+    return res.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(`${error.response.data}`);
+    } else {
+      throw new Error('Error when enabling 2FA');
+    }
+  }
+};
+
+/**
+ * Disables 2FA for a user.
+ *
+ * @param username - The username of the user
+ * @returns A promise that resolves to the updated user data
+ * @throws {Error} If the request to the server is unsuccessful
+ */
+const disable2FA = async (username: string): Promise<SafeDatabaseUser> => {
+  try {
+    const res = await api.post(`${USER_API_URL}/2fa/disable`, { username });
+    if (res.status !== 200) {
+      throw new Error('Error when disabling 2FA');
+    }
+    return res.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(`Error disabling 2FA: ${error.response.data}`);
+    } else {
+      throw new Error('Error when disabling 2FA');
+    }
+  }
+};
+
+/**
+ * Verifies a 2FA token for a user during login.
+ *
+ * @param username - The username of the user
+ * @param token - The 6-digit token from the authenticator app
+ * @returns A promise that resolves to true if token is valid, false otherwise
+ * @throws {Error} If the request to the server is unsuccessful
+ */
+const verify2FAToken = async (username: string, token: string): Promise<boolean> => {
+  try {
+    const res = await api.post(`${USER_API_URL}/2fa/verify`, {
+      username,
+      token,
+    });
+    if (res.status !== 200) {
+      throw new Error('Error when verifying 2FA token');
+    }
+    return res.data.valid;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(`Error verifying 2FA token: ${error.response.data}`);
+    } else {
+      throw new Error('Error when verifying 2FA token');
+    }
+  }
+};
 
 export {
   getUsers,
@@ -187,4 +348,9 @@ export {
   toggleFollowUser,
   getFollowers,
   getFollowing,
+  updateMessagingSetting,
+  generate2FASecret,
+  enable2FA,
+  disable2FA,
+  verify2FAToken,
 };

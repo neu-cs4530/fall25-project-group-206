@@ -5,10 +5,10 @@ import {
   deleteUser,
   resetPassword,
   updateBiography,
+  updateMessagingSetting,
 } from '../services/userService';
 import { SafeDatabaseUser } from '../types/types';
 import useUserContext from './useUserContext';
-
 /**
  * A custom hook to encapsulate all logic/state for the ProfileSettings component.
  */
@@ -33,6 +33,8 @@ const useProfileSettings = () => {
 
   const [showPassword, setShowPassword] = useState(false);
 
+  const [allowOpenMessaging, setAllowOpenMessaging] = useState(false);
+
   const canEditProfile =
     currentUser.username && userData?.username ? currentUser.username === userData.username : false;
 
@@ -44,6 +46,7 @@ const useProfileSettings = () => {
         setLoading(true);
         const data = await getUserByUsername(username);
         setUserData(data);
+        setAllowOpenMessaging(data.allowOpenMessaging || false);
       } catch (error) {
         setErrorMessage('Error fetching user profile');
         setUserData(null);
@@ -119,6 +122,25 @@ const useProfileSettings = () => {
   };
 
   /**
+   * Handler for updating messaging settings
+   */
+  const handleUpdateMessagingSetting = async (newValue: boolean) => {
+    if (!username) return;
+    try {
+      const updatedUser = await updateMessagingSetting(username, newValue);
+      setUserData(updatedUser);
+      setAllowOpenMessaging(newValue);
+      setSuccessMessage('Messaging settings updated!');
+      setErrorMessage(null);
+    } catch (error) {
+      setErrorMessage('Failed to update messaging settings.');
+      setSuccessMessage(null);
+      // Revert the checkbox on error
+      setAllowOpenMessaging(!newValue);
+    }
+  };
+
+  /**
    * Handler for deleting the user (triggers confirmation modal)
    */
   const handleDeleteUser = () => {
@@ -164,10 +186,12 @@ const useProfileSettings = () => {
     canEditProfile,
     showPassword,
     togglePasswordVisibility,
+    allowOpenMessaging,
     handleResetPassword,
     handleUpdateBiography,
     handleDeleteUser,
     handleViewCollectionsPage,
+    handleUpdateMessagingSetting,
   };
 };
 

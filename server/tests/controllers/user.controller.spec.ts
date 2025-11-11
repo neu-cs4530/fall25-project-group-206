@@ -40,6 +40,10 @@ const deleteUserByUsernameSpy = jest.spyOn(util, 'deleteUserByUsername');
 const toggleFollowSpy = jest.spyOn(util, 'toggleFollowUser');
 const getFollowersSpy = jest.spyOn(util, 'getFollowers');
 const getFollowingSpy = jest.spyOn(util, 'getFollowing');
+const generate2FASecretSpy = jest.spyOn(util, 'generate2FASecret');
+const enable2FASpy = jest.spyOn(util, 'enable2FA');
+const disable2FASpy = jest.spyOn(util, 'disable2FA');
+const verify2FATokenSpy = jest.spyOn(util, 'verify2FAToken');
 
 describe('Test userController', () => {
   describe('POST /signup', () => {
@@ -560,6 +564,207 @@ describe('Test userController', () => {
       expect(response.text).toContain(
         'Error when getting following: Error: Error getting following',
       );
+    });
+  });
+
+  describe('PATCH /updateMessagingSetting', () => {
+    beforeEach(() => {
+      jest.resetAllMocks();
+    });
+
+    it('should update allowOpenMessaging: true and call updateUser once with correct args', async () => {
+      const body = { username: mockUser.username, allowOpenMessaging: true };
+      updatedUserSpy.mockResolvedValueOnce({ ...mockSafeUser, allowOpenMessaging: true } as any);
+
+      const res = await supertest(app).patch('/api/user/updateMessagingSetting').send(body);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ ...mockUserJSONResponse, allowOpenMessaging: true });
+      expect(updatedUserSpy).toHaveBeenCalledTimes(1);
+      expect(updatedUserSpy).toHaveBeenCalledWith(mockUser.username, { allowOpenMessaging: true });
+    });
+
+    it('should update allowOpenMessaging: false and call updateUser once with correct args', async () => {
+      const body = { username: mockUser.username, allowOpenMessaging: false };
+      updatedUserSpy.mockResolvedValueOnce({ ...mockSafeUser, allowOpenMessaging: false } as any);
+
+      const res = await supertest(app).patch('/api/user/updateMessagingSetting').send(body);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ ...mockUserJSONResponse, allowOpenMessaging: false });
+      expect(updatedUserSpy).toHaveBeenCalledTimes(1);
+      expect(updatedUserSpy).toHaveBeenCalledWith(mockUser.username, { allowOpenMessaging: false });
+    });
+
+    it('should return 400 for request missing username and NOT call updateUser', async () => {
+      const body = { allowOpenMessaging: true };
+
+      const res = await supertest(app).patch('/api/user/updateMessagingSetting').send(body);
+
+      expect(res.status).toBe(400);
+      expect(updatedUserSpy).not.toHaveBeenCalled();
+    });
+
+    it('should return 400 for empty username and NOT call updateUser', async () => {
+      const body = { username: '', allowOpenMessaging: true };
+
+      const res = await supertest(app).patch('/api/user/updateMessagingSetting').send(body);
+
+      expect(res.status).toBe(400);
+      expect(updatedUserSpy).not.toHaveBeenCalled();
+    });
+
+    it('should return 400 when allowOpenMessaging is missing and NOT call updateUser', async () => {
+      const body = { username: mockUser.username };
+
+      const res = await supertest(app).patch('/api/user/updateMessagingSetting').send(body);
+
+      expect(res.status).toBe(400);
+      expect(updatedUserSpy).not.toHaveBeenCalled();
+    });
+
+    it('should return 400 when allowOpenMessaging is non-boolean and NOT call updateUser', async () => {
+      const body: any = { username: mockUser.username, allowOpenMessaging: 'yes' };
+
+      const res = await supertest(app).patch('/api/user/updateMessagingSetting').send(body);
+
+      expect(res.status).toBe(400);
+      expect(updatedUserSpy).not.toHaveBeenCalled();
+    });
+
+    it('should return 500 if updateUser returns an error', async () => {
+      const body = { username: mockUser.username, allowOpenMessaging: true };
+      updatedUserSpy.mockResolvedValueOnce({ error: 'Error updating user' } as any);
+
+      const res = await supertest(app).patch('/api/user/updateMessagingSetting').send(body);
+
+      expect(res.status).toBe(500);
+      expect(res.text).toContain(
+        'Error when updating messaging setting: Error: Error updating user',
+      );
+      expect(updatedUserSpy).toHaveBeenCalledTimes(1);
+      expect(updatedUserSpy).toHaveBeenCalledWith(mockUser.username, { allowOpenMessaging: true });
+    });
+  });
+
+  describe('2FA endpoints', () => {
+    const username = mockUser.username;
+
+    beforeEach(() => {
+      jest.resetAllMocks();
+    });
+
+    describe('POST /api/user/2fa/generate', () => {
+      it('should generate a 2FA secret and QR code', async () => {
+        const payload = { secret: 'BASE32SECRET', qrCode: 'data:image/png;base64,abc' };
+        generate2FASecretSpy.mockResolvedValueOnce(payload);
+
+        const res = await supertest(app).post('/api/user/2fa/generate').send({ username });
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual(payload);
+        expect(generate2FASecretSpy).toHaveBeenCalledWith(username);
+      });
+
+      it('should return 500 when generation fails', async () => {
+        generate2FASecretSpy.mockRejectedValueOnce(new Error('gen-fail'));
+
+        const res = await supertest(app).post('/api/user/2fa/generate').send({ username });
+
+        expect(res.status).toBe(500);
+        expect(res.text).toContain('Error generating 2FA');
+      });
+    });
+
+    describe('POST /api/user/2fa/enable', () => {
+      it('should enable 2FA and return updated user', async () => {
+        const updated = { ...mockSafeUser, twoFactorEnabled: true };
+        enable2FASpy.mockResolvedValueOnce(updated);
+
+        const res = await supertest(app)
+          .post('/api/user/2fa/enable')
+          .send({ username, secret: 'BASE32SECRET', token: '123456' });
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({
+          ...mockUserJSONResponse,
+          twoFactorEnabled: true,
+        });
+        expect(enable2FASpy).toHaveBeenCalledWith(username, 'BASE32SECRET', '123456');
+      });
+
+      it('should return 500 when service returns error', async () => {
+        enable2FASpy.mockResolvedValueOnce({ error: 'Invalid token' } as any);
+
+        const res = await supertest(app)
+          .post('/api/user/2fa/enable')
+          .send({ username, secret: 'BASE32SECRET', token: '000000' });
+
+        expect(res.status).toBe(500);
+        expect(res.text).toContain('Error');
+      });
+    });
+
+    describe('POST /api/user/2fa/disable', () => {
+      it('should disable 2FA and return updated user', async () => {
+        const updated = { ...mockSafeUser, twoFactorEnabled: false };
+        disable2FASpy.mockResolvedValueOnce(updated);
+
+        const res = await supertest(app).post('/api/user/2fa/disable').send({ username });
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({
+          ...mockUserJSONResponse,
+          twoFactorEnabled: false,
+        });
+        expect(disable2FASpy).toHaveBeenCalledWith(username);
+      });
+
+      it('should return 500 when service returns error', async () => {
+        disable2FASpy.mockResolvedValueOnce({ error: 'User not found' } as any);
+
+        const res = await supertest(app).post('/api/user/2fa/disable').send({ username });
+
+        expect(res.status).toBe(500);
+        expect(res.text).toContain('Error disabling 2FA');
+      });
+    });
+
+    describe('POST /api/user/2fa/verify', () => {
+      it('should return valid: true when token is correct', async () => {
+        verify2FATokenSpy.mockResolvedValueOnce(true);
+
+        const res = await supertest(app)
+          .post('/api/user/2fa/verify')
+          .send({ username, token: '123456' });
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ valid: true });
+        expect(verify2FATokenSpy).toHaveBeenCalledWith(username, '123456');
+      });
+
+      it('should return valid: false when token is incorrect', async () => {
+        verify2FATokenSpy.mockResolvedValueOnce(false);
+
+        const res = await supertest(app)
+          .post('/api/user/2fa/verify')
+          .send({ username, token: '000000' });
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ valid: false });
+        expect(verify2FATokenSpy).toHaveBeenCalledWith(username, '000000');
+      });
+
+      it('should return 500 if verification throws', async () => {
+        verify2FATokenSpy.mockRejectedValueOnce(new Error('verify-crash'));
+
+        const res = await supertest(app)
+          .post('/api/user/2fa/verify')
+          .send({ username, token: '111111' });
+
+        expect(res.status).toBe(500);
+        expect(res.text).toContain('Error verifying 2FA');
+      });
     });
   });
 });
