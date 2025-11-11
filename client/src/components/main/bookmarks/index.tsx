@@ -33,14 +33,6 @@ const BookmarksPage = () => {
     navigate(`/communities/${communityId}`);
   };
 
-  /**
-   * Handles click on a user bookmark to navigate to their page.
-   * @param username - The username of the user.
-   */
-  const handleUserClick = (username: string) => {
-    navigate(`/user/${username}`);
-  };
-
   return (
     <div className='bookmarks-page'>
       <div className='bookmarks-header'>
@@ -107,35 +99,6 @@ const BookmarksPage = () => {
                   <p className='bookmark-meta'>
                     {comm.visibility ?? 'Unknown'} • {comm.participants?.length ?? 0} participants
                   </p>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-      {/* USERS SECTION */}
-      {users.length > 0 && (
-        <>
-          <h2 className='bookmark-section-title'>Users</h2>
-          <div className='bookmarks-list'>
-            {users.map(bookmark => {
-              const u = bookmark.populatedTarget as {
-                _id?: string;
-                username?: string;
-                bio?: string;
-                reputation?: number;
-              } | null;
-
-              if (!u?._id) return null;
-
-              return (
-                <div
-                  key={u._id}
-                  className='bookmark-card'
-                  onClick={() => handleUserClick(u.username ?? '')}>
-                  <h3 className='bookmark-name'>{u.username ?? 'Unknown User'}</h3>
-                  <p className='bookmark-description'>{u.bio ?? 'No description available.'}</p>
-                  <p className='bookmark-meta'>Reputation: {u.reputation ?? 0}</p>
                 </div>
               );
             })}
