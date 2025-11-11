@@ -10,6 +10,7 @@ import {
   toggleFollowUser,
   getFollowers,
   getFollowing,
+  updateMessagingSetting,
 } from '../../services/user.service';
 import { SafeDatabaseUser, User, UserCredentials } from '../../types/types';
 import { user, safeUser } from '../mockData.models';
@@ -651,5 +652,104 @@ describe('getFollowing', () => {
     const result = await getFollowing(user.username);
 
     expect('error' in result).toBe(true);
+  });
+});
+
+describe('updateMessagingSetting', () => {
+  const baseSafeUser: SafeDatabaseUser = {
+    _id: new mongoose.Types.ObjectId(),
+    username: user.username,
+    dateJoined: user.dateJoined,
+    followers: user.followers,
+    following: user.following,
+  };
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
+  it('updates to allow open messaging (true) with correct args and projection', async () => {
+    const select = jest.fn().mockResolvedValue({ ...baseSafeUser, allowOpenMessaging: true });
+    const spy = jest
+      .spyOn(UserModel, 'findOneAndUpdate')
+      .mockImplementation((filter?: any, update?: any, options?: any) => {
+        // verify args
+        expect(filter).toEqual({ username: user.username });
+        expect(update).toEqual({ $set: { allowOpenMessaging: true } });
+        expect(options).toMatchObject({ new: true });
+
+        return { select } as any;
+      });
+
+    const result = await updateMessagingSetting(user.username, true);
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(select).toHaveBeenCalledWith('-password');
+
+    expect('error' in result).toBe(false);
+    if (!('error' in result)) {
+      expect(result.username).toEqual(user.username);
+      expect((result as any).allowOpenMessaging).toBe(true);
+    }
+  });
+
+  it('updates to disallow open messaging (false) with correct args and projection', async () => {
+    const select = jest.fn().mockResolvedValue({ ...baseSafeUser, allowOpenMessaging: false });
+    const spy = jest
+      .spyOn(UserModel, 'findOneAndUpdate')
+      .mockImplementation((filter?: any, update?: any, options?: any) => {
+        expect(filter).toEqual({ username: user.username });
+        expect(update).toEqual({ $set: { allowOpenMessaging: false } });
+        expect(options).toMatchObject({ new: true });
+        return { select } as any;
+      });
+
+    const result = await updateMessagingSetting(user.username, false);
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(select).toHaveBeenCalledWith('-password');
+
+    expect('error' in result).toBe(false);
+    if (!('error' in result)) {
+      expect(result.username).toEqual(user.username);
+      expect((result as any).allowOpenMessaging).toBe(false);
+    }
+  });
+
+  it('returns error when findOneAndUpdate returns null directly', async () => {
+    jest.spyOn(UserModel, 'findOneAndUpdate').mockResolvedValueOnce(null as any);
+
+    const result = await updateMessagingSetting(user.username, true);
+
+    expect('error' in result).toBe(true);
+    if ('error' in result) {
+      expect(result.error).toContain('Error occurred when updating messaging setting');
+    }
+  });
+
+  it('returns error when select resolves to null', async () => {
+    jest.spyOn(UserModel, 'findOneAndUpdate').mockReturnValue({
+      select: jest.fn().mockResolvedValue(null),
+    } as any);
+
+    const result = await updateMessagingSetting(user.username, true);
+
+    expect('error' in result).toBe(true);
+    if ('error' in result) {
+      expect(result.error).toContain('Error occurred when updating messaging setting');
+    }
+  });
+
+  it('returns error when select rejects (db error)', async () => {
+    jest.spyOn(UserModel, 'findOneAndUpdate').mockReturnValue({
+      select: jest.fn().mockRejectedValue(new Error('Database error')),
+    } as any);
+
+    const result = await updateMessagingSetting(user.username, true);
+
+    expect('error' in result).toBe(true);
+    if ('error' in result) {
+      expect(result.error).toContain('Error occurred when updating messaging setting');
+    }
   });
 });

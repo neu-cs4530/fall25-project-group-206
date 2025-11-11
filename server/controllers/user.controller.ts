@@ -285,6 +285,11 @@ const userController = (socket: FakeSOSocket) => {
     try {
       const { username, allowOpenMessaging } = req.body;
 
+      if (!username || typeof allowOpenMessaging !== 'boolean' || username == '') {
+        res.status(400).send('Invalid username or allowOpenMessaging');
+        return;
+      }
+
       const updatedUser = await updateUser(username, { allowOpenMessaging });
 
       if ('error' in updatedUser) {
