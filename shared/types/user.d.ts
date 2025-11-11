@@ -12,13 +12,24 @@ export interface UserCredentials {
 }
 
 /**
+ * Represents a user credentials for registration.
+ * - `username`: The unique username of the user.
+ * - `password`: The user's password.
+ * - `email`: The email account linked to the user.
+ */
+export interface UserRegistration extends UserCredentials {
+  email: string;
+}
+
+/**
  * Represents a user document, including user credentials and additional details.
  * - `username`: The unique username of the user.
  * - `password`: The user's password.
+ * - `email`: The email account linked to the user.
  * - `dateJoined`: The date when the user registered.
  * - `biography`: A short description or bio of the user (optional).
  */
-export interface User extends UserCredentials {
+export interface User extends UserRegistration {
   dateJoined: Date;
   biography?: string;
   followers: ObjectId[];
@@ -44,12 +55,14 @@ export interface DatabaseUser extends User {
  * Express request for user login, containing user credentials.
  * - `username`: The username submitted in the request (body).
  * - `password`: The password submitted in the request (body).
+ * - `email`: The email account linked to the user.
  * - `biography`: Optional field for biography information (body).
  */
 export interface UserRequest extends Request {
   body: {
     username: string;
     password: string;
+    email: string;
     biography?: string;
   };
 }

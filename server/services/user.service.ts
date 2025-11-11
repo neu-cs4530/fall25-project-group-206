@@ -7,6 +7,7 @@ import {
   UserResponse,
   UsersResponse,
 } from '../types/types';
+import bcrypt from 'bcrypt';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
 
@@ -18,6 +19,8 @@ import * as QRCode from 'qrcode';
  */
 export const saveUser = async (user: User): Promise<UserResponse> => {
   try {
+    const hashedPassword = await bcrypt.hash(user.password, 10);
+    user.password = hashedPassword;
     const result: DatabaseUser = await UserModel.create(user);
 
     if (!result) {
@@ -28,6 +31,7 @@ export const saveUser = async (user: User): Promise<UserResponse> => {
     const safeUser: SafeDatabaseUser = {
       _id: result._id,
       username: result.username,
+      email: result.username,
       dateJoined: result.dateJoined,
       biography: result.biography,
       followers: [],
@@ -90,12 +94,17 @@ export const loginUser = async (loginCredentials: UserCredentials): Promise<User
   const { username, password } = loginCredentials;
 
   try {
-    const user: SafeDatabaseUser | null = await UserModel.findOne({ username, password }).select(
-      '-password',
-    );
-
+    // const user: SafeDatabaseUser | null = await UserModel.findOne({ username, password }).select(
+    //   '-password',
+    // );
+    const user = await UserModel.findOne({ username });
     if (!user) {
       throw Error('Authentication failed');
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      throw Error('Invalid password');
     }
 
     return user;
@@ -221,6 +230,7 @@ export const toggleFollowUser = async (
     const safeUser: SafeDatabaseUser = {
       _id: savedCurrent._id,
       username: savedCurrent.username,
+      email: savedCurrent.email,
       dateJoined: savedCurrent.dateJoined,
       biography: savedCurrent.biography,
       followers: savedCurrent.followers,

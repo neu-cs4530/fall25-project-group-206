@@ -7,6 +7,7 @@ import { SafeDatabaseUser, User } from '../../types/types';
 const mockUser: User = {
   username: 'user1',
   password: 'password',
+  email: 'testemail@gmail.com',
   dateJoined: new Date('2024-12-03'),
   followers: [],
   following: [],
@@ -15,6 +16,7 @@ const mockUser: User = {
 const mockSafeUser: SafeDatabaseUser = {
   _id: new mongoose.Types.ObjectId(),
   username: 'user1',
+  email: 'testemail@gmail.com',
   dateJoined: new Date('2024-12-03'),
   followers: [],
   following: [],
@@ -23,6 +25,7 @@ const mockSafeUser: SafeDatabaseUser = {
 const mockUserJSONResponse = {
   _id: mockSafeUser._id.toString(),
   username: 'user1',
+  email: 'testemail@gmail.com',
   dateJoined: new Date('2024-12-03').toISOString(),
   followers: [],
   following: [],

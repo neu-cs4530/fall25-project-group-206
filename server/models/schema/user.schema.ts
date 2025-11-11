@@ -7,6 +7,7 @@ import { Schema } from 'mongoose';
  * Each User includes the following fields:
  * - `username`: The username of the user.
  * - `password`: The encrypted password securing the user's account.
+ * - `email`: The email tied to the user's account.
  * - `dateJoined`: The date the user joined the platform.
  *  - `biography`: A brief biography of the user.
  *  - `followers`: An array of users representing users who follow this user.
@@ -21,6 +22,10 @@ const userSchema: Schema = new Schema(
     },
     password: {
       type: String,
+    },
+    email: {
+      type: String,
+      unique: true,
     },
     dateJoined: {
       type: Date,
