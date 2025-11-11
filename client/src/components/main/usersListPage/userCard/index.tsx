@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { SafeDatabaseUser } from '../../../../types/types';
 import useFollowButton from '../../../../hooks/useFollowButton';
 import useUserContext from '../../../../hooks/useUserContext';
-import useBookmarkToggle from '../../../../hooks/useBookmarkToggle';
 
 /**
  * Interface representing the props for the User component.
@@ -44,14 +43,11 @@ const UserCardView = (props: UserProps) => {
     handleToggleFollow,
   } = useFollowButton(user.username, isFollowing);
 
-  const { handleToggleBookmark } = useBookmarkToggle(user._id.toString(), 'User');
-
   const [followerCount, setFollowerCount] = useState<number>(user.followers.length);
 
   const handleFollowClick = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering the card click
     const newFollowingState = await handleToggleFollow();
-    handleToggleBookmark();
     setFollowerCount(prev => (newFollowingState ? prev + 1 : Math.max(0, prev - 1)));
   };
 
