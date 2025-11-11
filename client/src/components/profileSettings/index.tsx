@@ -8,6 +8,8 @@ import useFollowButton from '../../hooks/useFollowButton';
 import useBookmarkToggle from '../../hooks/useBookmarkToggle';
 import FollowersList from './FollowersList';
 import FollowingList from './FollowingList';
+import use2FA from '../../hooks/use2FA';
+import Enable2FAModal from '../twoFactorAuth/Enable2FAModal';
 
 const ProfileSettings: React.FC = () => {
   const {
@@ -40,6 +42,11 @@ const ProfileSettings: React.FC = () => {
   const { user: currentUser } = useUserContext();
   const [refreshFollowers, setRefreshFollowers] = React.useState(false);
   const [refreshFollowing, setRefreshFollowing] = React.useState(false);
+  const [show2FAModal, setShow2FAModal] = React.useState(false);
+  const [twoFASuccess, setTwoFASuccess] = React.useState('');
+  const [twoFAError, setTwoFAError] = React.useState('');
+
+  const { isEnabled: is2FAEnabled, disableWith2FA } = use2FA(userData ? userData.username : '');
 
   // Determine initial follow state when viewing another user's profile
   const initialIsFollowing = Boolean(
@@ -69,6 +76,28 @@ const ProfileSettings: React.FC = () => {
     error: followError,
     handleToggleFollow,
   } = useFollowButton(userData ? userData.username : '', initialIsFollowing);
+
+  const handle2FAToggle = async () => {
+    setTwoFAError('');
+    setTwoFASuccess('');
+
+    if (is2FAEnabled) {
+      const success = await disableWith2FA();
+      if (success) {
+        setTwoFASuccess('2FA disabled successfully!');
+      } else {
+        setTwoFAError('Failed to disable 2FA');
+      }
+    } else {
+      setShow2FAModal(true);
+    }
+  };
+
+  const handle2FASuccess = () => {
+    setShow2FAModal(false);
+    setTwoFASuccess('2FA enabled successfully!');
+    setTwoFAError('');
+  };
 
   if (loading) {
     return (
@@ -206,6 +235,39 @@ const ProfileSettings: React.FC = () => {
                   Delete This User
                 </button>
               </>
+            )}
+
+            {/* ---- Two-Factor Authentication Section ---- */}
+            {canEditProfile && (
+              <>
+                <h4>Security Settings</h4>
+                {twoFASuccess && <p className='success-message'>{twoFASuccess}</p>}
+                {twoFAError && <p className='error-message'>{twoFAError}</p>}
+                <div className='twofa-section'>
+                  <label>
+                    <input
+                      type='checkbox'
+                      checked={is2FAEnabled}
+                      onChange={handle2FAToggle}
+                      disabled={!canEditProfile}
+                    />
+                    Enable Two-Factor Authentication (2FA)
+                  </label>
+                  <p className='info-text'>
+                    {is2FAEnabled
+                      ? '2FA is currently enabled on your account. You will need to enter a code from your authenticator app each time you log in.'
+                      : 'Enable 2FA to add an extra layer of security to your account.'}
+                  </p>
+                </div>
+              </>
+            )}
+
+            {show2FAModal && (
+              <Enable2FAModal
+                username={userData?.username || ''}
+                onSuccess={handle2FASuccess}
+                onCancel={() => setShow2FAModal(false)}
+              />
             )}
 
             {/* Followers / Following lists */}

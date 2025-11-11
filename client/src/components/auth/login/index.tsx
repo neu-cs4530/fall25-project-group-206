@@ -1,10 +1,13 @@
 import './index.css';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import useAuth from '../../../hooks/useAuth';
+import Verify2FAPrompt from '../../twoFactorAuth/Verify2FAPrompt';
+import { getUserByUsername } from '../../../services/userService';
 
 /**
  * Renders a login form with username and password inputs, password visibility toggle,
- * error handling, and a link to the signup page.
+ * error handling, and a link to the signup page. Also handles 2FA verification if enabled.
  */
 const Login = () => {
   const {
@@ -17,11 +20,35 @@ const Login = () => {
     togglePasswordVisibility,
   } = useAuth('login');
 
+  const [show2FAPrompt, setShow2FAPrompt] = useState(false);
+  const [userHas2FA, setUserHas2FA] = useState(false);
+
+  const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    // Check if user has 2FA enabled before proceeding to handleSubmit
+    // if (username) {
+    //   try {
+    //     const user = await getUserByUsername(username);
+    //     if (user.twoFactorEnabled) {
+    //       setUserHas2FA(true);
+    //       setShow2FAPrompt(true);
+    //     }
+    //   } catch (error) {
+    //     // User not found or error - let handleSubmit deal with it
+    //   }
+    // }
+
+    await handleSubmit(e);
+  };
+
+  const handle2FASuccess = async () => {
+    setShow2FAPrompt(false);
+  };
+
   return (
     <div className='container'>
       <h2>Welcome to FakeStackOverflow!</h2>
       <h3>Please login to continue.</h3>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleLoginSubmit}>
         <h4>Please enter your username.</h4>
         <input
           type='text'
@@ -59,6 +86,14 @@ const Login = () => {
       <Link to='/signup' className='signup-link'>
         Don&apos;t have an account? Sign up here.
       </Link>
+
+      {show2FAPrompt && userHas2FA && (
+        <Verify2FAPrompt
+          username={username}
+          onSuccess={handle2FASuccess}
+          onCancel={() => setShow2FAPrompt(false)}
+        />
+      )}
     </div>
   );
 };

@@ -79,16 +79,6 @@ const userController = (socket: FakeSOSocket) => {
         throw Error(user.error);
       }
 
-      // Check if 2FA is enabled
-      if (user.twoFactorEnabled) {
-        // Return a special response indicating 2FA is required
-        res.status(200).json({
-          requiresTwoFactor: true,
-          username: user.username,
-        });
-        return;
-      }
-
       res.status(200).json(user);
     } catch (error) {
       res.status(500).send('Login failed');
@@ -403,12 +393,6 @@ const userController = (socket: FakeSOSocket) => {
     }
   };
 
-  router.post('/2fa/generate', generate2FA);
-  router.post('/2fa/enable', enable2FAEndpoint);
-  router.post('/2fa/disable', disable2FAEndpoint);
-  router.post('/2fa/verify', verify2FA);
-
-  // Define routes for the user-related operations.
   router.post('/signup', createUser);
   router.post('/login', userLogin);
   router.patch('/resetPassword', resetPassword);
@@ -420,6 +404,11 @@ const userController = (socket: FakeSOSocket) => {
   router.get('/:username/following', getUserFollowing);
   router.post('/toggleFollow', toggleFollow);
   router.patch('/updateMessagingSetting', updateMessagingSetting);
+  router.post('/2fa/generate', generate2FA);
+  router.post('/2fa/enable', enable2FAEndpoint);
+  router.post('/2fa/disable', disable2FAEndpoint);
+  router.post('/2fa/verify', verify2FA);
+
   return router;
 };
 
