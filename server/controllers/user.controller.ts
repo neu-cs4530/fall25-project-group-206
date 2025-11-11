@@ -17,6 +17,10 @@ import {
   toggleFollowUser,
   getFollowers,
   getFollowing,
+  generate2FASecret,
+  enable2FA,
+  disable2FA,
+  verify2FAToken,
 } from '../services/user.service';
 
 const userController = (socket: FakeSOSocket) => {
@@ -307,7 +311,106 @@ const userController = (socket: FakeSOSocket) => {
     }
   };
 
-  // Define routes for the user-related operations.
+  /**
+   * Generates a new Two-Factor Authentication (2FA) secret and QR code for a user.
+   * @param req The request containing the username in the body.
+   * @param res The response returning the generated secret and QR code or an error.
+   * @returns A promise resolving to void.
+   */
+  const generate2FA = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { username } = req.body;
+
+      if (!username) {
+        res.status(400).send('Username is required');
+        return;
+      }
+
+      const result = await generate2FASecret(username);
+
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).send(`Error generating 2FA: ${error}`);
+    }
+  };
+
+  /**
+   * Enables Two-Factor Authentication (2FA) for a user after verifying the provided token.
+   * @param req The request containing username, secret, and token in the body.
+   * @param res The response returning the updated user or an error.
+   * @returns A promise resolving to void.
+   */
+  const enable2FAEndpoint = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { username, secret, token } = req.body;
+
+      const updatedUser = await enable2FA(username, secret, token);
+
+      if ('error' in updatedUser) {
+        throw new Error(updatedUser.error);
+      }
+
+      socket.emit('userUpdate', {
+        user: updatedUser,
+        type: 'updated',
+      });
+
+      res.status(200).json(updatedUser);
+    } catch (error) {
+      res.status(500).send(`${error}`);
+    }
+  };
+
+  /**
+   * Disables Two-Factor Authentication (2FA) for a user.
+   * @param req The request containing the username in the body.
+   * @param res The response returning the updated user or an error.
+   * @returns A promise resolving to void.
+   */
+  const disable2FAEndpoint = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { username } = req.body;
+
+      const updatedUser = await disable2FA(username);
+
+      if ('error' in updatedUser) {
+        throw new Error(updatedUser.error);
+      }
+
+      socket.emit('userUpdate', {
+        user: updatedUser,
+        type: 'updated',
+      });
+
+      res.status(200).json(updatedUser);
+    } catch (error) {
+      res.status(500).send(`Error disabling 2FA: ${error}`);
+    }
+  };
+
+  /**
+   * Verifies a user's 2FA token during login.
+   * @param req The request containing the username and token in the body.
+   * @param res The response returning a boolean indicating if the token is valid or not.
+   * @returns A promise resolving to void.
+   */
+
+  const verify2FA = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { username, token } = req.body;
+
+      const isValid = await verify2FAToken(username, token);
+
+      res.status(200).json({ valid: isValid });
+    } catch (error) {
+      res.status(500).send(`Error verifying 2FA: ${error}`);
+    }
+  };
+
+  router.post('/2fa/generate', generate2FA);
+  router.post('/2fa/enable', enable2FAEndpoint);
+  router.post('/2fa/disable', disable2FAEndpoint);
+  router.post('/2fa/verify', verify2FA);
   router.post('/signup', createUser);
   router.post('/login', userLogin);
   router.patch('/resetPassword', resetPassword);
@@ -319,6 +422,7 @@ const userController = (socket: FakeSOSocket) => {
   router.get('/:username/following', getUserFollowing);
   router.post('/toggleFollow', toggleFollow);
   router.patch('/updateMessagingSetting', updateMessagingSetting);
+
   return router;
 };
 

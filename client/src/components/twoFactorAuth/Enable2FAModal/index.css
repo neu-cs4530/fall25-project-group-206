@@ -1,0 +1,184 @@
+/* ====== Modal shell ====== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 18, 28, 0.45);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content.enable-2fa-modal {
+  width: 100%;
+  max-width: 560px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff, #fafbff);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 2rem;
+  border: 1px solid #eef0f6;
+}
+
+/* ====== Header ====== */
+.enable-2fa-modal h3 {
+  margin: 0 0 0.75rem 0;
+  text-align: center;
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: #111827;
+}
+
+.enable-2fa-modal .subtext {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+/* ====== Steps / content ====== */
+.setup-step {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.setup-step p {
+  margin: 0.25rem 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #374151;
+}
+
+/* ====== QR code frame ====== */
+.qr-code {
+  display: block;
+  width: 240px;
+  height: 240px;
+  margin: 0.5rem auto 1rem;
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+/* ====== Token input ====== */
+.input-text.token-input {
+  font-size: 1.75rem;
+  letter-spacing: 0.6rem;
+  text-align: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  width: 260px;
+  margin: 0.25rem auto 0;
+  padding: 0.6rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  transition: box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.input-text.token-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+}
+
+/* hint under token */
+.token-hint {
+  text-align: center;
+  margin-top: 0.35rem;
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+/* ====== Info panel ====== */
+.info-text {
+  background: #f8fafc;
+  padding: 0.9rem 1rem;
+  border-left: 4px solid #3b82f6;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  margin: 1rem 0 0.25rem;
+  color: #1f2937;
+  word-break: break-all;
+}
+
+.info-text small {
+  display: block;
+  margin-top: 0.4rem;
+  color: #6b7280;
+}
+
+/* ====== Error ====== */
+.error-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+}
+
+/* ====== Buttons ====== */
+.button {
+  appearance: none;
+  border: none;
+  border-radius: 12px;
+  padding: 0.7rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 80ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.button-primary {
+  background: #2563eb;
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25);
+}
+
+.button-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+  box-shadow: 0 8px 22px rgba(29, 78, 216, 0.28);
+}
+
+.button-primary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.button-secondary {
+  background: #f3f4f6;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+}
+
+.button-secondary:hover:not(:disabled) {
+  background: #e8eaee;
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.25rem;
+}
+
+/* ====== Small screens ====== */
+@media (max-width: 420px) {
+  .modal-content.enable-2fa-modal { padding: 1.25rem; }
+  .input-text.token-input { width: 220px; letter-spacing: 0.45rem; }
+  .qr-code { width: 210px; height: 210px; }
+}
