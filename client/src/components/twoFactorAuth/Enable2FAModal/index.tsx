@@ -26,18 +26,22 @@ const Enable2FAModal: React.FC<Enable2FAModalProps> = ({ username, onSuccess, on
 
   const handleVerifyAndEnable = async () => {
     if (token.length !== 6) {
-      clearError();
       return;
     }
     const success = await enableWith2FA(token);
     if (success) {
-      onSuccess();
+      // Reset modal state and call parent callback
+      setToken('');
+      setShowQR(false);
       reset();
+      onSuccess();
     }
   };
 
   const handleCancel = () => {
     reset();
+    setToken('');
+    setShowQR(false);
     onCancel();
   };
 
@@ -46,7 +50,14 @@ const Enable2FAModal: React.FC<Enable2FAModalProps> = ({ username, onSuccess, on
       <div className='modal-content enable-2fa-modal'>
         <h3>Enable Two-Factor Authentication</h3>
 
-        {error && <p className='error-message'>{error}</p>}
+        {error && (
+          <div className='error-message'>
+            {error}
+            <button onClick={clearError} style={{ marginLeft: '0.5rem' }}>
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {!showQR ? (
           <div className='setup-step'>
@@ -83,7 +94,7 @@ const Enable2FAModal: React.FC<Enable2FAModalProps> = ({ username, onSuccess, on
             />
 
             <p className='info-text'>
-              <strong>Save your secret key:</strong> {secret}
+              <strong>Save your secret key:</strong> <code>{secret}</code>
               <br />
               <small>Keep this safe in case you lose access to your authenticator app.</small>
             </p>

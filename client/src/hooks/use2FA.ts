@@ -1,5 +1,11 @@
-import { useState, useCallback } from 'react';
-import { generate2FASecret, enable2FA, disable2FA, verify2FAToken } from '../services/userService';
+import { useState, useCallback, useEffect } from 'react';
+import {
+  generate2FASecret,
+  enable2FA,
+  disable2FA,
+  verify2FAToken,
+  getUserByUsername,
+} from '../services/userService';
 
 /**
  * Custom hook for managing 2FA (Two-Factor Authentication).
@@ -14,6 +20,30 @@ const use2FA = (username: string) => {
   const [isEnabled, setIsEnabled] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+
+  /**
+   * Fetches the current user data to check if 2FA is enabled.
+   */
+  const fetchTwoFAStatus = useCallback(async () => {
+    if (!username) {
+      setIsEnabled(false);
+      return;
+    }
+
+    try {
+      const user = await getUserByUsername(username);
+      setIsEnabled(user.twoFactorEnabled || false);
+    } catch (err) {
+      setIsEnabled(false);
+    }
+  }, [username]);
+
+  /**
+   * Fetch 2FA status on mount or when username changes
+   */
+  useEffect(() => {
+    fetchTwoFAStatus();
+  }, [username, fetchTwoFAStatus]);
 
   /**
    * Generates a new 2FA secret and QR code for initial setup.
@@ -158,6 +188,7 @@ const use2FA = (username: string) => {
     // Utilities
     clearError,
     reset,
+    fetchTwoFAStatus,
   };
 };
 

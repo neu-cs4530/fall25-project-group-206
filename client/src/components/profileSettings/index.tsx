@@ -46,7 +46,11 @@ const ProfileSettings: React.FC = () => {
   const [twoFASuccess, setTwoFASuccess] = React.useState('');
   const [twoFAError, setTwoFAError] = React.useState('');
 
-  const { isEnabled: is2FAEnabled, disableWith2FA } = use2FA(userData ? userData.username : '');
+  const {
+    isEnabled: is2FAEnabled,
+    disableWith2FA,
+    fetchTwoFAStatus,
+  } = use2FA(userData ? userData.username : '');
 
   // Determine initial follow state when viewing another user's profile
   const initialIsFollowing = Boolean(
@@ -93,10 +97,12 @@ const ProfileSettings: React.FC = () => {
     }
   };
 
-  const handle2FASuccess = () => {
+  const handle2FASuccess = async () => {
     setShow2FAModal(false);
     setTwoFASuccess('2FA enabled successfully!');
     setTwoFAError('');
+    // Refresh the 2FA status so checkbox updates
+    await fetchTwoFAStatus();
   };
 
   if (loading) {
@@ -255,7 +261,7 @@ const ProfileSettings: React.FC = () => {
                   </label>
                   <p className='info-text'>
                     {is2FAEnabled
-                      ? '2FA is currently enabled on your account. You will need to enter a code from your authenticator app each time you log in.'
+                      ? '2FA is currently enabled on your account. You need to enter a code from your authenticator app each time you log in.'
                       : 'Enable 2FA to add an extra layer of security to your account.'}
                   </p>
                 </div>

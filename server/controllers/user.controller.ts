@@ -319,6 +319,11 @@ const userController = (socket: FakeSOSocket) => {
     try {
       const { username } = req.body;
 
+      if (!username) {
+        res.status(400).send('Username is required');
+        return;
+      }
+
       const result = await generate2FASecret(username);
 
       res.status(200).json(result);
@@ -348,7 +353,7 @@ const userController = (socket: FakeSOSocket) => {
 
       res.status(200).json(updatedUser);
     } catch (error) {
-      res.status(500).send(`Error enabling 2FA: ${error}`);
+      res.status(500).send(`${error}`);
     }
   };
 
@@ -393,6 +398,10 @@ const userController = (socket: FakeSOSocket) => {
     }
   };
 
+  router.post('/2fa/generate', generate2FA);
+  router.post('/2fa/enable', enable2FAEndpoint);
+  router.post('/2fa/disable', disable2FAEndpoint);
+  router.post('/2fa/verify', verify2FA);
   router.post('/signup', createUser);
   router.post('/login', userLogin);
   router.patch('/resetPassword', resetPassword);
@@ -404,10 +413,6 @@ const userController = (socket: FakeSOSocket) => {
   router.get('/:username/following', getUserFollowing);
   router.post('/toggleFollow', toggleFollow);
   router.patch('/updateMessagingSetting', updateMessagingSetting);
-  router.post('/2fa/generate', generate2FA);
-  router.post('/2fa/enable', enable2FAEndpoint);
-  router.post('/2fa/disable', disable2FAEndpoint);
-  router.post('/2fa/verify', verify2FA);
 
   return router;
 };

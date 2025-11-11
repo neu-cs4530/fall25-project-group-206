@@ -240,7 +240,7 @@ export const canSendMessage = async (
  */
 const generate2FASecret = async (username: string): Promise<{ secret: string; qrCode: string }> => {
   try {
-    const res = await api.post(`${USER_API_URL}/2fa/generate`, username);
+    const res = await api.post(`${USER_API_URL}/2fa/generate`, { username });
     if (res.status !== 200) {
       throw new Error('Error when generating 2FA secret');
     }
@@ -280,7 +280,7 @@ const enable2FA = async (
     return res.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(`Error enabling 2FA: ${error.response.data}`);
+      throw new Error(`${error.response.data}`);
     } else {
       throw new Error('Error when enabling 2FA');
     }
