@@ -24,6 +24,8 @@ export interface User extends UserCredentials {
   followers: ObjectId[];
   following: ObjectId[];
   allowOpenMessaging?: boolean;
+  twoFactorEnabled?: boolean;
+  twoFactorSecret?: string;
 }
 
 /**
@@ -65,7 +67,7 @@ export interface UserByUsernameRequest extends Request {
 /**
  * Represents a "safe" user object that excludes sensitive information like the password.
  */
-export type SafeDatabaseUser = Omit<DatabaseUser, 'password'>;
+export type SafeDatabaseUser = Omit<DatabaseUser, 'password' | 'twoFactorSecret'>;
 
 /**
  * Represents the response for user-related operations.
