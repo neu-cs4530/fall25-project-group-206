@@ -1,4 +1,4 @@
-import { JSX, useState } from 'react';
+import { JSX, useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './layout';
 import Login from './auth/login';
@@ -28,8 +28,6 @@ import NotificationsPage from './main/notifications';
 
 /**
  * ProtectedRoute component ensures that only authenticated users can access certain routes.
- * @param param0 - The props for the component.
- * @returns A JSX element representing the protected route.
  */
 const ProtectedRoute = ({
   user,
@@ -40,26 +38,77 @@ const ProtectedRoute = ({
   socket: FakeSOSocket | null;
   children: JSX.Element;
 }) => {
+  console.log('[ProtectedRoute] Checking access:', {
+    hasUser: !!user,
+    hasSocket: !!socket,
+    username: user?.username,
+  });
+
   if (!user || !socket) {
+    console.warn('[ProtectedRoute] ❌ Redirecting to / (no user or socket)');
     return <Navigate to='/' />;
   }
 
+  console.log('[ProtectedRoute] ✅ Access granted for user:', user.username);
   return <UserContext.Provider value={{ user, socket }}>{children}</UserContext.Provider>;
 };
 
 /**
  * Represents the main component of the application.
- * It manages the state for search terms and the main title.
+ * It manages the user context for login and routing.
  */
-const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
+const FakeStackOverflow = ({ initialSocket }: { initialSocket: FakeSOSocket | null }) => {
   const [user, setUser] = useState<SafeDatabaseUser | null>(null);
+  const [socket, setSocket] = useState<FakeSOSocket | null>(initialSocket);
+
+  // Log lifecycle
+  useEffect(() => {
+    console.log('[FakeSO] Mounted');
+    return () => console.log('[FakeSO] Unmounted');
+  }, []);
+
+  // Log whenever the user changes
+  useEffect(() => {
+    console.log('[FakeSO] 🔄 user state changed:', user);
+  }, [user]);
+
+  // Log whenever socket changes
+  useEffect(() => {
+    console.log('[FakeSO] 🔌 socket prop changed:', socket);
+  }, [socket]);
+
+  const handleSetUser = (u: SafeDatabaseUser | null) => {
+    console.log('[FakeSO] 🧠 setUser() called from LoginContext with:', u);
+    setUser(u);
+  };
+
+  const handleSetSocket = (s: FakeSOSocket | null) => {
+    console.log('[FakeSO] 🔌 setSocket() called from LoginContext with:', s);
+    setSocket(s);
+  };
 
   return (
-    <LoginContext.Provider value={{ setUser }}>
+    <LoginContext.Provider value={{ setUser: handleSetUser, setSocket: handleSetSocket }}>
       <Routes>
-        {/* Public Route */}
-        <Route path='/' element={<Login />} />
-        <Route path='/signup' element={<Signup />} />
+        {/* Public Routes */}
+        <Route
+          path='/'
+          element={
+            <>
+              {console.log('[FakeSO] Rendering Login route')}
+              <Login />
+            </>
+          }
+        />
+        <Route
+          path='/signup'
+          element={
+            <>
+              {console.log('[FakeSO] Rendering Signup route')}
+              <Signup />
+            </>
+          }
+        />
 
         {/* Protected Routes */}
         <Route

@@ -5,6 +5,7 @@ import FakeStackOverflow from './components/fakestackoverflow';
 import { FakeSOSocket } from './types/types';
 import { NotificationProvider } from './contexts/NotificationContext';
 import useUserContext from './hooks/useUserContext';
+import { UserProvider } from './contexts/UserProvider';
 
 // ensures socket connections work properly in production as well
 const SERVER_URL: string | undefined = import.meta.env.VITE_SERVER_URL || 'http://localhost:8000';
@@ -64,9 +65,11 @@ const App = () => {
    */
   return (
     <Router>
-      <NotificationProvider>
-        <FakeStackOverflow socket={socket} />
-      </NotificationProvider>
+      <UserProvider>
+        <NotificationProvider>
+          <FakeStackOverflow socket={socket} />
+        </NotificationProvider>
+      </UserProvider>
     </Router>
   );
 };

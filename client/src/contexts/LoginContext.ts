@@ -1,15 +1,15 @@
 import { createContext } from 'react';
-import { SafeDatabaseUser } from '../types/types';
+import { SafeDatabaseUser, FakeSOSocket } from '../types/types';
 
 /**
- * Interface representing the context type for user login management.
+ * Interface representing the context type for user and socket management.
  *
- * - setUser - A function to update the current user in the context,
- *             which take User object representing the logged-in user or null
- *             to indicate no user is logged in.
+ * - setUser: updates the current logged-in user (or null if logged out)
+ * - setSocket: updates the active socket connection
  */
 export interface LoginContextType {
   setUser: (user: SafeDatabaseUser | null) => void;
+  setSocket: (socket: FakeSOSocket | null) => void;
 }
 
 const LoginContext = createContext<LoginContextType | null>(null);
