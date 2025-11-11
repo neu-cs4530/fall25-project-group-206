@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChangeEvent, useState } from 'react';
 import useLoginContext from './useLoginContext';
 import { createUser, loginUser } from '../services/userService';
+import { SafeDatabaseUser } from '@fake-stack-overflow/shared';
 
 /**
  * Custom hook to manage authentication logic, including handling input changes,
@@ -15,6 +16,7 @@ import { createUser, loginUser } from '../services/userService';
  *   - passwordConfirmation: The current value of the password confirmation input (for signup).
  *   - showPassword: Boolean indicating whether the password is visible.
  *   - err: The current error message, if any.
+ *   - requires2FA: Boolean indicating if 2FA verification is required.
  *   - handleInputChange: Function to handle changes in input fields.
  *   - handleSubmit: Function to handle form submission.
  *   - togglePasswordVisibility: Function to toggle password visibility.
@@ -25,6 +27,7 @@ const useAuth = (authType: 'login' | 'signup') => {
   const [passwordConfirmation, setPasswordConfirmation] = useState<string>('');
   const [showPassword, setShowPassword] = useState(false);
   const [err, setErr] = useState<string>('');
+  const [requires2FA, setRequires2FA] = useState(false);
   const { setUser } = useLoginContext();
   const navigate = useNavigate();
 
@@ -77,8 +80,26 @@ const useAuth = (authType: 'login' | 'signup') => {
   };
 
   /**
+   * Completes the login process by setting user context and navigating to home.
+   * Called after password verification (and 2FA verification if required).
+   *
+   * @param user - The authenticated user object.
+   */
+  const completeLogin = (user: SafeDatabaseUser) => {
+    setUser(user);
+    setRequires2FA(false);
+    setUsername('');
+    setPassword('');
+    setPasswordConfirmation('');
+    setErr('');
+    navigate('/home');
+  };
+
+  /**
    * Handles the submission of the form.
-   * Validates input, performs login/signup, and navigates to the home page on success.
+   * Validates input, performs login/signup, and checks for 2FA requirement.
+   * For login: if 2FA is enabled, prompts for 2FA verification instead of completing login.
+   * For signup: completes login immediately.
    *
    * @param event - The form submission event.
    */
@@ -94,16 +115,26 @@ const useAuth = (authType: 'login' | 'signup') => {
     try {
       if (authType === 'signup') {
         user = await createUser({ username, password });
+        completeLogin(user);
       } else if (authType === 'login') {
         user = await loginUser({ username, password });
+
+        // Check if user has 2FA enabled
+        if (user.twoFactorEnabled) {
+          // Don't complete login yet - wait for 2FA verification
+          setRequires2FA(true);
+          setErr('');
+          return;
+        }
+
+        // No 2FA required - complete login immediately
+        completeLogin(user);
       } else {
         throw new Error('Invalid auth type');
       }
-
-      setUser(user);
-      navigate('/home');
     } catch (error) {
       setErr((error as Error).message);
+      setRequires2FA(false);
     }
   };
 
@@ -113,9 +144,11 @@ const useAuth = (authType: 'login' | 'signup') => {
     passwordConfirmation,
     showPassword,
     err,
+    requires2FA,
     handleInputChange,
     handleSubmit,
     togglePasswordVisibility,
+    completeLogin,
   };
 };
 

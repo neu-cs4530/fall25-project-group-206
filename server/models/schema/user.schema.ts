@@ -41,6 +41,14 @@ const userSchema: Schema = new Schema(
       type: Boolean,
       default: false, // Default to requiring mutual follows
     },
+    twoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    twoFactorSecret: {
+      type: String,
+      default: null,
+    },
   },
   { collection: 'User' },
 );

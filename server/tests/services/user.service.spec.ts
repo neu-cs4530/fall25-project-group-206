@@ -1,5 +1,6 @@
 import mongoose, { Query } from 'mongoose';
 import UserModel from '../../models/users.model';
+import * as speakeasy from 'speakeasy';
 import {
   deleteUserByUsername,
   getUserByUsername,
@@ -11,6 +12,10 @@ import {
   getFollowers,
   getFollowing,
   updateMessagingSetting,
+  generate2FASecret,
+  enable2FA,
+  disable2FA,
+  verify2FAToken,
 } from '../../services/user.service';
 import { SafeDatabaseUser, User, UserCredentials } from '../../types/types';
 import { user, safeUser } from '../mockData.models';
@@ -751,5 +756,265 @@ describe('updateMessagingSetting', () => {
     if ('error' in result) {
       expect(result.error).toContain('Error occurred when updating messaging setting');
     }
+  });
+});
+
+describe('generate2FASecret', () => {
+  it('should generate a secret and QR code', async () => {
+    const result = await generate2FASecret('testuser');
+
+    expect(result).toHaveProperty('secret');
+    expect(result).toHaveProperty('qrCode');
+    expect(result.secret).toBeTruthy();
+    expect(result.qrCode).toContain('data:image/png;base64');
+  });
+
+  it('should generate a valid base32 secret', async () => {
+    const result = await generate2FASecret('testuser');
+
+    // Base32 should only contain A-Z and 2-7
+    expect(result.secret).toMatch(/^[A-Z2-7]+$/);
+    expect(result.secret.length).toBeGreaterThan(0);
+  });
+
+  it('should include username in QR code', async () => {
+    const result = await generate2FASecret('testuser');
+
+    expect(result.qrCode).toContain('data:image/png;base64');
+  });
+});
+
+describe('enable2FA', () => {
+  let mockUser: any;
+  let mockToken: string;
+  let mockSecret: string;
+
+  beforeEach(() => {
+    mockSecret = 'JBSWY3DPEBLW64TMMQ======'; // Valid base32
+    mockToken = '123456'; // Mock token
+    mockUser = {
+      _id: new mongoose.Types.ObjectId(),
+      username: 'testuser',
+      twoFactorEnabled: false,
+      twoFactorSecret: null,
+    };
+  });
+
+  it('should enable 2FA when valid token is provided', async () => {
+    const verifySpy = jest.spyOn(speakeasy.totp, 'verify').mockReturnValue(true as any);
+
+    UserModel.findOneAndUpdate = jest.fn().mockReturnValue({
+      select: jest.fn().mockResolvedValue({
+        _id: mockUser._id,
+        username: 'testuser',
+        twoFactorEnabled: true,
+      }),
+    });
+
+    const result = await enable2FA('testuser', mockSecret, mockToken);
+
+    expect(result).not.toHaveProperty('error');
+    expect(result).toHaveProperty('username', 'testuser');
+    expect(UserModel.findOneAndUpdate).toHaveBeenCalledWith(
+      { username: 'testuser' },
+      {
+        $set: {
+          twoFactorEnabled: true,
+          twoFactorSecret: mockSecret,
+        },
+      },
+      { new: true },
+    );
+    expect(verifySpy).toHaveBeenCalled();
+
+    verifySpy.mockRestore();
+  });
+
+  it('should not enable 2FA when token is invalid', async () => {
+    const verifySpy = jest.spyOn(speakeasy.totp, 'verify').mockReturnValue(false as any);
+
+    const result = await enable2FA('testuser', mockSecret, 'invalid');
+
+    expect(result).toHaveProperty('error');
+    expect('error' in result).toBe(true);
+    expect(UserModel.findOneAndUpdate).not.toHaveBeenCalled();
+
+    verifySpy.mockRestore();
+  });
+
+  it('should return error if user not found', async () => {
+    const verifySpy = jest.spyOn(speakeasy.totp, 'verify').mockReturnValue(true as any);
+
+    UserModel.findOneAndUpdate = jest.fn().mockReturnValue({
+      select: jest.fn().mockResolvedValue(null),
+    });
+
+    const result = await enable2FA('nonexistent', mockSecret, mockToken);
+
+    expect(result).toHaveProperty('error');
+    expect('error' in result).toBe(true);
+
+    verifySpy.mockRestore();
+  });
+
+  it('should not return twoFactorSecret in response', async () => {
+    const verifySpy = jest.spyOn(speakeasy.totp, 'verify').mockReturnValue(true as any);
+
+    UserModel.findOneAndUpdate = jest.fn().mockReturnValue({
+      select: jest.fn().mockResolvedValue({
+        _id: mockUser._id,
+        username: 'testuser',
+        twoFactorEnabled: true,
+        // twoFactorSecret should be excluded by .select('-password -twoFactorSecret')
+      }),
+    });
+
+    const result = await enable2FA('testuser', mockSecret, mockToken);
+
+    expect(result).not.toHaveProperty('twoFactorSecret');
+
+    verifySpy.mockRestore();
+  });
+});
+
+describe('disable2FA', () => {
+  let mockUser: any;
+
+  beforeEach(() => {
+    mockUser = {
+      _id: new mongoose.Types.ObjectId(),
+      username: 'testuser',
+      twoFactorEnabled: true,
+      twoFactorSecret: 'JBSWY3DPEBLW64TMMQ======',
+    };
+  });
+
+  it('should disable 2FA for a user', async () => {
+    UserModel.findOneAndUpdate = jest.fn().mockReturnValue({
+      select: jest.fn().mockResolvedValue({
+        _id: mockUser._id,
+        username: 'testuser',
+        twoFactorEnabled: false,
+      }),
+    });
+
+    const result = await disable2FA('testuser');
+
+    expect(result).not.toHaveProperty('error');
+    expect(result).toHaveProperty('username', 'testuser');
+    expect(UserModel.findOneAndUpdate).toHaveBeenCalledWith(
+      { username: 'testuser' },
+      {
+        $set: {
+          twoFactorEnabled: false,
+          twoFactorSecret: null,
+        },
+      },
+      { new: true },
+    );
+  });
+
+  it('should return error if user not found', async () => {
+    UserModel.findOneAndUpdate = jest.fn().mockReturnValue({
+      select: jest.fn().mockResolvedValue(null),
+    });
+
+    const result = await disable2FA('nonexistent');
+
+    expect(result).toHaveProperty('error');
+    expect('error' in result).toBe(true);
+  });
+
+  it('should not return twoFactorSecret in response', async () => {
+    UserModel.findOneAndUpdate = jest.fn().mockReturnValue({
+      select: jest.fn().mockResolvedValue({
+        _id: mockUser._id,
+        username: 'testuser',
+        twoFactorEnabled: false,
+        // twoFactorSecret should be excluded
+      }),
+    });
+
+    const result = await disable2FA('testuser');
+
+    expect(result).not.toHaveProperty('twoFactorSecret');
+  });
+});
+
+describe('verify2FAToken', () => {
+  let mockUser: any;
+  let mockSecret: string;
+
+  beforeEach(() => {
+    mockSecret = 'JBSWY3DPEBLW64TMMQ======';
+    mockUser = {
+      _id: new mongoose.Types.ObjectId(),
+      username: 'testuser',
+      twoFactorEnabled: true,
+      twoFactorSecret: mockSecret,
+    };
+  });
+
+  it('should return true for valid token', async () => {
+    const verifySpy = jest.spyOn(speakeasy.totp, 'verify').mockReturnValue(true as any);
+
+    UserModel.findOne = jest.fn().mockResolvedValue(mockUser);
+
+    const result = await verify2FAToken('testuser', '123456');
+
+    expect(result).toBe(true);
+    expect(UserModel.findOne).toHaveBeenCalledWith({ username: 'testuser' });
+    expect(verifySpy).toHaveBeenCalledWith({
+      secret: mockSecret,
+      encoding: 'base32',
+      token: '123456',
+    });
+
+    verifySpy.mockRestore();
+  });
+
+  it('should return false for invalid token', async () => {
+    const verifySpy = jest.spyOn(speakeasy.totp, 'verify').mockReturnValue(false as any);
+
+    UserModel.findOne = jest.fn().mockResolvedValue(mockUser);
+
+    const result = await verify2FAToken('testuser', 'invalid');
+
+    expect(result).toBe(false);
+
+    verifySpy.mockRestore();
+  });
+
+  it('should return false if user not found', async () => {
+    UserModel.findOne = jest.fn().mockResolvedValue(null);
+
+    const result = await verify2FAToken('nonexistent', '123456');
+
+    expect(result).toBe(false);
+  });
+
+  it('should return false if user has no 2FA secret', async () => {
+    UserModel.findOne = jest.fn().mockResolvedValue({
+      ...mockUser,
+      twoFactorSecret: null,
+    });
+
+    const result = await verify2FAToken('testuser', '123456');
+
+    expect(result).toBe(false);
+  });
+
+  it('should return false on verification error', async () => {
+    const verifySpy = jest.spyOn(speakeasy.totp, 'verify').mockImplementation(() => {
+      throw new Error('Verification error');
+    });
+
+    UserModel.findOne = jest.fn().mockResolvedValue(mockUser);
+
+    const result = await verify2FAToken('testuser', '123456');
+
+    expect(result).toBe(false);
+
+    verifySpy.mockRestore();
   });
 });
