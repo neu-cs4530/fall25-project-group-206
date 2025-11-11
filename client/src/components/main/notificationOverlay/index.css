@@ -1,0 +1,76 @@
+.notification-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  pointer-events: none; /* clicks pass through outside the panel */
+  z-index: 9999;
+}
+
+.notification-panel {
+  pointer-events: auto;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  width: 360px;
+  margin-top: 1rem;
+  padding: 1rem;
+  animation: slideDown 0.4s ease forwards;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notification-panel h3 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  color: #1e293b;
+}
+
+.notification-item {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.5rem 0;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item a {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.notification-item a:hover {
+  background: #f8fafc;
+  border-radius: 6px;
+}
+
+.message {
+  font-size: 0.9rem;
+}
+
+.time {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.view-all {
+  display: block;
+  text-align: right;
+  font-size: 0.85rem;
+  color: #2563eb;
+  text-decoration: none;
+  margin-top: 0.5rem;
+}

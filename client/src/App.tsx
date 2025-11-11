@@ -1,35 +1,70 @@
 import { useEffect, useState } from 'react';
-import { FakeSOSocket } from './types/types';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import FakeStackOverflow from './components/fakestackoverflow';
+import { FakeSOSocket } from './types/types';
+import { NotificationProvider } from './contexts/NotificationContext';
+import useUserContext from './hooks/useUserContext';
 
-// ensures that the socket connections work properly in production as well.
+// ensures socket connections work properly in production as well
 const SERVER_URL: string | undefined = import.meta.env.VITE_SERVER_URL || 'http://localhost:8000';
 
 const App = () => {
   const [socket, setSocket] = useState<FakeSOSocket | null>(null);
+  const { user } = useUserContext(UserContext); // gives us user.username after login or restore
 
+  /**
+   * 1️⃣ Create the socket connection once when the app loads.
+   */
   useEffect(() => {
     if (!socket) {
-      setSocket(
-        io(SERVER_URL, {
-          path: '/socket.io',
-          withCredentials: true,
-        }),
-      );
-    }
+      const newSocket = io(SERVER_URL, {
+        path: '/socket.io',
+        withCredentials: true,
+      });
+      setSocket(newSocket);
+      console.log('🔌 Socket connection established');
 
-    return () => {
-      if (socket !== null) {
-        socket.disconnect();
-      }
-    };
+      return () => {
+        console.log('🧹 Disconnecting socket');
+        newSocket.disconnect();
+      };
+    }
   }, [socket]);
 
+  /**
+   * Register the user once we have both the socket and username.
+   * Also re-register whenever the socket reconnects (e.g. after a network blip).
+   */
+  useEffect(() => {
+    if (!socket || !user?.username) return;
+
+    const handleConnect = () => {
+      console.log(`📡 Registering user with socket: ${user.username}`);
+      socket.emit('register-user', user.username);
+    };
+
+    // register immediately if already connected
+    if (socket.connected) {
+      handleConnect();
+    }
+
+    // re-register automatically on reconnect
+    socket.on('connect', handleConnect);
+
+    return () => {
+      socket.off('connect', handleConnect);
+    };
+  }, [socket, user?.username]);
+
+  /**
+   * 3️⃣ Wrap the app in NotificationProvider so global notifications can listen for events.
+   */
   return (
     <Router>
-      <FakeStackOverflow socket={socket} />
+      <NotificationProvider>
+        <FakeStackOverflow socket={socket} />
+      </NotificationProvider>
     </Router>
   );
 };

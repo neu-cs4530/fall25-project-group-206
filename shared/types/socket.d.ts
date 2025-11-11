@@ -124,11 +124,12 @@ export interface CollectionUpdatePayload {
  * - `leaveChat`: Client can leave a chat.
  */
 export interface ClientToServerEvents {
-  makeMove: (move: GameMovePayload) => void;
-  joinGame: (gameID: string) => void;
-  leaveGame: (gameID: string) => void;
-  joinChat: (chatID: string) => void;
-  leaveChat: (chatID: string | undefined) => void;
+  'makeMove': (move: GameMovePayload) => void;
+  'joinGame': (gameID: string) => void;
+  'leaveGame': (gameID: string) => void;
+  'joinChat': (chatID: string) => void;
+  'leaveChat': (chatID: string | undefined) => void;
+  'register-user': (username: string) => void;
 }
 
 /**

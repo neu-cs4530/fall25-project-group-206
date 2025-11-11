@@ -22,7 +22,8 @@ import chatController from './controllers/chat.controller';
 import gameController from './controllers/game.controller';
 import collectionController from './controllers/collection.controller';
 import communityController from './controllers/community.controller';
-import bookmarkController from './controllers/bookmark.controller'; // ✅ NEW
+import bookmarkController from './controllers/bookmark.controller';
+import notificationController from './controllers/notification.controller';
 
 const MONGO_URL = `${process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017'}/fake_so`;
 const PORT = parseInt(process.env.PORT || '8000');
@@ -39,6 +40,8 @@ const socket: FakeSOSocket = new Server(server, {
   },
 });
 
+export const ioInstance = socket;
+
 function connectDatabase() {
   return mongoose.connect(MONGO_URL).catch(err => console.log('MongoDB connection error: ', err));
 }
@@ -50,11 +53,21 @@ function startServer() {
   });
 }
 
-socket.on('connection', socket => {
-  console.log('A user connected ->', socket.id);
+socket.on('connection', client => {
+  console.log(`🧠 Socket connected: ${client.id}`);
 
-  socket.on('disconnect', () => {
-    console.log('User disconnected');
+  // Each user joins a private room named after their username
+  client.on('register-user', username => {
+    if (typeof username === 'string' && username.trim()) {
+      client.join(username);
+      console.log(`👤 ${username} joined private room`);
+    } else {
+      console.warn('⚠️ Invalid username for socket registration');
+    }
+  });
+
+  client.on('disconnect', () => {
+    console.log(`❌ Socket disconnected: ${client.id}`);
   });
 });
 
@@ -111,6 +124,7 @@ app.use('/api/games', gameController(socket));
 app.use('/api/collection', collectionController(socket));
 app.use('/api/community', communityController(socket));
 app.use('/api/bookmark', bookmarkController(socket));
+app.use('/api/notifications', notificationController(socket));
 
 const openApiDocument = yaml.parse(fs.readFileSync('./openapi.yaml', 'utf8'));
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));

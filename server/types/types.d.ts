@@ -1,11 +1,18 @@
-import { Server } from 'socket.io';
-import { ClientToServerEvents, ServerToClientEvents } from '@fake-stack-overflow/shared';
+import { Server, Socket } from 'socket.io';
+import type { NotificationItem } from '../../../shared/types/notification';
 
-// export * from '../../shared/src/types/types';
-export * from '@fake-stack-overflow/shared';
+// Events that the server emits to the client
+export interface ServerToClientEvents {
+  'new-notification': (notif: NotificationItem) => void;
+  // add others if needed later
+}
 
-/**
- * Type alias for the Socket.io Server instance.
- * - Handles communication between the client and server using defined events.
- */
+// Events that the client emits to the server
+export interface ClientToServerEvents {
+  'register-user': (username: string) => void;
+  // add others like 'send-message' or 'join-room'
+}
+
+// Strongly typed Socket.IO Server and Socket aliases
 export type FakeSOSocket = Server<ClientToServerEvents, ServerToClientEvents>;
+export type FakeSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
