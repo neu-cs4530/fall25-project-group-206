@@ -312,8 +312,10 @@ const userController = (socket: FakeSOSocket) => {
   };
 
   /**
-   * Generate 2FA secret and QR code
-   * POST /api/user/2fa/generate
+   * Generates a new Two-Factor Authentication (2FA) secret and QR code for a user.
+   * @param req The request containing the username in the body.
+   * @param res The response returning the generated secret and QR code or an error.
+   * @returns A promise resolving to void.
    */
   const generate2FA = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -333,8 +335,10 @@ const userController = (socket: FakeSOSocket) => {
   };
 
   /**
-   * Enable 2FA for a user
-   * POST /api/user/2fa/enable
+   * Enables Two-Factor Authentication (2FA) for a user after verifying the provided token.
+   * @param req The request containing username, secret, and token in the body.
+   * @param res The response returning the updated user or an error.
+   * @returns A promise resolving to void.
    */
   const enable2FAEndpoint = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -358,8 +362,10 @@ const userController = (socket: FakeSOSocket) => {
   };
 
   /**
-   * Disable 2FA for a user
-   * POST /api/user/2fa/disable
+   * Disables Two-Factor Authentication (2FA) for a user.
+   * @param req The request containing the username in the body.
+   * @param res The response returning the updated user or an error.
+   * @returns A promise resolving to void.
    */
   const disable2FAEndpoint = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -383,9 +389,12 @@ const userController = (socket: FakeSOSocket) => {
   };
 
   /**
-   * Verify 2FA token during login
-   * POST /api/user/2fa/verify
+   * Verifies a user's 2FA token during login.
+   * @param req The request containing the username and token in the body.
+   * @param res The response returning a boolean indicating if the token is valid or not.
+   * @returns A promise resolving to void.
    */
+
   const verify2FA = async (req: Request, res: Response): Promise<void> => {
     try {
       const { username, token } = req.body;
