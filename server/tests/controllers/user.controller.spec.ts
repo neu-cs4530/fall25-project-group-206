@@ -559,4 +559,103 @@ describe('Test userController', () => {
       );
     });
   });
+
+  describe('PATCH /updateMessagingSetting', () => {
+    beforeEach(() => {
+      jest.resetAllMocks();
+    });
+
+    it('should successfully update allowOpenMessaging given correct arguments (true)', async () => {
+      const mockReqBody = {
+        username: mockUser.username,
+        allowOpenMessaging: true,
+      };
+
+      updatedUserSpy.mockResolvedValueOnce({ ...mockSafeUser, allowOpenMessaging: true });
+
+      const response = await supertest(app)
+        .patch('/api/user/updateMessagingSetting')
+        .send(mockReqBody);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ ...mockUserJSONResponse, allowOpenMessaging: true });
+      expect(updatedUserSpy).toHaveBeenCalledWith(mockUser.username, { allowOpenMessaging: true });
+    });
+
+    it('should successfully update allowOpenMessaging given correct arguments (false)', async () => {
+      const mockReqBody = {
+        username: mockUser.username,
+        allowOpenMessaging: false,
+      };
+
+      updatedUserSpy.mockResolvedValueOnce({ ...mockSafeUser, allowOpenMessaging: false });
+
+      const response = await supertest(app)
+        .patch('/api/user/updateMessagingSetting')
+        .send(mockReqBody);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ ...mockUserJSONResponse, allowOpenMessaging: false });
+      expect(updatedUserSpy).toHaveBeenCalledWith(mockUser.username, { allowOpenMessaging: false });
+    });
+
+    it('should return 400 for request missing username', async () => {
+      const mockReqBody = {
+        allowOpenMessaging: true,
+      };
+
+      const res = await supertest(app).patch('/api/user/updateMessagingSetting').send(mockReqBody);
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should return 400 for request with empty username', async () => {
+      const mockReqBody = {
+        username: '',
+        allowOpenMessaging: true,
+      };
+
+      const res = await supertest(app).patch('/api/user/updateMessagingSetting').send(mockReqBody);
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should return 400 for request missing allowOpenMessaging', async () => {
+      const mockReqBody = {
+        username: mockUser.username,
+        // allowOpenMessaging omitted
+      };
+
+      const res = await supertest(app).patch('/api/user/updateMessagingSetting').send(mockReqBody);
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should return 400 for non-boolean allowOpenMessaging', async () => {
+      const mockReqBody: any = {
+        username: mockUser.username,
+        allowOpenMessaging: 'yes', // invalid type
+      };
+
+      const res = await supertest(app).patch('/api/user/updateMessagingSetting').send(mockReqBody);
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should return 500 if updateUser returns an error', async () => {
+      const mockReqBody = {
+        username: mockUser.username,
+        allowOpenMessaging: true,
+      };
+
+      updatedUserSpy.mockResolvedValueOnce({ error: 'Error updating user' });
+
+      const res = await supertest(app).patch('/api/user/updateMessagingSetting').send(mockReqBody);
+
+      expect(res.status).toBe(500);
+      expect(res.text).toContain(
+        'Error when updating messaging setting: Error: Error updating user',
+      );
+    });
+  });
 });

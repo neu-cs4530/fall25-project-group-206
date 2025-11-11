@@ -23,6 +23,7 @@ const ProfileSettings: React.FC = () => {
     pendingAction,
     canEditProfile,
     showPassword,
+    allowOpenMessaging,
     togglePasswordVisibility,
     setEditBioMode,
     setNewBio,
@@ -33,6 +34,7 @@ const ProfileSettings: React.FC = () => {
     handleUpdateBiography,
     handleDeleteUser,
     handleViewCollectionsPage,
+    handleUpdateMessagingSetting,
   } = useProfileSettings();
 
   const { user: currentUser } = useUserContext();
@@ -60,6 +62,7 @@ const ProfileSettings: React.FC = () => {
     userData ? userData._id.toString() : '',
     'User',
   );
+
   const {
     isFollowing,
     isLoading: followLoading,
@@ -132,6 +135,17 @@ const ProfileSettings: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {canEditProfile && (
+              <label>
+                <input
+                  type='checkbox'
+                  checked={allowOpenMessaging}
+                  onChange={e => handleUpdateMessagingSetting(e.target.checked)}
+                />
+                Allow anyone to message me (not just mutual follows)
+              </label>
+            )}
 
             <p>
               <strong>Date Joined:</strong>{' '}

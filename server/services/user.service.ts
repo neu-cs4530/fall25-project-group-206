@@ -276,3 +276,31 @@ export const getFollowing = async (username: string): Promise<UsersResponse> => 
     return { error: `Error occurred when fetching following: ${error}` };
   }
 };
+
+/**
+ * Updates the allowOpenMessaging setting for a user
+ *
+ * @param username - The username of the user
+ * @param allowOpenMessaging - The new setting value
+ * @returns Promise<UserResponse>
+ */
+export const updateMessagingSetting = async (
+  username: string,
+  allowOpenMessaging: boolean,
+): Promise<UserResponse> => {
+  try {
+    const updatedUser = await UserModel.findOneAndUpdate(
+      { username },
+      { $set: { allowOpenMessaging } },
+      { new: true },
+    ).select('-password');
+
+    if (!updatedUser) {
+      throw Error('Error updating messaging setting');
+    }
+
+    return updatedUser;
+  } catch (error) {
+    return { error: `Error occurred when updating messaging setting: ${error}` };
+  }
+};

@@ -8,6 +8,7 @@ import {
 } from '../types/types';
 import useUserContext from './useUserContext';
 import { createChat, getChatById, getChatsByUser, sendMessage } from '../services/chatService';
+import { canSendMessage } from '../services/userService';
 
 /**
  * useDirectMessage is a custom hook that provides state and functions for direct messaging between users.
@@ -23,26 +24,47 @@ const useDirectMessage = () => {
   const [newMessage, setNewMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  const getOtherParticipantUsername = (chat: PopulatedDatabaseChat, myUsername: string) => {
+    if (!chat || !myUsername) return null;
+    return chat.participants.find(p => p.toString() !== myUsername.toString());
+  };
+
   const handleJoinChat = (chatID: ObjectId) => {
     socket.emit('joinChat', String(chatID));
   };
 
   const handleSendMessage = async () => {
-    if (newMessage.trim() && selectedChat?._id) {
-      const message: Omit<Message, 'type'> = {
-        msg: newMessage,
-        msgFrom: user.username,
-        msgDateTime: new Date(),
-      };
-
-      const chat = await sendMessage(message, selectedChat._id);
-
-      setSelectedChat(chat);
-      setError(null);
-      setNewMessage('');
-    } else {
+    if (!newMessage.trim()) {
       setError('Message cannot be empty');
+      return;
     }
+    if (!selectedChat?._id) {
+      setError('No chat selected');
+      return;
+    }
+
+    const otherUsername = getOtherParticipantUsername(selectedChat, user.username);
+    if (!otherUsername) {
+      setError('Could not resolve recipient.');
+      return;
+    }
+
+    const allowed = await canSendMessage(user, otherUsername.toString());
+    if (!allowed) {
+      setError('Messaging requires mutual follow or the user has open DMs disabled.');
+      return;
+    }
+
+    const message: Omit<Message, 'type'> = {
+      msg: newMessage,
+      msgFrom: user.username,
+      msgDateTime: new Date(),
+    };
+
+    const chat = await sendMessage(message, selectedChat._id);
+    setSelectedChat(chat);
+    setError(null);
+    setNewMessage('');
   };
 
   const handleChatSelect = async (chatID: ObjectId | undefined) => {

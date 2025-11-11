@@ -175,6 +175,61 @@ const getFollowing = async (username: string): Promise<SafeDatabaseUser[]> => {
   }
   return res.data;
 };
+/**
+ * Updates the messaging setting for a user.
+ *
+ * @param username - The username of the user
+ * @param allowOpenMessaging - Whether to allow open messaging (true) or require mutual follows (false)
+ * @returns A promise that resolves to the updated user data
+ * @throws {Error} If the request to the server is unsuccessful
+ */
+const updateMessagingSetting = async (
+  username: string,
+  allowOpenMessaging: boolean,
+): Promise<SafeDatabaseUser> => {
+  const res = await api.patch(`${USER_API_URL}/updateMessagingSetting`, {
+    username,
+    allowOpenMessaging,
+  });
+  if (res.status !== 200) {
+    throw new Error('Error when updating messaging setting');
+  }
+  return res.data;
+};
+
+/**
+ * Determines if currentUser can send a message to targetUser
+ *
+ * @param currentUser - The user attempting to send a message
+ * @param targetUser - The user receiving the message
+ * @returns boolean - true if messaging is allowed
+ */
+export const canSendMessage = async (
+  currentUser: SafeDatabaseUser,
+  targetUsername: string,
+): Promise<boolean> => {
+  // Can't message yourself
+  if (currentUser.username.toString() === targetUsername.toString()) {
+    return false;
+  }
+
+  const targetUser = await getUserByUsername(targetUsername);
+
+  // If target has open messaging enabled, anyone can message them
+  if (targetUser.allowOpenMessaging) {
+    return true;
+  }
+
+  // Otherwise, require mutual following
+  const currentUserFollowsTarget = currentUser.following.some(
+    id => id.toString() === targetUser._id.toString(),
+  );
+  const targetFollowsCurrentUser = targetUser.followers.some(
+    id => id.toString() === currentUser._id.toString(),
+  );
+
+  return currentUserFollowsTarget && targetFollowsCurrentUser;
+};
 
 export {
   getUsers,
@@ -187,4 +242,5 @@ export {
   toggleFollowUser,
   getFollowers,
   getFollowing,
+  updateMessagingSetting,
 };

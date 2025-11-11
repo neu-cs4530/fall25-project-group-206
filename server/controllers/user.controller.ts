@@ -275,6 +275,38 @@ const userController = (socket: FakeSOSocket) => {
     }
   };
 
+  /**
+   * Updates a user's biography.
+   * @param req The request containing the username and boolean in the body.
+   * @param res The response, either confirming the update or returning an error.
+   * @returns A promise resolving to void.
+   */
+  const updateMessagingSetting = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { username, allowOpenMessaging } = req.body;
+
+      if (!username || typeof allowOpenMessaging !== 'boolean' || username == '') {
+        res.status(400).send('Invalid username or allowOpenMessaging');
+        return;
+      }
+
+      const updatedUser = await updateUser(username, { allowOpenMessaging });
+
+      if ('error' in updatedUser) {
+        throw new Error(updatedUser.error);
+      }
+
+      socket.emit('userUpdate', {
+        user: updatedUser,
+        type: 'updated',
+      });
+
+      res.status(200).json(updatedUser);
+    } catch (error) {
+      res.status(500).send(`Error when updating messaging setting: ${error}`);
+    }
+  };
+
   // Define routes for the user-related operations.
   router.post('/signup', createUser);
   router.post('/login', userLogin);
@@ -286,6 +318,7 @@ const userController = (socket: FakeSOSocket) => {
   router.get('/:username/followers', getUserFollowers);
   router.get('/:username/following', getUserFollowing);
   router.post('/toggleFollow', toggleFollow);
+  router.patch('/updateMessagingSetting', updateMessagingSetting);
   return router;
 };
 
