@@ -63,6 +63,16 @@ export interface UserByUsernameRequest extends Request {
 }
 
 /**
+ * Express request for querying a user by their ID.
+ * - `username`: The username provided as a route parameter.
+ */
+export interface UserByIDRequest extends Request {
+  params: {
+    username: string;
+  };
+}
+
+/**
  * Represents a "safe" user object that excludes sensitive information like the password.
  */
 export type SafeDatabaseUser = Omit<DatabaseUser, 'password'>;

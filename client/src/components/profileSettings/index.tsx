@@ -143,7 +143,7 @@ const ProfileSettings: React.FC = () => {
                   checked={allowOpenMessaging}
                   onChange={e => handleUpdateMessagingSetting(e.target.checked)}
                 />
-                Allow anyone I follow to message me (not just mutual follows)
+                Allow anyone to message me (not just mutual follows)
               </label>
             )}
 
