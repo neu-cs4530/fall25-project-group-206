@@ -6,6 +6,8 @@ import { SafeDatabaseUser } from './user';
 import { BaseMove, GameInstance, GameInstanceID, GameMove, GameState } from './game';
 import { DatabaseCommunity } from './community';
 import { PopulatedDatabaseCollection } from './collection';
+import { PopulatedDatabaseBookmark } from './bookmark';
+import type { Server, Socket } from 'socket.io';
 
 /**
  * Payload for an answer update event.
@@ -149,17 +151,21 @@ export interface ClientToServerEvents {
  * - `bookmarkUpdate`: Server sends updated bookmark.
  */
 export interface ServerToClientEvents {
-  questionUpdate: (question: PopulatedDatabaseQuestion) => void;
-  answerUpdate: (result: AnswerUpdatePayload) => void;
-  viewsUpdate: (question: PopulatedDatabaseQuestion) => void;
-  voteUpdate: (vote: VoteUpdatePayload) => void;
-  commentUpdate: (comment: CommentUpdatePayload) => void;
-  messageUpdate: (message: MessageUpdatePayload) => void;
-  userUpdate: (user: UserUpdatePayload) => void;
-  gameUpdate: (game: GameUpdatePayload) => void;
-  gameError: (error: GameErrorPayload) => void;
-  chatUpdate: (chat: ChatUpdatePayload) => void;
-  communityUpdate: (community: CommunityUpdatePayload) => void;
-  collectionUpdate: (community: CollectionUpdatePayload) => void;
-  bookmarkUpdate: (bookmark: PopulatedDatabaseBookmark) => void;
+  'questionUpdate': (question: PopulatedDatabaseQuestion) => void;
+  'answerUpdate': (result: AnswerUpdatePayload) => void;
+  'viewsUpdate': (question: PopulatedDatabaseQuestion) => void;
+  'voteUpdate': (vote: VoteUpdatePayload) => void;
+  'commentUpdate': (comment: CommentUpdatePayload) => void;
+  'messageUpdate': (message: MessageUpdatePayload) => void;
+  'userUpdate': (user: UserUpdatePayload) => void;
+  'gameUpdate': (game: GameUpdatePayload) => void;
+  'gameError': (error: GameErrorPayload) => void;
+  'chatUpdate': (chat: ChatUpdatePayload) => void;
+  'communityUpdate': (community: CommunityUpdatePayload) => void;
+  'collectionUpdate': (community: CollectionUpdatePayload) => void;
+  'bookmarkUpdate': (bookmark: PopulatedDatabaseBookmark) => void;
+  'new-notification': (notif: NotificationItem) => void;
 }
+
+export type FakeSOSocket = Server<ClientToServerEvents, ServerToClientEvents>;
+export type FakeSocket = Socket<ClientToServerEvents, ServerToClientEvents>;

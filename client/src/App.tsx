@@ -11,26 +11,28 @@ const SERVER_URL: string | undefined = import.meta.env.VITE_SERVER_URL || 'http:
 
 const App = () => {
   const [socket, setSocket] = useState<FakeSOSocket | null>(null);
-  const { user } = useUserContext(UserContext); // gives us user.username after login or restore
+  const { user } = useUserContext(); // gives us user.username after login or restore
 
   /**
    * 1️⃣ Create the socket connection once when the app loads.
    */
   useEffect(() => {
-    if (!socket) {
-      const newSocket = io(SERVER_URL, {
-        path: '/socket.io',
-        withCredentials: true,
-      });
-      setSocket(newSocket);
-      console.log('🔌 Socket connection established');
+    // ✅ Only connect after user logs in
+    if (!user) return;
 
-      return () => {
-        console.log('🧹 Disconnecting socket');
-        newSocket.disconnect();
-      };
-    }
-  }, [socket]);
+    const newSocket = io(SERVER_URL, {
+      path: '/socket.io',
+      withCredentials: true,
+    });
+
+    setSocket(newSocket);
+    console.log('🔌 Socket connected for', user.username);
+
+    return () => {
+      console.log('🧹 Disconnecting socket for', user.username);
+      newSocket.disconnect();
+    };
+  }, [user]);
 
   /**
    * Register the user once we have both the socket and username.
