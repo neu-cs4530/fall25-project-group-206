@@ -1,0 +1,25 @@
+.tabs .tabs-header {
+  display: flex; flex-wrap: wrap; gap: .5rem;
+  padding: .6rem; background:#f9fafb;
+  border: 1px solid #e5e7eb; border-radius: .8rem;
+  margin-bottom: 1rem;
+}
+
+.tabs .tab {
+  appearance:none; background:#f3f4f6; color:#374151;
+  border:1px solid #e5e7eb; padding:.55rem 1rem;
+  border-radius: 999px; font-weight:600; cursor:pointer;
+  transition: transform .15s ease, background .15s, color .15s, box-shadow .15s;
+}
+
+.tabs .tab:hover { background:#e5e7eb; transform: translateY(-1px); }
+
+.tabs .tab--active {
+  background:#2563eb; color:#fff; border-color:#1d4ed8;
+  box-shadow: 0 2px 8px rgba(37,99,235,.25);
+}
+
+.tabs .tab-panel.profile-card {
+  background:#fff; border:1px solid #e5e7eb; border-radius:.75rem;
+  padding:1.25rem; box-shadow: 0 6px 24px rgba(0,0,0,.06);
+}
