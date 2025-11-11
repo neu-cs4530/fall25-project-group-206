@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import UserModel from '../models/users.model';
 import {
   DatabaseUser,
