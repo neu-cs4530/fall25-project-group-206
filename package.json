@@ -11,8 +11,9 @@
     "bcrypt": "^6.0.0"
   },
   "devDependencies": {
-    "@types/bcrypt": "^6.0.0"
+    "@types/bcrypt": "^6.0.0",
     "qrcode": "^1.5.4",
     "speakeasy": "^2.0.0"
   }
 }
+
