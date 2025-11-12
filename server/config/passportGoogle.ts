@@ -1,5 +1,5 @@
 import passport from 'passport';
-import { Strategy as GoogleStrategy, Profile } from 'passport-google-oauth20';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { saveUser, getUserByUsername } from '../services/user.service';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
