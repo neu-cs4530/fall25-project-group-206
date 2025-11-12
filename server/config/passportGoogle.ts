@@ -5,7 +5,14 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { User } from '../types/types';
 
-if (process.env.NODE_ENV !== 'test') {
+const { REACT_APP_GOOGLE_CLIENT_ID, REACT_APP_GOOGLE_CLIENT_SECRET } = process.env;
+
+// Only register Google strategy if creds exist and not running tests
+if (
+  REACT_APP_GOOGLE_CLIENT_ID &&
+  REACT_APP_GOOGLE_CLIENT_SECRET &&
+  process.env.NODE_ENV !== 'test'
+) {
   passport.use(
     new GoogleStrategy(
       {
