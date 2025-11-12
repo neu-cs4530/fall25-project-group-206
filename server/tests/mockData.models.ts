@@ -207,6 +207,9 @@ export const user: User = {
   dateJoined: new Date('2024-12-03'),
   followers: [],
   following: [],
+  allowOpenMessaging: false,
+  twoFactorEnabled: false,
+  knownDevices: [],
 };
 
 export const safeUser: SafeDatabaseUser = {
@@ -216,4 +219,7 @@ export const safeUser: SafeDatabaseUser = {
   dateJoined: new Date('2024-12-03'),
   followers: [],
   following: [],
+  allowOpenMessaging: false,
+  twoFactorEnabled: false,
+  knownDevices: [],
 };

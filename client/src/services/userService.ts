@@ -43,7 +43,7 @@ const createUser = async (user: UserRegistration): Promise<SafeDatabaseUser> => 
     return res.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(`Error while signing up: ${error.response.data}`);
+      throw new Error(`Error while signing up: ${JSON.stringify(error.response.data)}`);
     } else {
       throw new Error('Error while signing up');
     }
@@ -63,7 +63,7 @@ const loginUser = async (user: UserCredentials): Promise<SafeDatabaseUser> => {
     return res.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(`Error while logging in: ${error.response.data}`);
+      throw new Error(`Error while logging in: ${JSON.stringify(error.response.data)}`);
     } else {
       throw new Error('Error while logging in');
     }

@@ -43,8 +43,11 @@ const userController = (socket: FakeSOSocket) => {
       following: [],
     };
 
+    const ip = req.ip || 'unknown';
+    const userAgent = req.get('User-Agent') || 'unknown';
+
     try {
-      const result = await saveUser(user);
+      const result = await saveUser(user, ip, userAgent);
 
       if ('error' in result) {
         throw new Error(result.error);
@@ -73,7 +76,10 @@ const userController = (socket: FakeSOSocket) => {
         password: req.body.password,
       };
 
-      const user = await loginUser(loginCredentials);
+      const ip = req.ip || 'unknown';
+      const userAgent = req.get('User-Agent') || 'unknown';
+
+      const user = await loginUser(loginCredentials, ip, userAgent);
 
       if ('error' in user) {
         throw Error(user.error);

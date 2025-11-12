@@ -8,12 +8,13 @@
     "shared"
   ],
   "dependencies": {
-    "bcrypt": "^6.0.0"
+    "bcrypt": "^6.0.0",
+    "nodemailer": "^7.0.10"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
+    "@types/nodemailer": "^7.0.3",
     "qrcode": "^1.5.4",
     "speakeasy": "^2.0.0"
   }
 }
-

@@ -121,7 +121,6 @@ const useAuth = (authType: 'login' | 'signup') => {
     }
 
     let user;
-
     try {
       if (authType === 'signup') {
         user = await createUser({ username, password, email });
