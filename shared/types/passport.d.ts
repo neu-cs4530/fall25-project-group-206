@@ -1,7 +1,9 @@
-import { User } from './types/types';
+import type { User as AppUser } from './user';
 
 declare global {
   namespace Express {
-    interface User extends User {}
+    interface User extends AppUser {
+      _id: string;
+    }
   }
 }

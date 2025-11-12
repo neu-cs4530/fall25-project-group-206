@@ -76,8 +76,8 @@ const Login = () => {
               Submit
             </button>
           </form>
-          <a href='http://localhost:8000/api/user/auth/google'>
-            <button>Login with Google</button>
+          <a href='/api/user/auth/google'>
+            <button type='button'>Login with Google</button>
           </a>
           {err && <p className='error-message'>{err}</p>}
           <Link to='/signup' className='signup-link'>
