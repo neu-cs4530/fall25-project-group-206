@@ -16,9 +16,11 @@ import {
   enable2FA,
   disable2FA,
   verify2FAToken,
+  sendNewDeviceEmail,
 } from '../../services/user.service';
 import { SafeDatabaseUser, User, UserCredentials } from '../../types/types';
 import { user, safeUser } from '../mockData.models';
+import nodemailer from 'nodemailer';
 
 describe('User model', () => {
   beforeEach(() => {
@@ -153,7 +155,6 @@ describe('loginUser', () => {
   // it('should return the user if authentication succeeds', async () => {
   //   jest.spyOn(UserModel, 'findOne').mockImplementation((filter?: any) => {
   //     expect(filter.username).toBeDefined();
-  //     // expect(filter.password).toBeDefined();
   //     const query: any = {};
   //     query.select = jest.fn().mockReturnValue(Promise.resolve(safeUser));
   //     return query;
@@ -1023,5 +1024,87 @@ describe('verify2FAToken', () => {
     expect(result).toBe(false);
 
     verifySpy.mockRestore();
+  });
+});
+jest.mock('nodemailer');
+
+describe('sendNewDeviceEmail', () => {
+  const to = 'test@example.com';
+  let sendMailMock: jest.Mock;
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+
+    sendMailMock = jest.fn().mockResolvedValue({});
+    (nodemailer.createTransport as jest.Mock).mockReturnValue({
+      sendMail: sendMailMock,
+    });
+  });
+
+  it('should send an email with correct recipient, subject, text, and html', async () => {
+    const deviceInfo = 'IP: 1.2.3.4, Browser: Chrome';
+
+    await sendNewDeviceEmail(to, deviceInfo);
+
+    expect(nodemailer.createTransport).toHaveBeenCalledTimes(1);
+    expect(sendMailMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: '"Your App" <no-reply@yourapp.com>',
+        to,
+        subject: 'New Device Sign-In Detected',
+        text: `We detected a sign-in from a new device: ${deviceInfo}. If this wasn't you, secure your account immediately.`,
+        html: expect.stringContaining(`<b>${deviceInfo}</b>`),
+      }),
+    );
+  });
+
+  it('should work if deviceInfo is empty', async () => {
+    const deviceInfo = '';
+
+    await sendNewDeviceEmail(to, deviceInfo);
+
+    expect(sendMailMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: expect.stringContaining(`<b>${deviceInfo}</b>`),
+      }),
+    );
+  });
+
+  it('should handle special characters in deviceInfo', async () => {
+    const deviceInfo = 'IP: <1.2.3.4>, Browser: Chrome & Safari';
+
+    await sendNewDeviceEmail(to, deviceInfo);
+
+    expect(sendMailMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: expect.stringContaining(`<b>${deviceInfo}</b>`),
+      }),
+    );
+  });
+
+  it('should call createTransport with correct SMTP config', async () => {
+    await sendNewDeviceEmail(to, 'Device Info');
+
+    expect(nodemailer.createTransport).toHaveBeenCalledWith(
+      expect.objectContaining({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT),
+        secure: Number(process.env.SMTP_PORT) === 465,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      }),
+    );
+  });
+
+  it('should log an error if sendMail fails', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    sendMailMock.mockRejectedValueOnce(new Error('SMTP error'));
+
+    await sendNewDeviceEmail(to, 'Device Info');
+
+    expect(consoleSpy).toHaveBeenCalledWith('Failed to send new device email');
+    consoleSpy.mockRestore();
   });
 });

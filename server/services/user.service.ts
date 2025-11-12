@@ -10,17 +10,35 @@ import {
 import bcrypt from 'bcrypt';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
+import crypto from 'crypto';
+import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+dotenv.config();
 
 /**
  * Saves a new user to the database.
  *
  * @param {User} user - The user object to be saved, containing user details like username, password, etc.
+ * @param {string} ip - The IP address of the device attempting login.
+ * @param {string} userAgent - The user-agent string of the device/browser.
  * @returns {Promise<UserResponse>} - Resolves with the saved user object (without the password) or an error message.
  */
-export const saveUser = async (user: User): Promise<UserResponse> => {
+export const saveUser = async (
+  user: User,
+  ip?: string,
+  userAgent?: string,
+): Promise<UserResponse> => {
   try {
     const hashedPassword = await bcrypt.hash(user.password, 10);
     user.password = hashedPassword;
+
+    if (ip && userAgent) {
+      const deviceId = getDeviceId(ip, userAgent);
+      user.knownDevices = [deviceId];
+    } else {
+      user.knownDevices = [];
+    }
+
     const result: DatabaseUser = await UserModel.create(user);
 
     if (!result) {
@@ -36,6 +54,7 @@ export const saveUser = async (user: User): Promise<UserResponse> => {
       biography: result.biography,
       followers: [],
       following: [],
+      knownDevices: result.knownDevices || [],
     };
 
     return safeUser;
@@ -88,23 +107,31 @@ export const getUsersList = async (): Promise<UsersResponse> => {
  * Authenticates a user by verifying their username and password.
  *
  * @param {UserCredentials} loginCredentials - An object containing the username and password.
+ * @param {string} ip - The IP address of the device attempting login.
+ * @param {string} userAgent - The user-agent string of the device/browser.
  * @returns {Promise<UserResponse>} - Resolves with the authenticated user object (without the password) or an error message.
  */
-export const loginUser = async (loginCredentials: UserCredentials): Promise<UserResponse> => {
+export const loginUser = async (
+  loginCredentials: UserCredentials,
+  ip?: string,
+  userAgent?: string,
+): Promise<UserResponse> => {
   const { username, password } = loginCredentials;
 
   try {
-    // const user: SafeDatabaseUser | null = await UserModel.findOne({ username, password }).select(
-    //   '-password',
-    // );
     const user = await UserModel.findOne({ username });
-    if (!user) {
-      throw Error('Authentication failed');
-    }
+    if (!user) throw new Error('Authentication failed');
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      throw Error('Invalid password');
+    if (!isMatch) throw new Error('Authentication failed');
+
+    if (ip && userAgent) {
+      const deviceId = getDeviceId(ip, userAgent);
+      const knownDevices = user.knownDevices || [];
+      if (!knownDevices.includes(deviceId)) {
+        await UserModel.findOneAndUpdate({ _id: user._id }, { $push: { knownDevices: deviceId } });
+        await sendNewDeviceEmail(user.email, `IP: ${ip}, Browser: ${userAgent}`);
+      }
     }
 
     return user;
@@ -440,5 +467,56 @@ export const verify2FAToken = async (username: string, token: string): Promise<b
     });
   } catch (error) {
     return false;
+  }
+};
+
+/**
+ * Generates a unique device identifier based on the user's IP address and user-agent.
+ * This function creates a SHA-256 hash of the combination of the IP address and user-agent
+ * string. It can be used to detect whether a user is signing in from a new device.
+ *
+ * @param ip - The IP address of the device (usually from the request object).
+ * @param userAgent - The user-agent string from the browser or client.
+ * @returns A SHA-256 hash string representing a unique device identifier.
+ */
+export const getDeviceId = (ip: string, userAgent: string): string => {
+  return crypto
+    .createHash('sha256')
+    .update(ip + userAgent)
+    .digest('hex');
+};
+
+/**
+ * Sends an email notification to a user when a sign-in is detected from a new device.
+ * This function uses SMTP credentials from environment variables to send the email.
+ * The email informs the user about the IP address and browser of the new device and
+ * advises them to secure their account if the sign-in was not performed by them.
+ *
+ * @param to - The recipient's email address.
+ * @param deviceInfo - A string describing the device details (e.g., IP and browser).
+ * @returns A Promise that resolves when the email has been sent.
+ */
+export const sendNewDeviceEmail = async (to: string, deviceInfo: string) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT),
+      secure: Number(process.env.SMTP_PORT) === 465, // true for 465, false for 587
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: '"Your App" <no-reply@yourapp.com>',
+      to,
+      subject: 'New Device Sign-In Detected',
+      text: `We detected a sign-in from a new device: ${deviceInfo}. If this wasn't you, secure your account immediately.`,
+      html: `<p>We detected a sign-in from a new device: <b>${deviceInfo}</b>.</p>
+             <p>If this wasn't you, secure your account immediately.</p>`,
+    });
+  } catch (err) {
+    console.error('Failed to send new device email');
   }
 };

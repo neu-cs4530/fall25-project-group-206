@@ -9,9 +9,13 @@ import { Schema } from 'mongoose';
  * - `password`: The encrypted password securing the user's account.
  * - `email`: The email tied to the user's account.
  * - `dateJoined`: The date the user joined the platform.
- *  - `biography`: A brief biography of the user.
- *  - `followers`: An array of users representing users who follow this user.
- *  - `following`: An array of users representing users this user follows.
+ * - `biography`: A brief biography of the user.
+ * - `followers`: An array of users representing users who follow this user.
+ * - `following`: An array of users representing users this user follows.
+ * - `allowOpenMessaging`: Boolean indicating if the user allows messaging from non-followers (default: false).
+ * - `twoFactorEnabled`: Boolean indicating if two-factor authentication (2FA) is enabled for the user (default: false).
+ * - `twoFactorSecret`: The secret key used for 2FA, or null if 2FA is not enabled.
+ * - `knownDevices`: An array of strings representing devices this user has logged in on.
  */
 const userSchema: Schema = new Schema(
   {
@@ -53,6 +57,10 @@ const userSchema: Schema = new Schema(
     twoFactorSecret: {
       type: String,
       default: null,
+    },
+    knownDevices: {
+      type: [String],
+      default: [],
     },
   },
   { collection: 'User' },
