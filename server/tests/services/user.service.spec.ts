@@ -1098,13 +1098,13 @@ describe('sendNewDeviceEmail', () => {
     );
   });
 
-  it('should log an error if sendMail fails', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+  it('should return an error object if sendMail fails', async () => {
     sendMailMock.mockRejectedValueOnce(new Error('SMTP error'));
 
-    await sendNewDeviceEmail(to, 'Device Info');
+    const result = await sendNewDeviceEmail(to, 'Device Info');
 
-    expect(consoleSpy).toHaveBeenCalledWith('Failed to send new device email');
-    consoleSpy.mockRestore();
+    expect(result).toEqual({
+      error: expect.stringContaining('Error occurred when sending email'),
+    });
   });
 });

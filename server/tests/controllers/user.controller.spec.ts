@@ -60,13 +60,17 @@ describe('Test userController', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ ...mockUserJSONResponse, biography: mockReqBody.biography });
-      expect(saveUserSpy).toHaveBeenCalledWith({
-        ...mockReqBody,
-        biography: mockReqBody.biography,
-        dateJoined: expect.any(Date),
-        followers: [],
-        following: [],
-      });
+      expect(saveUserSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ...mockReqBody,
+          biography: mockReqBody.biography,
+          dateJoined: expect.any(Date),
+          followers: [],
+          following: [],
+        }),
+        expect.any(String), // IP
+        expect.any(String), // User-Agent
+      );
     });
 
     it('should return 400 for request missing username', async () => {
@@ -150,7 +154,11 @@ describe('Test userController', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual(mockUserJSONResponse);
-      expect(loginUserSpy).toHaveBeenCalledWith(mockReqBody);
+      expect(loginUserSpy).toHaveBeenCalledWith(
+        mockReqBody,
+        expect.any(String), // IP
+        expect.any(String), // User-Agent
+      );
     });
 
     it('should return 400 for request missing username', async () => {

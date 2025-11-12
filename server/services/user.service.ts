@@ -516,7 +516,7 @@ export const sendNewDeviceEmail = async (to: string, deviceInfo: string) => {
       html: `<p>We detected a sign-in from a new device: <b>${deviceInfo}</b>.</p>
              <p>If this wasn't you, secure your account immediately.</p>`,
     });
-  } catch (err) {
-    console.error('Failed to send new device email');
+  } catch (error) {
+    return { error: `Error occurred when sending email: ${error}` };
   }
 };
