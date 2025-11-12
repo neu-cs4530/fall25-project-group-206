@@ -119,7 +119,7 @@ export const loginUser = async (
   const { username, password } = loginCredentials;
 
   try {
-    const user = await UserModel.findOne({ username });
+    const user = await UserModel.findOne({ $or: [{ username }, { email: username }] });
     if (!user) throw new Error('Authentication failed');
 
     const isMatch = await bcrypt.compare(password, user.password);
