@@ -43,12 +43,12 @@ const Login = () => {
       {!requires2FA ? (
         <>
           <form onSubmit={handleLoginSubmit}>
-            <h4>Please enter your username.</h4>
+            <h4>Please enter your username or email address.</h4>
             <input
               type='text'
               value={username}
               onChange={event => handleInputChange(event, 'username')}
-              placeholder='Enter your username'
+              placeholder='Enter your username or email'
               required
               className='input-text'
               id='username-input'
@@ -76,6 +76,9 @@ const Login = () => {
               Submit
             </button>
           </form>
+          <a href='http://localhost:8000/api/user/auth/google'>
+            <button>Login with Google</button>
+          </a>
           {err && <p className='error-message'>{err}</p>}
           <Link to='/signup' className='signup-link'>
             Don&apos;t have an account? Sign up here.
