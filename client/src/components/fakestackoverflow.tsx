@@ -24,6 +24,7 @@ import AllCollectionsPage from './main/collections/allCollectionsPage';
 import CollectionPage from './main/collections/collectionPage';
 import NewCollectionPage from './main/collections/newCollectionPage';
 import BookmarksPage from './main/bookmarks';
+import NotificationsPage from './main/notificationsPage';
 
 /**
  * ProtectedRoute component ensures that only authenticated users can access certain routes.
@@ -85,6 +86,7 @@ const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
           <Route path='/new/community' element={<NewCommunityPage />} />
           <Route path='/communities/:communityID' element={<CommunityPage />} />
           <Route path='/bookmarks/:username' element={<BookmarksPage />} />
+          <Route path='/notifications' element={<NotificationsPage />} />
         </Route>
       </Routes>
     </LoginContext.Provider>
