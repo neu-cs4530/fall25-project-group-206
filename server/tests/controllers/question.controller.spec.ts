@@ -1,3 +1,9 @@
+jest.mock('../../services/notificationFanout.service', () => ({
+  __esModule: true,
+  notifyOnNewQuestion: jest.fn().mockResolvedValue(undefined),
+  notifyOnNewAnswer: jest.fn().mockResolvedValue(undefined),
+}));
+
 import mongoose from 'mongoose';
 import supertest from 'supertest';
 import { app } from '../../app';

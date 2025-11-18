@@ -24,6 +24,7 @@ import collectionController from './controllers/collection.controller';
 import communityController from './controllers/community.controller';
 import bookmarkController from './controllers/bookmark.controller'; // ✅ NEW
 import notificationController from './controllers/notification.controller';
+import { registerSocketServer } from './utils/realtime';
 
 const MONGO_URL = `${process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017'}/fake_so`;
 const PORT = parseInt(process.env.PORT || '8000');
@@ -39,6 +40,8 @@ const socket: FakeSOSocket = new Server(server, {
     credentials: true,
   },
 });
+
+registerSocketServer(socket);
 
 function connectDatabase() {
   return mongoose.connect(MONGO_URL).catch(err => console.log('MongoDB connection error: ', err));
