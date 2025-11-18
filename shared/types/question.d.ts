@@ -26,6 +26,7 @@ export type OrderType = 'newest' | 'unanswered' | 'active' | 'mostViewed';
  * - `upVotes`: An array of usernames who have upvoted the question.
  * - `downVotes`: An array of usernames who have downvoted the question.
  * - `comments`: An array of comments related to the question.
+ * - `community`: Optional id of the community this question belongs to.
  */
 export interface Question {
   title: string;
@@ -38,7 +39,13 @@ export interface Question {
   upVotes: string[];
   downVotes: string[];
   comments: Comment[];
-  community: ObjectId | null;
+
+  /**
+   * Optional community reference:
+   * - undefined / null => not in a community
+   * - ObjectId         => belongs to that community
+   */
+  community?: ObjectId | null;
 }
 
 /**
@@ -54,7 +61,11 @@ export interface DatabaseQuestion
   tags: ObjectId[];
   answers: ObjectId[];
   comments: ObjectId[];
-  community: ObjectId | null;
+
+  /**
+   * Stored as an ObjectId or null; still optional from TypeScript's point of view.
+   */
+  community?: ObjectId | null;
 }
 
 /**
@@ -68,7 +79,11 @@ export interface PopulatedDatabaseQuestion
   tags: DatabaseTag[];
   answers: PopulatedDatabaseAnswer[];
   comments: DatabaseComment[];
-  community: DatabaseCommunity | null;
+
+  /**
+   * Populated community, if any.
+   */
+  community?: DatabaseCommunity | null;
 }
 
 /**
