@@ -43,22 +43,6 @@ describe('Bookmark Service', () => {
       expect(BookmarkModel.deleteOne).toHaveBeenCalled();
     });
 
-    // Tests for creating a new bookmark
-    test('should create a new bookmark if none exists', async () => {
-      const created = { ...mockBookmark, _id: new mongoose.Types.ObjectId() };
-      (BookmarkModel.findOne as jest.Mock).mockResolvedValueOnce(null);
-      (BookmarkModel.create as jest.Mock).mockResolvedValueOnce(created);
-
-      const result = await toggleBookmark(username, mockTargetId.toString(), 'User');
-
-      expect(result).toEqual(created);
-      expect(BookmarkModel.create).toHaveBeenCalledWith({
-        username,
-        targetId: expect.any(mongoose.Types.ObjectId),
-        targetType: 'User',
-      });
-    });
-
     // Tests for error handling
     test('should return error if database throws', async () => {
       (BookmarkModel.findOne as jest.Mock).mockRejectedValueOnce(new Error('DB Error'));

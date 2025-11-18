@@ -1,0 +1,149 @@
+.notifications-page {
+  padding: 2rem;
+  font-family: Arial, sans-serif;
+}
+
+.notifications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.notifications-header h2 {
+  margin: 0;
+}
+
+.notifications-refresh {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #1e293b;
+  background-color: #fff;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.notifications-refresh:hover {
+  background-color: #f1f5f9;
+}
+
+.notifications-error {
+  padding: 1rem;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.notifications-empty {
+  color: #64748b;
+  margin-top: 0.5rem;
+}
+
+.notifications-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.notification-card {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+.notification-card:hover {
+  background-color: #f8fafc;
+}
+
+.notification-message {
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+  color: #0f172a;
+}
+
+.notification-meta {
+  font-size: 0.8rem;
+  color: #64748b;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.notification-separator {
+  margin: 0 0.15rem;
+}
+
+.notification-location,
+.notification-type {
+  padding: 0.1rem 0.35rem;
+  border-radius: 999px;
+  border: 1px solid #cbd5f5;
+  background-color: #eff6ff;
+  font-size: 0.75rem;
+}
+
+/* Slight variations for different badges */
+.badge-collection {
+  border-color: #a5b4fc;
+  background-color: #eef2ff;
+}
+
+.badge-community {
+  border-color: #86efac;
+  background-color: #ecfdf3;
+}
+
+.badge-collection-community {
+  border-color: #facc15;
+  background-color: #fef9c3;
+}
+
+.badge-question {
+  border-color: #38bdf8;
+  background-color: #e0f2fe;
+}
+
+.badge-answer {
+  border-color: #f97316;
+  background-color: #ffedd5;
+}
+
+/* New badge colors */
+.badge-following {
+  border-color: #10b981; /* Green */
+  background-color: #d1fae5;
+}
+
+.badge-new-message {
+  border-color: #fbbf24; /* Yellow */
+  background-color: #fef3c7;
+}
+
+.badge-milestone {
+  border-color: #4ade80; /* Bright Green */
+  background-color: #d1fae5; /* Light Green */
+}
+
+.badge-question-answered {
+  border-color: #ef4444; /* Red */
+  background-color: #fee2e2;
+}
+
+.badge-activity {
+  border-color: #3b82f6; /* Blue */
+  background-color: #e0f2fe;
+}
+
+.badge-system {
+  border-color: #3b82f6; /* Blue */
+  background-color: #e0f2fe; /* Light Blue */
+}

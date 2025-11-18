@@ -1,0 +1,92 @@
+/* client/src/components/main/notificationToaster/index.css */
+
+.notification-toast-container {
+  position: fixed;
+  top: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  pointer-events: none; /* allow clicks through container except on toast itself */
+}
+
+/* The toast card */
+.notification-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+
+  min-width: 320px;
+  max-width: 480px;
+
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+
+  background: #111827; /* slate-900-ish */
+  color: #f9fafb;      /* almost white */
+
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.5),
+    0 4px 6px -4px rgba(0, 0, 0, 0.4);
+
+  border-left: 4px solid #38bdf8; /* accent line (sky-400-ish) */
+
+  cursor: pointer;
+  animation: notification-toast-slide-down 150ms ease-out;
+}
+
+/* The main message text */
+.notification-toast-message {
+  flex: 1;
+  font-size: 0.875rem;  /* 14px */
+  line-height: 1.4;
+}
+
+/* Close button: circular, subtle, aligned top-right-ish */
+.notification-toast-close {
+  flex-shrink: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #9ca3af; /* gray-400 */
+
+  cursor: pointer;
+  transition:
+    background-color 120ms ease-out,
+    color 120ms ease-out,
+    transform 80ms ease-out;
+}
+
+/* Hover / focus states */
+.notification-toast-close:hover,
+.notification-toast-close:focus-visible {
+  background-color: rgba(156, 163, 175, 0.2); /* subtle gray circle */
+  color: #e5e7eb; /* gray-200 */
+}
+
+.notification-toast-close:active {
+  transform: scale(0.94);
+}
+
+/* Simple slide-down animation */
+@keyframes notification-toast-slide-down {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

@@ -161,4 +161,5 @@ export interface ServerToClientEvents {
   communityUpdate: (community: CommunityUpdatePayload) => void;
   collectionUpdate: (community: CollectionUpdatePayload) => void;
   bookmarkUpdate: (bookmark: PopulatedDatabaseBookmark) => void;
+  notificationPing: (payload: { username: string }) => void;
 }
