@@ -10,6 +10,8 @@ import * as OpenApiValidator from 'express-openapi-validator';
 import swaggerUi from 'swagger-ui-express';
 import yaml from 'yaml';
 import * as fs from 'fs';
+import session from 'express-session';
+import passport from 'passport';
 
 import answerController from './controllers/answer.controller';
 import questionController from './controllers/question.controller';
@@ -22,7 +24,7 @@ import chatController from './controllers/chat.controller';
 import gameController from './controllers/game.controller';
 import collectionController from './controllers/collection.controller';
 import communityController from './controllers/community.controller';
-import bookmarkController from './controllers/bookmark.controller'; // ✅ NEW
+import bookmarkController from './controllers/bookmark.controller';
 import notificationController from './controllers/notification.controller';
 import { registerSocketServer } from './utils/realtime';
 
@@ -73,6 +75,25 @@ process.on('SIGINT', async () => {
 });
 
 app.use(express.json());
+
+try {
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || 'supersecret',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        sameSite: 'none',
+        secure: false,
+      },
+    }),
+  );
+
+  app.use(passport.initialize());
+  app.use(passport.session());
+} catch (e) {
+  console.error('Failed to load or initialize OAuth Google:', e);
+}
 
 try {
   app.use(

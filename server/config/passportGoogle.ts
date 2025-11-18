@@ -7,7 +7,6 @@ import { User } from '../types/types';
 
 const { REACT_APP_GOOGLE_CLIENT_ID, REACT_APP_GOOGLE_CLIENT_SECRET } = process.env;
 
-// Only register Google strategy if creds exist and not running tests
 if (
   REACT_APP_GOOGLE_CLIENT_ID &&
   REACT_APP_GOOGLE_CLIENT_SECRET &&
@@ -56,7 +55,6 @@ if (
   );
 }
 
-// Serialize/Deserialize user for session (optional if using sessions)
 passport.serializeUser((user: Express.User, done) => done(null, user));
 passport.deserializeUser(async (id: string, done) => {
   try {
