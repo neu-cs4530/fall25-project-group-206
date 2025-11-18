@@ -430,9 +430,11 @@ const userController = (socket: FakeSOSocket) => {
    * @param res Redirects the user to the frontend with login info.
    */
   const googleLoginCallback = (req: Request, res: Response) => {
-    passport.authenticate('google', { failureRedirect: '/login' })(req, res, () => {
-      // Successful login
-      res.redirect('http://localhost:4530?googleLogin=true');
+    passport.authenticate('google', {
+      failureRedirect: '/login?error=google',
+    })(req, res, () => {
+      const redirectBase = process.env.CLIENT_URL || 'http://localhost:4530';
+      res.redirect(`${redirectBase}/home`);
     });
   };
 
