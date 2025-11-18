@@ -10,6 +10,8 @@ import type {
   PopulatedDatabaseAnswer,
   NotificationLocation,
 } from '../types/types';
+import UserModel from '../models/users.model';
+import type { DatabaseUser } from '../types/types';
 
 /**
  * Resolve a NotificationLocation string from flags.
@@ -110,36 +112,74 @@ async function computeRecipientsForQuestion(
 }
 
 /**
+ * Returns the list of usernames who follow the given actor username.
+ */
+async function getFollowerUsernamesForActor(actorUsername: string): Promise<string[]> {
+  // Find the actor so we know their _id
+  const actor = (await UserModel.findOne({ username: actorUsername })
+    .select('_id')
+    .exec()) as DatabaseUser | null;
+
+  if (!actor) {
+    return [];
+  }
+
+  // All users whose "following" array contains actor._id are followers
+  const followers = (await UserModel.find({ following: actor._id })
+    .select('username')
+    .exec()) as Pick<DatabaseUser, 'username'>[];
+
+  return followers.map(u => u.username).filter((name): name is string => Boolean(name));
+}
+
+/**
  * Fan-out for a newly created question.
  * Persists notifications + pings via realtime util.
  */
 export async function notifyOnNewQuestion(question: PopulatedDatabaseQuestion): Promise<void> {
+  // Bookmark / community recipients
   const recipients = await computeRecipientsForQuestion(question);
-
-  if (!recipients.size) return;
-
   const questionId = question._id as ObjectId;
 
-  const docs = Array.from(recipients.entries()).map(([username, location]) => {
-    const locationPhrase = describeQuestionLocation(location, question);
+  const docs: any[] = [];
 
-    return {
-      user: username,
-      actor: question.askedBy,
-      message: `${question.askedBy} posted a question "${question.title}" in ${locationPhrase}`,
-      eventDate: question.askDateTime,
-      targetId: questionId,
-      targetType: 'Question' as const,
-      location,
-      link: `/question/${questionId.toString()}`,
-      category: 'question' as const,
-      isRead: false,
-    };
-  });
+  // Persist notifications only for bookmark-based recipients
+  if (recipients.size) {
+    for (const [username, location] of recipients.entries()) {
+      const locationPhrase = describeQuestionLocation(location, question);
 
-  await NotificationModel.insertMany(docs);
+      docs.push({
+        user: username,
+        actor: question.askedBy,
+        message: `${question.askedBy} posted a question "${question.title}" in ${locationPhrase}`,
+        eventDate: question.askDateTime,
+        targetId: questionId,
+        targetType: 'Question' as const,
+        location,
+        link: `/question/${questionId.toString()}`,
+        category: 'question' as const,
+        isRead: false,
+      });
+    }
 
-  for (const [username] of recipients.entries()) {
+    if (docs.length) {
+      await NotificationModel.insertMany(docs);
+    }
+  }
+
+  // Followers also receive real-time pings, even if they have no bookmarks
+  const followerUsernames = await getFollowerUsernamesForActor(question.askedBy);
+
+  const allRecipients = new Set<string>([
+    ...recipients.keys(), // bookmark-based
+    ...followerUsernames, // social followers
+  ]);
+
+  if (!allRecipients.size) {
+    return;
+  }
+
+  for (const username of allRecipients) {
     emitNotification(username);
   }
 }
@@ -152,31 +192,43 @@ export async function notifyOnNewAnswer(
   answer: PopulatedDatabaseAnswer,
 ): Promise<void> {
   const recipients = await computeRecipientsForQuestion(question);
-
-  if (!recipients.size) return;
-
   const questionId = question._id as ObjectId;
 
-  const docs = Array.from(recipients.entries()).map(([username, location]) => {
-    const locationPhrase = describeQuestionLocation(location, question);
+  const docs: any[] = [];
 
-    return {
-      user: username,
-      actor: answer.ansBy,
-      message: `${answer.ansBy} posted an answer to "${question.title}" in ${locationPhrase}`,
-      eventDate: answer.ansDateTime,
-      targetId: questionId,
-      targetType: 'Answer' as const,
-      location,
-      link: `/question/${questionId.toString()}`,
-      category: 'answer' as const,
-      isRead: false,
-    };
-  });
+  if (recipients.size) {
+    for (const [username, location] of recipients.entries()) {
+      const locationPhrase = describeQuestionLocation(location, question);
 
-  await NotificationModel.insertMany(docs);
+      docs.push({
+        user: username,
+        actor: answer.ansBy,
+        message: `${answer.ansBy} posted an answer to "${question.title}" in ${locationPhrase}`,
+        eventDate: answer.ansDateTime,
+        targetId: questionId,
+        targetType: 'Answer' as const,
+        location,
+        link: `/question/${questionId.toString()}`,
+        category: 'answer' as const,
+        isRead: false,
+      });
+    }
 
-  for (const [username] of recipients.entries()) {
+    if (docs.length) {
+      await NotificationModel.insertMany(docs);
+    }
+  }
+
+  // Followers of the answer author get real-time pings as well
+  const followerUsernames = await getFollowerUsernamesForActor(answer.ansBy);
+
+  const allRecipients = new Set<string>([...recipients.keys(), ...followerUsernames]);
+
+  if (!allRecipients.size) {
+    return;
+  }
+
+  for (const username of allRecipients) {
     emitNotification(username);
   }
 }

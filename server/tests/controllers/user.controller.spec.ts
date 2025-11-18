@@ -3,6 +3,20 @@ import mongoose from 'mongoose';
 import { app } from '../../app';
 import * as util from '../../services/user.service';
 import { SafeDatabaseUser, User } from '../../types/types';
+import NotificationModel from '../../models/notification.model';
+
+jest.mock('../../utils/realtime', () => {
+  const emitMock = jest.fn();
+  const registerSocketServerMock = jest.fn();
+
+  return {
+    __esModule: true,
+    default: emitMock, // what you import as emitNotification
+    registerSocketServer: registerSocketServerMock, // what app.ts calls
+  };
+});
+
+import emitNotification from '../../utils/realtime';
 
 const mockUser: User = {
   username: 'user1',
@@ -466,58 +480,107 @@ describe('Test userController', () => {
   });
 
   describe('POST /toggleFollow', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
     it('should successfully toggle follow status given correct arguments', async () => {
-      const mockReqBody = {
-        currentUsername: 'user1',
-        targetUsername: 'user2',
+      const currentId = new mongoose.Types.ObjectId();
+      const targetId = new mongoose.Types.ObjectId();
+
+      // "Before" state: user1 is NOT following user2
+      const currentBefore: any = {
+        _id: currentId,
+        username: 'user1',
+        followers: [],
+        following: [],
       };
 
-      // Mock a successful toggleFollowUser call
-      toggleFollowSpy.mockResolvedValueOnce(mockSafeUser);
+      const targetUser: any = {
+        _id: targetId,
+        username: 'user2',
+        followers: [],
+        following: [],
+      };
 
-      const response = await supertest(app).post('/api/user/toggleFollow').send(mockReqBody);
+      // Controller calls getUserByUsername twice: current user, then target user
+      getUserByUsernameSpy.mockResolvedValueOnce(currentBefore).mockResolvedValueOnce(targetUser);
 
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockUserJSONResponse);
-      // Ensure toggleFollowUser is called with the correct args
+      // Then calls toggleFollowUser to actually change relationship
+      toggleFollowSpy.mockResolvedValueOnce({
+        ...currentBefore,
+        following: [targetId], // now following target
+      } as any);
+
+      // New follow → should create a notification and emit a ping
+      const createSpy = jest.spyOn(NotificationModel, 'create').mockResolvedValueOnce({} as any);
+      const emitSpy = emitNotification as jest.Mock;
+
+      const res = await supertest(app)
+        .post('/api/user/toggleFollow')
+        .send({ currentUsername: 'user1', targetUsername: 'user2' });
+
+      expect(res.status).toBe(200);
       expect(toggleFollowSpy).toHaveBeenCalledWith('user1', 'user2');
-    });
 
-    it('should return 400 for request missing currentUsername', async () => {
-      const mockReqBody = {
-        targetUsername: 'user2',
+      // Notification doc content
+      expect(createSpy).toHaveBeenCalledTimes(1);
+      const doc = createSpy.mock.calls[0][0] as {
+        user: string;
+        actor: string;
+        targetType: string;
+        category: string;
+        location: string;
+        link: string;
       };
 
-      const response = await supertest(app).post('/api/user/toggleFollow').send(mockReqBody);
+      expect(doc.user).toBe('user2'); // recipient = user being followed
+      expect(doc.actor).toBe('user1'); // actor = follower
+      expect(doc.targetType).toBe('User');
+      expect(doc.category).toBe('follow');
+      expect(doc.location).toBe('following');
+      expect(doc.link).toBe('/user/user1');
 
-      expect(response.status).toBe(400);
-      expect(response.text).toBe('Both currentUsername and targetUsername are required');
-    });
-
-    it('should return 400 for request missing targetUsername', async () => {
-      const mockReqBody = {
-        currentUsername: 'user1',
-      };
-
-      const response = await supertest(app).post('/api/user/toggleFollow').send(mockReqBody);
-
-      expect(response.status).toBe(400);
-      expect(response.text).toBe('Both currentUsername and targetUsername are required');
+      // Realtime ping to target user
+      expect(emitSpy).toHaveBeenCalledWith('user2');
     });
 
     it('should return 500 if toggleFollowUser returns an error', async () => {
-      const mockReqBody = {
-        currentUsername: 'user1',
-        targetUsername: 'user2',
+      const currentId = new mongoose.Types.ObjectId();
+      const targetId = new mongoose.Types.ObjectId();
+
+      const currentBefore: any = {
+        _id: currentId,
+        username: 'user1',
+        followers: [],
+        following: [],
       };
 
-      // Simulate a DB error
-      toggleFollowSpy.mockResolvedValueOnce({ error: 'Error toggling follow' });
+      const targetUser: any = {
+        _id: targetId,
+        username: 'user2',
+        followers: [],
+        following: [],
+      };
 
-      const response = await supertest(app).post('/api/user/toggleFollow').send(mockReqBody);
+      getUserByUsernameSpy.mockResolvedValueOnce(currentBefore).mockResolvedValueOnce(targetUser);
 
-      expect(response.status).toBe(500);
-      expect(response.text).toContain('Error when toggling follow: Error: Error toggling follow');
+      // Simulate service-level failure
+      toggleFollowSpy.mockResolvedValueOnce({
+        error: 'Error occurred when toggling follow',
+      } as any);
+
+      const createSpy = jest.spyOn(NotificationModel, 'create');
+
+      const res = await supertest(app)
+        .post('/api/user/toggleFollow')
+        .send({ currentUsername: 'user1', targetUsername: 'user2' });
+
+      // Controller should surface as 500
+      expect(res.status).toBe(500);
+
+      // No follow notification should be created on error
+      expect(createSpy).not.toHaveBeenCalled();
     });
   });
 

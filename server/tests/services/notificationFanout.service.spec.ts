@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import BookmarkModel from '../../models/bookmark.model';
 import CollectionModel from '../../models/collection.model';
 import NotificationModel from '../../models/notification.model';
+import UserModel from '../../models/users.model';
+
 import { notifyOnNewQuestion, notifyOnNewAnswer } from '../../services/notificationFanout.service';
 import type {
   PopulatedDatabaseQuestion,
@@ -21,6 +23,17 @@ import emitNotification from '../../utils/realtime';
 describe('notificationFanout.service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Default: no followers for any actor, to avoid real DB
+    jest.spyOn(UserModel, 'findOne').mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      exec: jest.fn().mockResolvedValue(null),
+    } as any);
+
+    jest.spyOn(UserModel, 'find').mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      exec: jest.fn().mockResolvedValue([]),
+    } as any);
   });
 
   test('notifyOnNewQuestion notifies users who bookmarked the community', async () => {
@@ -35,7 +48,7 @@ describe('notificationFanout.service', () => {
       admin: 'owner',
       createdAt: new Date(),
       updatedAt: new Date(),
-    };
+    } as any;
 
     const question: PopulatedDatabaseQuestion = {
       _id: new mongoose.Types.ObjectId(),
@@ -50,7 +63,7 @@ describe('notificationFanout.service', () => {
       upVotes: [],
       downVotes: [],
       community,
-    };
+    } as any;
 
     // 1) No collections contain this question
     jest.spyOn(CollectionModel, 'find').mockImplementation(() => {
@@ -83,13 +96,13 @@ describe('notificationFanout.service', () => {
       } as any;
     });
 
-    const createSpy = jest.spyOn(NotificationModel, 'insertMany').mockResolvedValue([] as any);
+    const insertManySpy = jest.spyOn(NotificationModel, 'insertMany').mockResolvedValue([] as any);
     const emitSpy = emitNotification as jest.Mock;
 
     await notifyOnNewQuestion(question);
 
-    expect(createSpy).toHaveBeenCalledTimes(1);
-    const payloadArg = createSpy.mock.calls[0][0] as any[];
+    expect(insertManySpy).toHaveBeenCalledTimes(1);
+    const payloadArg = insertManySpy.mock.calls[0][0] as any[];
 
     expect(payloadArg).toHaveLength(1);
     expect(payloadArg[0].user).toBe('bob');
@@ -105,6 +118,7 @@ describe('notificationFanout.service', () => {
 
   test('notifyOnNewAnswer notifies users who bookmarked a collection containing the question', async () => {
     const questionId = new mongoose.Types.ObjectId();
+    const collectionId = new mongoose.Types.ObjectId();
 
     const question: PopulatedDatabaseQuestion = {
       _id: questionId,
@@ -119,7 +133,7 @@ describe('notificationFanout.service', () => {
       upVotes: [],
       downVotes: [],
       community: null,
-    };
+    } as any;
 
     const answer: PopulatedDatabaseAnswer = {
       _id: new mongoose.Types.ObjectId(),
@@ -127,9 +141,7 @@ describe('notificationFanout.service', () => {
       ansBy: 'charlie',
       ansDateTime: new Date('2024-01-03T00:00:00Z'),
       comments: [],
-    };
-
-    const collectionId = new mongoose.Types.ObjectId();
+    } as any;
 
     // 1) This question is part of one collection
     jest.spyOn(CollectionModel, 'find').mockImplementation(() => {
@@ -167,13 +179,13 @@ describe('notificationFanout.service', () => {
       } as any;
     });
 
-    const createSpy = jest.spyOn(NotificationModel, 'insertMany').mockResolvedValue([] as any);
+    const insertManySpy = jest.spyOn(NotificationModel, 'insertMany').mockResolvedValue([] as any);
     const emitSpy = emitNotification as jest.Mock;
 
     await notifyOnNewAnswer(question, answer);
 
-    expect(createSpy).toHaveBeenCalledTimes(1);
-    const payloadArg = createSpy.mock.calls[0][0] as any[];
+    expect(insertManySpy).toHaveBeenCalledTimes(1);
+    const payloadArg = insertManySpy.mock.calls[0][0] as any[];
 
     expect(payloadArg).toHaveLength(1);
     expect(payloadArg[0].user).toBe('dave');
