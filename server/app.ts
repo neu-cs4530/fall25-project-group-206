@@ -10,8 +10,6 @@ import * as OpenApiValidator from 'express-openapi-validator';
 import swaggerUi from 'swagger-ui-express';
 import yaml from 'yaml';
 import * as fs from 'fs';
-import session from 'express-session';
-import passport from 'passport';
 
 import answerController from './controllers/answer.controller';
 import questionController from './controllers/question.controller';
@@ -75,25 +73,6 @@ process.on('SIGINT', async () => {
 });
 
 app.use(express.json());
-
-try {
-  app.use(
-    session({
-      secret: process.env.SESSION_SECRET || 'supersecret',
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        sameSite: 'none',
-        secure: false,
-      },
-    }),
-  );
-
-  app.use(passport.initialize());
-  app.use(passport.session());
-} catch (e) {
-  console.error('Failed to load or initialize OAuth Google:', e);
-}
 
 try {
   app.use(
