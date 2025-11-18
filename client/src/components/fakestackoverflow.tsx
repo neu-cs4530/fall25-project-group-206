@@ -1,10 +1,16 @@
+// client/src/components/fakestackoverflow.tsx
 import { JSX, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+
 import Layout from './layout';
 import Login from './auth/login';
+import Signup from './auth/signup';
+
 import { FakeSOSocket, SafeDatabaseUser } from '../types/types';
+
 import LoginContext from '../contexts/LoginContext';
 import UserContext from '../contexts/UserContext';
+
 import QuestionPage from './main/questionPage';
 import TagPage from './main/tagPage';
 import NewQuestionPage from './main/newQuestion';
@@ -12,7 +18,6 @@ import NewAnswerPage from './main/newAnswer';
 import AnswerPage from './main/answerPage';
 import MessagingPage from './main/messagingPage';
 import DirectMessage from './main/directMessage';
-import Signup from './auth/signup';
 import UsersListPage from './main/usersListPage';
 import ProfileSettings from './profileSettings';
 import AllGamesPage from './main/games/allGamesPage';
@@ -26,10 +31,11 @@ import NewCollectionPage from './main/collections/newCollectionPage';
 import BookmarksPage from './main/bookmarks';
 import NotificationsPage from './main/notificationsPage';
 
+import NotificationSocketBridge from './NotificationSocketBridge';
+import NotificationToaster from './main/notificationToaster';
+
 /**
  * ProtectedRoute component ensures that only authenticated users can access certain routes.
- * @param param0 - The props for the component.
- * @returns A JSX element representing the protected route.
  */
 const ProtectedRoute = ({
   user,
@@ -49,7 +55,7 @@ const ProtectedRoute = ({
 
 /**
  * Represents the main component of the application.
- * It manages the state for search terms and the main title.
+ * It manages the user state and route configuration.
  */
 const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
   const [user, setUser] = useState<SafeDatabaseUser | null>(null);
@@ -57,7 +63,7 @@ const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
   return (
     <LoginContext.Provider value={{ setUser }}>
       <Routes>
-        {/* Public Route */}
+        {/* Public Routes */}
         <Route path='/' element={<Login />} />
         <Route path='/signup' element={<Signup />} />
 
@@ -65,7 +71,16 @@ const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
         <Route
           element={
             <ProtectedRoute user={user} socket={socket}>
-              <Layout />
+              <>
+                {/* Listen for notification pings for the logged-in user */}
+                <NotificationSocketBridge socket={socket} />
+
+                {/* Main layout for the app */}
+                <Layout />
+
+                {/* Global top-center toast */}
+                <NotificationToaster />
+              </>
             </ProtectedRoute>
           }>
           <Route path='/home' element={<QuestionPage />} />

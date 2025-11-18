@@ -24,6 +24,34 @@ function resolveLocation(flags: {
 }
 
 /**
+ * Human-readable phrase for where the activity happened.
+ *
+ * If the question has a populated community with a name, we always say:
+ *   the "<name>" community
+ *
+ * Otherwise we fall back to a generic phrase that includes the location slug
+ * (e.g., "your collection").
+ */
+function describeQuestionLocation(
+  location: NotificationLocation,
+  question: PopulatedDatabaseQuestion,
+): string {
+  const communityName = question.community?.name;
+
+  // Prefer explicit community name whenever we have it
+  if (communityName && communityName.trim().length > 0) {
+    return `the "${communityName}" community`;
+  }
+
+  // Fallback: generic wording by location
+  if (location === 'collection') return 'your collection';
+  if (location === 'collection/community') return 'your collection and community';
+
+  // Default
+  return `your ${location}`;
+}
+
+/**
  * Internal helper: find all users who should be notified about activity on this question,
  * and track whether they see it via collections and/or communities.
  */
@@ -92,18 +120,22 @@ export async function notifyOnNewQuestion(question: PopulatedDatabaseQuestion): 
 
   const questionId = question._id as ObjectId;
 
-  const docs = Array.from(recipients.entries()).map(([username, location]) => ({
-    user: username,
-    actor: question.askedBy,
-    message: `${question.askedBy} posted a question "${question.title}" in your ${location}`,
-    eventDate: question.askDateTime,
-    targetId: questionId,
-    targetType: 'Question' as const,
-    location,
-    link: `/question/${questionId.toString()}`,
-    category: 'question' as const,
-    isRead: false,
-  }));
+  const docs = Array.from(recipients.entries()).map(([username, location]) => {
+    const locationPhrase = describeQuestionLocation(location, question);
+
+    return {
+      user: username,
+      actor: question.askedBy,
+      message: `${question.askedBy} posted a question "${question.title}" in ${locationPhrase}`,
+      eventDate: question.askDateTime,
+      targetId: questionId,
+      targetType: 'Question' as const,
+      location,
+      link: `/question/${questionId.toString()}`,
+      category: 'question' as const,
+      isRead: false,
+    };
+  });
 
   await NotificationModel.insertMany(docs);
 
@@ -125,18 +157,22 @@ export async function notifyOnNewAnswer(
 
   const questionId = question._id as ObjectId;
 
-  const docs = Array.from(recipients.entries()).map(([username, location]) => ({
-    user: username,
-    actor: answer.ansBy,
-    message: `${answer.ansBy} posted an answer to "${question.title}" in your ${location}`,
-    eventDate: answer.ansDateTime,
-    targetId: questionId,
-    targetType: 'Answer' as const,
-    location,
-    link: `/question/${questionId.toString()}`,
-    category: 'answer' as const,
-    isRead: false,
-  }));
+  const docs = Array.from(recipients.entries()).map(([username, location]) => {
+    const locationPhrase = describeQuestionLocation(location, question);
+
+    return {
+      user: username,
+      actor: answer.ansBy,
+      message: `${answer.ansBy} posted an answer to "${question.title}" in ${locationPhrase}`,
+      eventDate: answer.ansDateTime,
+      targetId: questionId,
+      targetType: 'Answer' as const,
+      location,
+      link: `/question/${questionId.toString()}`,
+      category: 'answer' as const,
+      isRead: false,
+    };
+  });
 
   await NotificationModel.insertMany(docs);
 
