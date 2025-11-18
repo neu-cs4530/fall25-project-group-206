@@ -27,8 +27,6 @@ const useNotificationsPage = () => {
     try {
       const data = await fetchNotificationFeed(user.username);
 
-      console.log('[useNotificationsPage] raw feed payload:', data);
-
       // Ensure newest → oldest by eventDate
       const sorted = [...data].sort(
         (a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime(),
@@ -63,7 +61,6 @@ const useNotificationsPage = () => {
         return;
       }
 
-      console.log('[useNotificationsPage] notificationPing for', payload.username);
       setHasNew(true);
       void load();
     };

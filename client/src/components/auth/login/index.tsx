@@ -76,7 +76,7 @@ const Login = () => {
               Submit
             </button>
           </form>
-          <a href='/api/user/auth/google'>
+          <a href='/api/auth/google'>
             <button type='button'>Login with Google</button>
           </a>
           {err && <p className='error-message'>{err}</p>}
