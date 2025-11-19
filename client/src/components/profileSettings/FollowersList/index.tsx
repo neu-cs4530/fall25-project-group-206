@@ -24,12 +24,7 @@ interface FollowerItemProps {
 /**
  * Individual follower item with follow button
  */
-const FollowerItem = ({
-  follower,
-  currentUsername,
-  onFollowChange,
-  onUserClick,
-}: FollowerItemProps) => {
+const FollowerItem = ({ follower, onFollowChange, onUserClick }: FollowerItemProps) => {
   const { user: currentUser } = useUserContext();
 
   // Check if current user is following this follower
