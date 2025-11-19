@@ -17,9 +17,12 @@ const useSessionTimeout = (inactivityMinutes: number = 30, warningMinutes: numbe
   const { setUser } = useLoginContext();
   const [showModal, setShowModal] = useState(false);
   const [countdown, setCountdown] = useState(warningMinutes * 60);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  type TimeoutHandle = ReturnType<typeof setTimeout>;
+  type IntervalHandle = ReturnType<typeof setInterval>;
+
+  const timeoutRef = useRef<TimeoutHandle | null>(null);
+  const warningTimeoutRef = useRef<TimeoutHandle | null>(null);
+  const countdownIntervalRef = useRef<IntervalHandle | null>(null);
 
   useEffect(() => {
     if (!user) return; // Only track if user is logged in

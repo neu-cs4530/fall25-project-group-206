@@ -1,23 +1,22 @@
 // server/services/notificationFeed.service.ts
+import { ObjectId } from 'mongodb';
 import BookmarkModel from '../models/bookmark.model';
 import CommunityModel from '../models/community.model';
 import { populateDocument } from '../utils/database.util';
-import { buildBackfillNotificationsForUser } from '../utils/backfillNotifications.util';
+import buildBackfillNotificationsForUser from '../utils/backfillNotifications.util';
 
 import type {
   DatabaseCommunity,
   PopulatedDatabaseCollection,
   NotificationItem,
-} from '../types/types';
-import UserModel from '../models/users.model';
-import QuestionModel from '../models/questions.model';
-import NotificationModel from '../models/notification.model';
-import type {
   DatabaseUser,
   PopulatedDatabaseQuestion,
   PopulatedDatabaseAnswer,
   DatabaseNotification,
 } from '../types/types';
+import UserModel from '../models/users.model';
+import QuestionModel from '../models/questions.model';
+import NotificationModel from '../models/notification.model';
 
 /**
  * Builds notifications based on bookmarks (collections + communities).
@@ -37,7 +36,7 @@ export const buildNotificationsFromBookmarks = async (
     const bookmarks = await BookmarkModel.find({
       username,
       targetType: { $in: ['Collection', 'Community'] },
-    });
+    }); // NOTE: no `.exec()` here
 
     if (!bookmarks || bookmarks.length === 0) {
       return [];
@@ -66,7 +65,7 @@ export const buildNotificationsFromBookmarks = async (
         }),
       ).then(items => items.filter((c): c is PopulatedDatabaseCollection => c !== null)),
 
-      // Communities: raw DB fetch
+      // Communities: raw DB fetch; tests mock `find` directly
       communityObjectIds.length
         ? (CommunityModel.find({ _id: { $in: communityObjectIds } }) as unknown as Promise<
             DatabaseCommunity[]
@@ -97,13 +96,13 @@ export const buildNotificationsFromFollowing = async (
     // Load current user with their "following" populated to usernames.
     const dbUser = (await UserModel.findOne({ username })
       .populate('following', 'username')
-      .exec()) as unknown as (DatabaseUser & { following: DatabaseUser[] }) | null;
+      .exec()) as (DatabaseUser & { following: DatabaseUser[] }) | null;
 
     if (!dbUser) {
       return [];
     }
 
-    const followedUsers = (dbUser.following || []) as unknown as Pick<DatabaseUser, 'username'>[];
+    const followedUsers = (dbUser.following || []) as Pick<DatabaseUser, 'username'>[];
 
     const followedUsernames = followedUsers
       .map(u => u.username)
@@ -123,7 +122,7 @@ export const buildNotificationsFromFollowing = async (
     const notifications: NotificationItem[] = [];
 
     for (const q of questions) {
-      const qId = q._id as any;
+      const qId = q._id as ObjectId;
 
       // Question-level notification
       notifications.push({
@@ -178,19 +177,19 @@ export const buildNotificationFeedForUser = async (
   username: string,
 ): Promise<NotificationItem[] | { error: string }> => {
   try {
-    // 1️⃣ Base source: bookmarks
+    // 1) Base source: bookmarks
     const fromBookmarks = await buildNotificationsFromBookmarks(username);
     if ('error' in fromBookmarks) {
       return fromBookmarks;
     }
 
-    // 2️⃣ Following-based Q/A activity
+    // 2) Following-based Q/A activity
     const fromFollowing = await buildNotificationsFromFollowing(username);
     if ('error' in fromFollowing) {
       return fromFollowing;
     }
 
-    // 3️⃣ "X started following you" events from the Notification collection
+    // 3) "X started following you" events from the Notification collection
     const rawFollowDocs = (await NotificationModel.find({
       user: username,
       category: 'follow',
@@ -211,18 +210,13 @@ export const buildNotificationFeedForUser = async (
       category: doc.category,
     }));
 
-    // 4️⃣ Merge with precedence: following-based Q/A notifications
+    // 4) Merge with precedence: following-based Q/A notifications
     // override bookmark-based ones for the same underlying event.
     const merged = new Map<string, NotificationItem>();
 
     const makeKey = (n: NotificationItem): string => {
-      const targetIdStr =
-        typeof (n as any).targetId === 'string'
-          ? (n as any).targetId
-          : ((n as any).targetId?.toString?.() ?? 'unknownTarget');
-
-      const eventMs =
-        n.eventDate instanceof Date ? n.eventDate.getTime() : new Date(n.eventDate).getTime();
+      const targetIdStr = n.targetId.toString();
+      const eventMs = n.eventDate.getTime();
 
       // Key is purely about the underlying event, not category.
       return `${n.targetType}:${targetIdStr}:${n.actor}:${eventMs}`;

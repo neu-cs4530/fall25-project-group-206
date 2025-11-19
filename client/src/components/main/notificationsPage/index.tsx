@@ -1,3 +1,4 @@
+// client/src/components/main/notifications/index.tsx
 import './index.css';
 import { useNavigate } from 'react-router-dom';
 import useNotificationsPage from '../../../hooks/useNotificationsPage';
@@ -7,13 +8,24 @@ const NotificationsPage = () => {
   const { notifications, loading, error, refetch } = useNotificationsPage();
   const navigate = useNavigate();
 
+  // Helper: the server sends Mongo ObjectIds, which arrive as strings in JSON.
+  // At runtime this is always string, but the shared type uses ObjectId.
+  const getTargetIdString = (targetId: NotificationItem['targetId']): string => {
+    if (typeof targetId === 'string') {
+      return targetId;
+    }
+
+    // Fallback for ObjectId-type values
+    return (targetId as unknown as { toString: () => string }).toString();
+  };
+
   const handleClick = (notification: NotificationItem) => {
     if (notification.link) {
       navigate(notification.link);
       return;
     }
 
-    navigate(`/question/${notification.targetId}`);
+    navigate(`/question/${getTargetIdString(notification.targetId)}`);
   };
 
   const formatRelativeTime = (value: Date | string | null | undefined) => {
@@ -39,22 +51,19 @@ const NotificationsPage = () => {
   // Helper to build a unique, stable key for each notification
   const makeKey = (n: NotificationItem, index: number): string => {
     if (n._id) {
-      return String(n._id);
+      // _id is an ObjectId in the shared type but serialized to string over the wire.
+      return (n._id as unknown as { toString: () => string }).toString();
     }
 
-    const targetIdStr =
-      typeof n.targetId === 'string'
-        ? n.targetId
-        : ((n.targetId as any)?.toString?.() ?? 'unknownTarget');
-
-    const eventTime = new Date(n.eventDate).getTime();
+    const targetIdStr = getTargetIdString(n.targetId);
+    const eventTime = new Date(n.eventDate as unknown as Date | string).getTime();
 
     return [
       'notif',
       targetIdStr,
       n.targetType,
       n.actor,
-      eventTime || 'noTime',
+      Number.isNaN(eventTime) ? 'noTime' : eventTime,
       index, // final guardrail to avoid collisions
     ].join(':');
   };
@@ -101,13 +110,15 @@ const NotificationsPage = () => {
         {notifications.map((n, index) => {
           const key = makeKey(n, index);
 
-          const rawLocation = (n as any).location as string | undefined;
-          const locationSlug = rawLocation?.replace('/', '-') ?? 'unknown';
-          const locationLabel = rawLocation ?? 'feed';
+          // These fields are string literal unions on the shared type,
+          // which are fine to pass to string methods.
+          const locationSlug = n.location.replace('/', '-') ?? 'unknown';
+          const locationLabel = n.location ?? 'feed';
 
-          const rawTargetType = (n as any).targetType as string | undefined;
-          const targetTypeLabel = rawTargetType ?? 'Activity';
-          const targetTypeSlug = rawTargetType?.toLowerCase() ?? 'activity';
+          const targetTypeLabel = n.targetType ?? 'Activity';
+          const targetTypeSlug = n.targetType?.toLowerCase() ?? 'activity';
+
+          const eventDateValue = n.eventDate as unknown as Date | string;
 
           return (
             <li key={key} className='notification-card' onClick={() => handleClick(n)}>
@@ -115,9 +126,7 @@ const NotificationsPage = () => {
               <div className='notification-meta'>
                 <span className='notification-actor'>by {n.actor}</span>
                 <span className='notification-separator'>•</span>
-                <span className='notification-time'>
-                  {formatRelativeTime((n as any).eventDate)}
-                </span>
+                <span className='notification-time'>{formatRelativeTime(eventDateValue)}</span>
                 <span className='notification-separator'>•</span>
                 <span className={`notification-location badge-${locationSlug}`}>
                   {locationLabel}
