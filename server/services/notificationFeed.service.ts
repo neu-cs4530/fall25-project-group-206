@@ -1,21 +1,23 @@
+// server/services/notificationFeed.service.ts
 import BookmarkModel from '../models/bookmark.model';
 import CommunityModel from '../models/community.model';
 import { populateDocument } from '../utils/database.util';
-import buildBackfillNotificationsForUser from '../utils/backfillNotifications.util';
+import { buildBackfillNotificationsForUser } from '../utils/backfillNotifications.util';
 
 import type {
   DatabaseCommunity,
   PopulatedDatabaseCollection,
   NotificationItem,
+} from '../types/types';
+import UserModel from '../models/users.model';
+import QuestionModel from '../models/questions.model';
+import NotificationModel from '../models/notification.model';
+import type {
   DatabaseUser,
   PopulatedDatabaseQuestion,
   PopulatedDatabaseAnswer,
   DatabaseNotification,
 } from '../types/types';
-import UserModel from '../models/users.model';
-import QuestionModel from '../models/questions.model';
-import NotificationModel from '../models/notification.model';
-import { ObjectId } from 'mongodb';
 
 /**
  * Builds notifications based on bookmarks (collections + communities).
@@ -121,7 +123,7 @@ export const buildNotificationsFromFollowing = async (
     const notifications: NotificationItem[] = [];
 
     for (const q of questions) {
-      const qId = q._id as ObjectId;
+      const qId = q._id as any;
 
       // Question-level notification
       notifications.push({
@@ -215,7 +217,9 @@ export const buildNotificationFeedForUser = async (
 
     const makeKey = (n: NotificationItem): string => {
       const targetIdStr =
-        typeof n.targetId === 'string' ? n.targetId : (n.targetId?.toString?.() ?? 'unknownTarget');
+        typeof (n as any).targetId === 'string'
+          ? (n as any).targetId
+          : ((n as any).targetId?.toString?.() ?? 'unknownTarget');
 
       const eventMs =
         n.eventDate instanceof Date ? n.eventDate.getTime() : new Date(n.eventDate).getTime();

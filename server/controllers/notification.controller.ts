@@ -32,6 +32,13 @@ const notificationController = (socket: FakeSOSocket) => {
           throw new Error(result.error);
         }
 
+        console.log(
+          '[notificationController] feed for',
+          username,
+          ':',
+          JSON.stringify(result, null, 2),
+        );
+
         res.status(200).json(result);
       } catch (error) {
         res.status(500).send(`Error building notification feed: ${(error as Error).message}`);

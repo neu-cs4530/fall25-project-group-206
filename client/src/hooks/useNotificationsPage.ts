@@ -1,6 +1,6 @@
 // client/src/hooks/useNotificationsPage.ts
 import { useCallback, useEffect, useState } from 'react';
-import fetchNotificationFeed from '../services/notificationService';
+import { fetchNotificationFeed } from '../services/notificationService';
 import type { NotificationItem } from '../types/types';
 import useUserContext from './useUserContext';
 import socket from '../services/socket';
@@ -26,6 +26,8 @@ const useNotificationsPage = () => {
 
     try {
       const data = await fetchNotificationFeed(user.username);
+
+      console.log('[useNotificationsPage] raw feed payload:', data);
 
       // Ensure newest → oldest by eventDate
       const sorted = [...data].sort(
@@ -61,6 +63,7 @@ const useNotificationsPage = () => {
         return;
       }
 
+      console.log('[useNotificationsPage] notificationPing for', payload.username);
       setHasNew(true);
       void load();
     };

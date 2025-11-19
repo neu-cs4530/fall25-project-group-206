@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import QuestionModel from '../../models/questions.model';
-import buildBackfillNotificationsForUser from '../../utils/backfillNotifications.util';
+import { buildBackfillNotificationsForUser } from '../../utils/backfillNotifications.util';
 
 import type { PopulatedDatabaseCollection } from '../../../shared/types/collection';
 import type { DatabaseCommunity } from '../../../shared/types/community';

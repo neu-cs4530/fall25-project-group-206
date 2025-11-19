@@ -38,10 +38,25 @@ const NotificationsPage = () => {
 
   // Helper to build a unique, stable key for each notification
   const makeKey = (n: NotificationItem, index: number): string => {
-    const targetIdStr = n.targetId.toString();
+    if (n._id) {
+      return String(n._id);
+    }
+
+    const targetIdStr =
+      typeof n.targetId === 'string'
+        ? n.targetId
+        : ((n.targetId as any)?.toString?.() ?? 'unknownTarget');
+
     const eventTime = new Date(n.eventDate).getTime();
 
-    return ['notif', targetIdStr, n.targetType, n.actor, eventTime || 'noTime', index].join(':');
+    return [
+      'notif',
+      targetIdStr,
+      n.targetType,
+      n.actor,
+      eventTime || 'noTime',
+      index, // final guardrail to avoid collisions
+    ].join(':');
   };
 
   if (loading) {
@@ -86,11 +101,13 @@ const NotificationsPage = () => {
         {notifications.map((n, index) => {
           const key = makeKey(n, index);
 
-          const locationSlug = n.location?.replace('/', '-') ?? 'unknown';
-          const locationLabel = n.location ?? 'feed';
+          const rawLocation = (n as any).location as string | undefined;
+          const locationSlug = rawLocation?.replace('/', '-') ?? 'unknown';
+          const locationLabel = rawLocation ?? 'feed';
 
-          const targetTypeLabel = n.targetType ?? 'Activity';
-          const targetTypeSlug = n.targetType?.toLowerCase() ?? 'activity';
+          const rawTargetType = (n as any).targetType as string | undefined;
+          const targetTypeLabel = rawTargetType ?? 'Activity';
+          const targetTypeSlug = rawTargetType?.toLowerCase() ?? 'activity';
 
           return (
             <li key={key} className='notification-card' onClick={() => handleClick(n)}>
@@ -98,7 +115,9 @@ const NotificationsPage = () => {
               <div className='notification-meta'>
                 <span className='notification-actor'>by {n.actor}</span>
                 <span className='notification-separator'>•</span>
-                <span className='notification-time'> {formatRelativeTime(n.eventDate)} </span>
+                <span className='notification-time'>
+                  {formatRelativeTime((n as any).eventDate)}
+                </span>
                 <span className='notification-separator'>•</span>
                 <span className={`notification-location badge-${locationSlug}`}>
                   {locationLabel}

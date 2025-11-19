@@ -22,6 +22,8 @@ import {
   disable2FA,
   verify2FAToken,
 } from '../services/user.service';
+import passport from 'passport';
+import '../config/passportGoogle';
 import NotificationModel from '../models/notification.model';
 import emitNotification from '../utils/realtime';
 
@@ -456,6 +458,29 @@ const userController = (socket: FakeSOSocket) => {
     }
   };
 
+  /**
+   * Initiates Google OAuth login.
+   * @param req The request.
+   * @param res Redirects the user to Google's login page.
+   */
+  const googleLoginRedirect = (req: Request, res: Response) => {
+    passport.authenticate('google', { scope: ['profile', 'email'] })(req, res);
+  };
+
+  /**
+   * Handles Google OAuth callback.
+   * @param req The request with user info from Google.
+   * @param res Redirects the user to the frontend with login info.
+   */
+  const googleLoginCallback = (req: Request, res: Response) => {
+    passport.authenticate('google', {
+      failureRedirect: '/login?error=google',
+    })(req, res, () => {
+      const redirectBase = process.env.CLIENT_URL || 'http://localhost:4530';
+      res.redirect(`${redirectBase}/home`);
+    });
+  };
+
   router.post('/2fa/generate', generate2FA);
   router.post('/2fa/enable', enable2FAEndpoint);
   router.post('/2fa/disable', disable2FAEndpoint);
@@ -471,6 +496,8 @@ const userController = (socket: FakeSOSocket) => {
   router.get('/:username/following', getUserFollowing);
   router.post('/toggleFollow', toggleFollow);
   router.patch('/updateMessagingSetting', updateMessagingSetting);
+  router.get('/auth/google', googleLoginRedirect);
+  router.get('/auth/google/callback', googleLoginCallback);
 
   return router;
 };

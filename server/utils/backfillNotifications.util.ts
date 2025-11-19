@@ -1,14 +1,11 @@
 // server/utils/backfillNotifications.util.ts
 import { ObjectId } from 'mongodb';
 import QuestionModel from '../models/questions.model';
-import type {
-  DatabaseCommunity,
-  PopulatedDatabaseCollection,
-  PopulatedDatabaseQuestion,
-  PopulatedDatabaseAnswer,
-  NotificationItem,
-  NotificationLocation,
-} from '../types/types';
+import type { DatabaseCommunity } from '../types/types';
+import type { PopulatedDatabaseCollection } from '../types/types';
+import type { PopulatedDatabaseQuestion } from '../types/types';
+import type { PopulatedDatabaseAnswer } from '../types/types';
+import type { NotificationItem, NotificationLocation } from '../types/types';
 
 /**
  * Internal helper: convert the set of flags into a single location string.
@@ -167,7 +164,7 @@ async function fetchQuestionsForCommunities(
  * NotificationItem objects that the controller can return to the client
  * or optionally persist later.
  */
-async function buildBackfillNotificationsForUser(
+export async function buildBackfillNotificationsForUser(
   collections: PopulatedDatabaseCollection[],
   communities: DatabaseCommunity[],
 ): Promise<NotificationItem[]> {
@@ -257,5 +254,3 @@ async function buildBackfillNotificationsForUser(
 
   return notifications;
 }
-
-export default buildBackfillNotificationsForUser;
