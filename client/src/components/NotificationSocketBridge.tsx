@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import type { FakeSOSocket, NotificationItem } from '../types/types';
 import useUserContext from '../hooks/useUserContext';
 import { useNotificationToast } from '../contexts/NotificationToastContext';
-import { fetchNotificationFeed } from '../services/notificationService';
+import fetchNotificationFeed from '../services/notificationService';
 import { ObjectId } from 'mongodb';
 
 interface NotificationSocketBridgeProps {

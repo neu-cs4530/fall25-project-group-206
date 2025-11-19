@@ -1,6 +1,6 @@
 // client/src/hooks/useNotificationsPage.ts
 import { useCallback, useEffect, useState } from 'react';
-import { fetchNotificationFeed } from '../services/notificationService';
+import fetchNotificationFeed from '../services/notificationService';
 import type { NotificationItem } from '../types/types';
 import useUserContext from './useUserContext';
 import socket from '../services/socket';
