@@ -5,7 +5,6 @@ import './index.css';
 import useProfileSettings from '../../hooks/useProfileSettings';
 import useUserContext from '../../hooks/useUserContext';
 import useFollowButton from '../../hooks/useFollowButton';
-import useBookmarkToggle from '../../hooks/useBookmarkToggle';
 import FollowersList from './FollowersList';
 import FollowingList from './FollowingList';
 import use2FA from '../../hooks/use2FA';
@@ -73,7 +72,6 @@ const ProfileSettings: React.FC = () => {
   const onToggleFollow = async () => {
     try {
       await handleToggleFollow();
-      handleToggleBookmark();
     } finally {
       setRefreshFollowers(v => !v);
       setRefreshFollowing(v => !v);
@@ -81,11 +79,6 @@ const ProfileSettings: React.FC = () => {
   };
 
   const handleSetActive = (id: string) => setActive(id as TabId);
-
-  const { handleToggleBookmark } = useBookmarkToggle(
-    userData ? userData._id.toString() : '',
-    'User',
-  );
 
   const {
     isFollowing,
