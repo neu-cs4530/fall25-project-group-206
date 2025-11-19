@@ -1,6 +1,5 @@
 import './index.css';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
 import useAuth from '../../../hooks/useAuth';
 
 /**
@@ -11,6 +10,7 @@ const Signup = () => {
   const {
     username,
     password,
+    email,
     passwordConfirmation,
     showPassword,
     err,
@@ -19,8 +19,6 @@ const Signup = () => {
     togglePasswordVisibility,
   } = useAuth('signup');
 
-  const [email, setEmail] = useState('');
-
   return (
     <div className='container'>
       <div className='auth-card'>
@@ -28,19 +26,6 @@ const Signup = () => {
         <h3>Join FakeStackOverflow today</h3>
 
         <form onSubmit={handleSubmit}>
-          <div className='form-group'>
-            <h4>Email</h4>
-            <input
-              type='email'
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder='Enter your email address'
-              required
-              className='input-text'
-              id='email-input'
-            />
-          </div>
-
           <div className='form-group'>
             <h4>Username</h4>
             <input
@@ -51,6 +36,19 @@ const Signup = () => {
               required
               className='input-text'
               id='username-input'
+            />
+          </div>
+
+          <div className='form-group'>
+            <h4>Email</h4>
+            <input
+              type='email'
+              value={email}
+              onChange={event => handleInputChange(event, 'email')}
+              placeholder='Enter your email'
+              required
+              className='input-text'
+              id='email-input'
             />
           </div>
 
