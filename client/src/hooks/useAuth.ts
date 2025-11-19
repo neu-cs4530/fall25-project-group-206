@@ -13,6 +13,7 @@ import { SafeDatabaseUser } from '@fake-stack-overflow/shared';
  * @returns {Object} An object containing:
  *   - username: The current value of the username input.
  *   - password: The current value of the password input.
+ *   - email: The current value of the email input.
  *   - passwordConfirmation: The current value of the password confirmation input (for signup).
  *   - showPassword: Boolean indicating whether the password is visible.
  *   - err: The current error message, if any.
@@ -24,6 +25,7 @@ import { SafeDatabaseUser } from '@fake-stack-overflow/shared';
 const useAuth = (authType: 'login' | 'signup') => {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
   const [passwordConfirmation, setPasswordConfirmation] = useState<string>('');
   const [showPassword, setShowPassword] = useState(false);
   const [err, setErr] = useState<string>('');
@@ -46,12 +48,14 @@ const useAuth = (authType: 'login' | 'signup') => {
    */
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement>,
-    field: 'username' | 'password' | 'confirmPassword',
+    field: 'username' | 'email' | 'password' | 'confirmPassword',
   ) => {
     const fieldText = e.target.value.trim();
 
     if (field === 'username') {
       setUsername(fieldText);
+    } else if (field === 'email') {
+      setEmail(fieldText);
     } else if (field === 'password') {
       setPassword(fieldText);
     } else if (field === 'confirmPassword') {
@@ -71,9 +75,15 @@ const useAuth = (authType: 'login' | 'signup') => {
       return false;
     }
 
-    if (authType === 'signup' && password !== passwordConfirmation) {
-      setErr('Passwords do not match');
-      return false;
+    if (authType === 'signup') {
+      if (email === '') {
+        setErr('Please enter an email');
+        return false;
+      }
+      if (password !== passwordConfirmation) {
+        setErr('Passwords do not match');
+        return false;
+      }
     }
 
     return true;
@@ -111,10 +121,9 @@ const useAuth = (authType: 'login' | 'signup') => {
     }
 
     let user;
-
     try {
       if (authType === 'signup') {
-        user = await createUser({ username, password });
+        user = await createUser({ username, password, email });
         completeLogin(user);
       } else if (authType === 'login') {
         user = await loginUser({ username, password });
@@ -141,6 +150,7 @@ const useAuth = (authType: 'login' | 'signup') => {
   return {
     username,
     password,
+    email,
     passwordConfirmation,
     showPassword,
     err,

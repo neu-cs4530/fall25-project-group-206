@@ -10,6 +10,7 @@ const Signup = () => {
   const {
     username,
     password,
+    email,
     passwordConfirmation,
     showPassword,
     err,
@@ -31,6 +32,16 @@ const Signup = () => {
           required
           className='input-text'
           id='username-input'
+        />
+        <h4>Please enter your email.</h4>
+        <input
+          type='email'
+          value={email}
+          onChange={event => handleInputChange(event, 'email')}
+          placeholder='Enter your email'
+          required
+          className='input-text'
+          id='email-input'
         />
         <h4>Please enter your password.</h4>
         <input
