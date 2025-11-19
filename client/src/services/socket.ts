@@ -9,13 +9,13 @@ import api from './config';
 let backendBaseUrl: string;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const axiosBase = (api as any).defaults?.baseURL as string | undefined;
+const AXIOS_BASE_URL = (api as any).defaults?.baseURL as string | undefined;
 
-if (axiosBase) {
+if (AXIOS_BASE_URL) {
   // Strip trailing "/api" if present so sockets hit the root server / front-end origin.
   // '/api'  -> ''
   // 'https://site.com/api' -> 'https://site.com'
-  backendBaseUrl = axiosBase.replace(/\/api\/?$/, '');
+  backendBaseUrl = AXIOS_BASE_URL.replace(/\/api\/?$/, '');
 } else {
   // Fallbacks in case baseURL is not set for some reason
   backendBaseUrl =
