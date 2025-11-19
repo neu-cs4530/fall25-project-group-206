@@ -1,4 +1,3 @@
-// server/services/notificationFanout.service.ts
 import { ObjectId } from 'mongodb';
 import BookmarkModel from '../models/bookmark.model';
 import CollectionModel from '../models/collection.model';
@@ -9,9 +8,10 @@ import type {
   PopulatedDatabaseQuestion,
   PopulatedDatabaseAnswer,
   NotificationLocation,
+  DatabaseUser,
+  DatabaseNotification,
 } from '../types/types';
 import UserModel from '../models/users.model';
-import type { DatabaseUser } from '../types/types';
 
 /**
  * Resolve a NotificationLocation string from flags.
@@ -141,7 +141,9 @@ export async function notifyOnNewQuestion(question: PopulatedDatabaseQuestion): 
   const recipients = await computeRecipientsForQuestion(question);
   const questionId = question._id as ObjectId;
 
-  const docs: any[] = [];
+  type NotificationDoc = Omit<DatabaseNotification, '_id'>;
+
+  const docs: NotificationDoc[] = [];
 
   // Persist notifications only for bookmark-based recipients
   if (recipients.size) {
@@ -194,7 +196,9 @@ export async function notifyOnNewAnswer(
   const recipients = await computeRecipientsForQuestion(question);
   const questionId = question._id as ObjectId;
 
-  const docs: any[] = [];
+  type NotificationDoc = Omit<DatabaseNotification, '_id'>;
+
+  const docs: NotificationDoc[] = [];
 
   if (recipients.size) {
     for (const [username, location] of recipients.entries()) {

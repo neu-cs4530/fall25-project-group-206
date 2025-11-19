@@ -1,4 +1,3 @@
-// client/src/services/socket.ts
 import { io, Socket } from 'socket.io-client';
 import api from './config';
 
@@ -9,13 +8,13 @@ import api from './config';
 let backendBaseUrl: string;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const axiosBase = (api as any).defaults?.baseURL as string | undefined;
+const AXIOSBASE = (api as any).defaults?.baseURL as string | undefined;
 
-if (axiosBase) {
+if (AXIOSBASE) {
   // Strip trailing "/api" if present so sockets hit the root server / front-end origin.
   // '/api'  -> ''
   // 'https://site.com/api' -> 'https://site.com'
-  backendBaseUrl = axiosBase.replace(/\/api\/?$/, '');
+  backendBaseUrl = AXIOSBASE.replace(/\/api\/?$/, '');
 } else {
   // Fallbacks in case baseURL is not set for some reason
   backendBaseUrl =

@@ -5,6 +5,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './layout';
 import Login from './auth/login';
 import Signup from './auth/signup';
+import OAuthSuccess from './auth/oauth';
 
 import { FakeSOSocket, SafeDatabaseUser } from '../types/types';
 
@@ -66,6 +67,7 @@ const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
         {/* Public Routes */}
         <Route path='/' element={<Login />} />
         <Route path='/signup' element={<Signup />} />
+        <Route path='/oauth-success' element={<OAuthSuccess />} />
 
         {/* Protected Routes */}
         <Route
