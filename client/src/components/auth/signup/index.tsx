@@ -21,63 +21,86 @@ const Signup = () => {
 
   return (
     <div className='container'>
-      <h2>Sign up for FakeStackOverflow!</h2>
-      <form onSubmit={handleSubmit}>
-        <h4>Please enter your username.</h4>
-        <input
-          type='text'
-          value={username}
-          onChange={event => handleInputChange(event, 'username')}
-          placeholder='Enter your username'
-          required
-          className='input-text'
-          id='username-input'
-        />
-        <h4>Please enter your email.</h4>
-        <input
-          type='email'
-          value={email}
-          onChange={event => handleInputChange(event, 'email')}
-          placeholder='Enter your email'
-          required
-          className='input-text'
-          id='email-input'
-        />
-        <h4>Please enter your password.</h4>
-        <input
-          type={showPassword ? 'text' : 'password'}
-          value={password}
-          onChange={event => handleInputChange(event, 'password')}
-          placeholder='Enter your password'
-          required
-          className='input-text'
-          id='password-input'
-        />
-        <input
-          type={showPassword ? 'text' : 'password'}
-          value={passwordConfirmation}
-          onChange={e => handleInputChange(e, 'confirmPassword')}
-          placeholder='Confirm your password'
-          required
-          className='input-text'
-        />
-        <div className='show-password'>
-          <input
-            type='checkbox'
-            id='showPasswordToggle'
-            checked={showPassword}
-            onChange={togglePasswordVisibility}
-          />
-          <label htmlFor='showPasswordToggle'>Show Password</label>
-        </div>
-        <button type='submit' className='login-button'>
-          Submit
-        </button>
-      </form>
-      {err && <p className='error-message'>{err}</p>}
-      <Link to='/' className='login-link'>
-        Have an account? Login here.
-      </Link>
+      <div className='auth-card'>
+        <h2>Create Account</h2>
+        <h3>Join FakeStackOverflow today</h3>
+
+        <form onSubmit={handleSubmit}>
+          <div className='form-group'>
+            <h4>Username</h4>
+            <input
+              type='text'
+              value={username}
+              onChange={event => handleInputChange(event, 'username')}
+              placeholder='Choose a username'
+              required
+              className='input-text'
+              id='username-input'
+            />
+          </div>
+
+          <div className='form-group'>
+            <h4>Email</h4>
+            <input
+              type='email'
+              value={email}
+              onChange={event => handleInputChange(event, 'email')}
+              placeholder='Enter your email'
+              required
+              className='input-text'
+              id='email-input'
+            />
+          </div>
+
+          <div className='form-group'>
+            <h4>Password</h4>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={event => handleInputChange(event, 'password')}
+              placeholder='Create a password'
+              required
+              className='input-text'
+              id='password-input'
+            />
+          </div>
+
+          <div className='form-group'>
+            <h4>Confirm Password</h4>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={passwordConfirmation}
+              onChange={event => handleInputChange(event, 'confirmPassword')}
+              placeholder='Confirm your password'
+              required
+              className='input-text'
+              id='confirm-password-input'
+            />
+          </div>
+
+          <div className='show-password'>
+            <input
+              type='checkbox'
+              id='showPasswordToggle'
+              checked={showPassword}
+              onChange={togglePasswordVisibility}
+            />
+            <label htmlFor='showPasswordToggle'>Show Password</label>
+          </div>
+
+          {err && <p className='error-message'>{err}</p>}
+
+          <button type='submit' className='signup-button'>
+            Create Account
+          </button>
+        </form>
+
+        <div className='divider'></div>
+
+        <Link to='/' className='login-link'>
+          Already have an account? Sign in here
+        </Link>
+      </div>
     </div>
   );
 };

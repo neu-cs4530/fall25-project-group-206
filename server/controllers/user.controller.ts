@@ -331,7 +331,7 @@ const userController = (socket: FakeSOSocket) => {
   };
 
   /**
-   * Updates a user's biography.
+   * Toggles open messaging/mutual follow messaging.
    * @param req The request containing the username and boolean in the body.
    * @param res The response, either confirming the update or returning an error.
    * @returns A promise resolving to void.
