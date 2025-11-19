@@ -1,64 +1,47 @@
-import { useId, useState, PropsWithChildren, KeyboardEvent } from 'react';
+import * as React from 'react';
+import './index.css';
 
-type TabItem = { id: string; label: string };
-
-export function useTabs<T extends string>(initial: T) {
-  const [active, setActive] = useState<T>(initial);
-  return { active, setActive };
+interface TabItem {
+  id: string;
+  label: string;
 }
 
-export function TabsHeader({
-  items,
-  active,
-  setActive,
-}: {
+interface TabsHeaderProps {
   items: TabItem[];
   active: string;
   setActive: (id: string) => void;
-}) {
-  const tablistId = useId();
+}
 
-  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    const idx = items.findIndex(t => t.id === active);
-    if (e.key === 'ArrowRight') setActive(items[(idx + 1) % items.length].id);
-    if (e.key === 'ArrowLeft') setActive(items[(idx - 1 + items.length) % items.length].id);
-  };
-
+/**
+ * Modern tab navigation header
+ */
+export const TabsHeader: React.FC<TabsHeaderProps> = ({ items, active, setActive }) => {
   return (
-    <div
-      role='tablist'
-      aria-label='Profile sections'
-      id={tablistId}
-      className='tabs-header'
-      onKeyDown={onKeyDown}>
-      {items.map(t => (
+    <div className='tabs-header'>
+      {items.map(item => (
         <button
-          key={t.id}
-          role='tab'
-          aria-selected={active === t.id}
-          aria-controls={`${t.id}-panel`}
-          className={`tab ${active === t.id ? 'tab--active' : ''}`}
-          onClick={() => setActive(t.id)}>
-          {t.label}
+          key={item.id}
+          className={`tab ${active === item.id ? 'tab--active' : ''}`}
+          onClick={() => setActive(item.id)}
+          type='button'>
+          {item.label}
         </button>
       ))}
     </div>
   );
+};
+
+interface TabPanelProps {
+  id: string;
+  active: string;
+  children: React.ReactNode;
 }
 
-export function TabPanel({
-  id,
-  active,
-  children,
-}: PropsWithChildren<{ id: string; active: string }>) {
-  return (
-    <div
-      role='tabpanel'
-      id={`${id}-panel`}
-      aria-labelledby={id}
-      hidden={active !== id}
-      className='tab-panel'>
-      {children}
-    </div>
-  );
-}
+/**
+ * Tab panel content container
+ */
+export const TabPanel: React.FC<TabPanelProps> = ({ id, active, children }) => {
+  if (id !== active) return null;
+
+  return <div className='tab-panel'>{children}</div>;
+};

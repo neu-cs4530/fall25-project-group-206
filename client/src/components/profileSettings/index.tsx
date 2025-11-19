@@ -125,14 +125,12 @@ const ProfileSettings: React.FC = () => {
     <div className='profile-settings'>
       <div className='profile-card'>
         <h2>Profile</h2>
-
         {successMessage && <p className='success-message'>{successMessage}</p>}
         {errorMessage && <p className='error-message'>{errorMessage}</p>}
-
         {userData ? (
-          <>
+          <div className='tabs'>
+            {' '}
             <TabsHeader items={items} active={active} setActive={handleSetActive} />
-
             {/* OVERVIEW */}
             <TabPanel id='overview' active={active}>
               <p>
@@ -188,7 +186,6 @@ const ProfileSettings: React.FC = () => {
                 View Collections
               </button>
             </TabPanel>
-
             {/* MESSAGING */}
             <TabPanel id='messaging' active={active}>
               {canEditProfile ? (
@@ -204,7 +201,6 @@ const ProfileSettings: React.FC = () => {
                 <p>Only the profile owner can modify messaging settings.</p>
               )}
             </TabPanel>
-
             {/* SECURITY (2FA) */}
             <TabPanel id='security' active={active}>
               {canEditProfile && (
@@ -237,7 +233,6 @@ const ProfileSettings: React.FC = () => {
                 />
               )}
             </TabPanel>
-
             {/* PASSWORD */}
             <TabPanel id='password' active={active}>
               {canEditProfile ? (
@@ -270,7 +265,6 @@ const ProfileSettings: React.FC = () => {
                 <p>Only the profile owner can reset this password.</p>
               )}
             </TabPanel>
-
             {/* SOCIAL */}
             <TabPanel id='social' active={active}>
               {!canEditProfile && currentUser && userData && (
@@ -285,11 +279,18 @@ const ProfileSettings: React.FC = () => {
                 </div>
               )}
               <div className='follow-lists'>
-                <FollowersList username={userData.username} refreshTrigger={refreshFollowers} />
-                <FollowingList username={userData.username} refreshTrigger={refreshFollowing} />
+                <FollowersList
+                  username={userData.username}
+                  refreshTrigger={refreshFollowers}
+                  onUserClick={() => setActive('overview')} // Add this
+                />
+                <FollowingList
+                  username={userData.username}
+                  refreshTrigger={refreshFollowing}
+                  onUserClick={() => setActive('overview')} // Add this
+                />
               </div>
             </TabPanel>
-
             {/* DANGER */}
             <TabPanel id='danger' active={active}>
               {canEditProfile ? (
@@ -303,8 +304,6 @@ const ProfileSettings: React.FC = () => {
                 <p>Only the profile owner can delete this account.</p>
               )}
             </TabPanel>
-
-            {/* Delete confirmation modal unchanged */}
             {showConfirmation && (
               <div className='modal'>
                 <div className='modal-content'>
@@ -325,7 +324,7 @@ const ProfileSettings: React.FC = () => {
                 </div>
               </div>
             )}
-          </>
+          </div>
         ) : (
           <p>No user data found. Make sure the username parameter is correct.</p>
         )}

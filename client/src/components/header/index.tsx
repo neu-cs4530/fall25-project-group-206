@@ -12,26 +12,32 @@ const Header = () => {
   const { val, handleInputChange, handleKeyDown, handleSignOut } = useHeader();
   const { user: currentUser } = useUserContext();
   const navigate = useNavigate();
+
   return (
     <div id='header' className='header'>
-      <div></div>
-      <div className='title'>Fake Stack Overflow</div>
+      <div className='title' onClick={() => navigate('/home')}>
+        Fake Stack Overflow
+      </div>
+
       <input
         id='searchBar'
-        placeholder='Search ...'
+        placeholder='Search questions, tags, users...'
         type='text'
         value={val}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
       />
-      <button onClick={handleSignOut} className='logout-button'>
-        Log out
-      </button>
-      <button
-        className='view-profile-button'
-        onClick={() => navigate(`/user/${currentUser.username}`)}>
-        View Profile
-      </button>
+
+      <div className='header-buttons'>
+        <button
+          className='view-profile-button'
+          onClick={() => navigate(`/user/${currentUser.username}`)}>
+          Profile
+        </button>
+        <button onClick={handleSignOut} className='logout-button'>
+          Log Out
+        </button>
+      </div>
     </div>
   );
 };
