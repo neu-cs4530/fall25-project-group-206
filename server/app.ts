@@ -24,10 +24,7 @@ import collectionController from './controllers/collection.controller';
 import communityController from './controllers/community.controller';
 import bookmarkController from './controllers/bookmark.controller';
 import notificationController from './controllers/notification.controller';
-import authController from './controllers/auth.controller';
 import { registerSocketServer } from './utils/realtime';
-import passport from 'passport';
-import session from 'express-session';
 
 const MONGO_URL = `${process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017'}/fake_so`;
 const PORT = parseInt(process.env.PORT || '8000');
@@ -106,19 +103,6 @@ try {
   console.error('Failed to load or initialize OpenAPI Validator:', e);
 }
 
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'supersecret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: false, // true only if using HTTPS
-      httpOnly: true,
-      sameSite: 'lax',
-    },
-  }),
-);
-
 // Register all controllers
 app.use('/api/question', questionController(socket));
 app.use('/api/tags', tagController());
@@ -132,10 +116,6 @@ app.use('/api/collection', collectionController(socket));
 app.use('/api/community', communityController(socket));
 app.use('/api/bookmark', bookmarkController(socket));
 app.use('/api/notification', notificationController(socket));
-
-app.use(passport.initialize());
-app.use(passport.session());
-app.use('/api/auth', authController());
 
 const openApiDocument = yaml.parse(fs.readFileSync('./openapi.yaml', 'utf8'));
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));

@@ -1,10 +1,10 @@
 // client/src/components/NotificationSocketBridge.tsx
 import { useEffect } from 'react';
-import type { FakeSOSocket, NotificationItem } from '../types/types';
+import type { FakeSOSocket } from '../types/types';
 import useUserContext from '../hooks/useUserContext';
 import { useNotificationToast } from '../contexts/NotificationToastContext';
-import fetchNotificationFeed from '../services/notificationService';
-import { ObjectId } from 'mongodb';
+import { fetchNotificationFeed } from '../services/notificationService';
+import type { NotificationItem } from '../types/types';
 
 interface NotificationSocketBridgeProps {
   socket: FakeSOSocket | null;
@@ -30,6 +30,8 @@ const NotificationSocketBridge = ({ socket }: NotificationSocketBridgeProps) => 
         return;
       }
 
+      console.log('[NotificationSocketBridge] notificationPing for', payload.username);
+
       try {
         const feed = await fetchNotificationFeed(user.username);
 
@@ -43,16 +45,19 @@ const NotificationSocketBridge = ({ socket }: NotificationSocketBridgeProps) => 
         );
 
         const latest = sorted[0];
+        console.log('[NotificationSocketBridge] latest notification for toast:', latest);
 
         // Push the latest notification into the toast system
         pushNotification(latest);
       } catch (err) {
+        console.error('[NotificationSocketBridge] Failed to fetch notification feed:', err);
+
         // Fallback: simple generic toast if something goes wrong.
         const fallback: NotificationItem = {
           actor: 'System',
           message: 'You have new notifications.',
           eventDate: new Date(),
-          targetId: new ObjectId(),
+          targetId: '' as any, // dummy, not used by the toast
           targetType: 'Question',
           location: 'collection',
           link: '/notifications',

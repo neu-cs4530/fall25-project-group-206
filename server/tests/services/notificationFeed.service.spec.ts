@@ -6,7 +6,7 @@ import UserModel from '../../models/users.model';
 import QuestionModel from '../../models/questions.model';
 import NotificationModel from '../../models/notification.model';
 import { populateDocument } from '../../utils/database.util';
-import buildBackfillNotificationsForUser from '../../utils/backfillNotifications.util';
+import { buildBackfillNotificationsForUser } from '../../utils/backfillNotifications.util';
 
 import {
   buildNotificationsFromBookmarks,
@@ -291,6 +291,20 @@ describe('notificationFeed.service', () => {
         },
       ];
 
+      // 2) Stub following → overriding notification for the same Q1
+      const fromFollowing: NotificationItem[] = [
+        {
+          actor: 'bob',
+          message: 'bob via following',
+          eventDate: baseDate,
+          targetId: qId,
+          targetType: 'Question',
+          location: 'following',
+          category: 'question',
+          link: `/question/${qId.toString()}`,
+        },
+      ];
+
       // Mock BookmarkModel / populateDocument / CommunityModel / backfill → fromBookmarks
       jest.spyOn(BookmarkModel, 'find').mockResolvedValueOnce([
         {
@@ -385,7 +399,7 @@ describe('notificationFeed.service', () => {
 
       // For Q1, the "following" notification should override the bookmarks one
       expect(second.location).toBe('following');
-      expect(second.message).toBe('Someone you follow, bob, posted a question "Q1".');
+      expect(second.message).toBe('Someone you follow, bob, posted a question \"Q1\".');
     });
 
     it('returns { error } when bookmark builder returns error', async () => {
