@@ -1,23 +1,26 @@
 /* eslint import/no-extraneous-dependencies: "off" */
 
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv, type ConfigEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Must match the port the server creates
-const DEV_BACKEND_PORT = 8000;
+export default ({ mode }: ConfigEnv) => {
+  const env = loadEnv(mode, process.cwd(), '');
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 4530,
-    proxy: {
-      '/api': `http://localhost:${DEV_BACKEND_PORT}`,
-      '/socket.io': {
-        target: `ws://localhost:${DEV_BACKEND_PORT}`,
-        ws: true,
-        rewriteWsOrigin: true,
+  // Access your env var
+  const serverURL = env.VITE_SERVER_URL;
+
+  return defineConfig({
+    plugins: [react()],
+    server: {
+      port: 4530,
+      proxy: {
+        '/api': serverURL ? serverURL : 'http://localhost:8000',
+        '/socket.io': {
+          target: serverURL ? serverURL.replace(/^http/, 'ws') : 'ws://localhost:8000',
+          ws: true,
+          rewriteWsOrigin: true,
+        },
       },
     },
-  },
-});
+  });
+};
