@@ -1,5 +1,46 @@
+/* Tag Page Styles */
+
+/* Tag Page Header (uses .space_between class) */
+.space_between.right_padding {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 2rem !important;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-sm);
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Tag List Grid */
 .tag_list {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-gap: 80px 20px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2rem 1.5rem;
+  padding: 0 2rem 2rem 2rem;
+}
+
+/* Responsive Grid */
+@media (max-width: 1024px) {
+  .tag_list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .tag_list {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: 0 1rem 1rem 1rem;
+  }
+  
+  .space_between.right_padding {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+  
+  .space_between.right_padding .bluebtn {
+    margin-right: 0;
+    width: 100%;
+  }
 }

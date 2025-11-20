@@ -4,8 +4,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  background: var(--color-primary-gradient);
+  box-shadow: var(--shadow-primary);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -16,11 +16,11 @@
 .title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--color-text-white);
   white-space: nowrap;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: transform var(--transition-base);
 }
 
 .title:hover {
@@ -34,21 +34,21 @@
   padding: 0.75rem 1.25rem;
   font-size: 0.9375rem;
   border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 24px;
+  border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.95);
-  color: #1f2937;
-  transition: all 0.3s ease;
+  color: var(--color-text-primary);
+  transition: all var(--transition-slow);
   outline: none;
 }
 
 #searchBar:focus {
-  background: #ffffff;
+  background: var(--color-bg-card);
   border-color: rgba(255, 255, 255, 0.4);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
 }
 
 #searchBar::placeholder {
-  color: #9ca3af;
+  color: var(--color-text-muted);
 }
 
 /* Button Container */
@@ -65,12 +65,12 @@
   font-size: 0.9375rem;
   font-weight: 600;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base);
   white-space: nowrap;
   background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  color: var(--color-text-white);
   backdrop-filter: blur(10px);
 }
 
@@ -79,25 +79,25 @@
   background: rgba(255, 255, 255, 0.25);
   border-color: rgba(255, 255, 255, 0.5);
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .logout-button:active,
 .view-profile-button:active {
   transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Alternative: Solid White Buttons */
 .view-profile-button {
-  background: #ffffff;
-  color: #667eea;
+  background: var(--color-bg-card);
+  color: var(--color-primary);
   border-color: transparent;
 }
 
 .view-profile-button:hover {
-  background: #f9fafb;
-  color: #764ba2;
+  background: var(--color-bg-light);
+  color: var(--color-primary-dark);
 }
 
 /* Responsive Design */
