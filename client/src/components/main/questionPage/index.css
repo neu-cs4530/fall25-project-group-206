@@ -3,5 +3,5 @@
 }
 
 .question_list:last-child {
-  border-bottom: #000000 1px dashed;
+  border-bottom: 1px solid var(--color-border-light);
 }

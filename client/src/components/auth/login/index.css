@@ -5,15 +5,15 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-primary-gradient);
   padding: 20px;
 }
 
 /* Auth Card */
 .auth-card {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
   padding: 40px;
   width: 100%;
   max-width: 440px;
@@ -34,7 +34,7 @@
 /* Headings */
 .container h2 {
   font-size: 2rem;
-  color: #1f2937;
+  color: var(--color-text-primary);
   margin-bottom: 8px;
   text-align: center;
   font-weight: 700;
@@ -42,7 +42,7 @@
 
 .container h3 {
   font-size: 1rem;
-  color: #6b7280;
+  color: var(--color-text-tertiary);
   margin-bottom: 32px;
   text-align: center;
   font-weight: 400;
@@ -50,7 +50,7 @@
 
 .container h4 {
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--color-text-secondary);
   margin: 0 0 8px 0;
   font-weight: 600;
 }
@@ -74,23 +74,23 @@ form {
   padding: 12px 16px;
   font-size: 15px;
   width: 100%;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  background-color: #fff;
-  color: #1f2937;
+  border: 2px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-card);
+  color: var(--color-text-primary);
   box-sizing: border-box;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base);
   font-family: inherit;
 }
 
 .input-text:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .input-text::placeholder {
-  color: #9ca3af;
+  color: var(--color-text-muted);
 }
 
 /* Show Password Checkbox */
@@ -105,12 +105,12 @@ form {
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: #667eea;
+  accent-color: var(--color-primary);
 }
 
 .show-password label {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--color-text-tertiary);
   cursor: pointer;
   user-select: none;
 }
@@ -121,13 +121,13 @@ form {
   padding: 14px;
   font-size: 16px;
   font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
+  background: var(--color-primary-gradient);
+  color: var(--color-text-white);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transition: all var(--transition-slow);
+  box-shadow: var(--shadow-primary);
   margin-top: 8px;
 }
 
@@ -140,7 +140,7 @@ form {
 .login-button:active,
 .signup-button:active {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+  box-shadow: var(--shadow-primary);
 }
 
 /* Divider */
@@ -149,7 +149,7 @@ form {
   align-items: center;
   text-align: center;
   margin: 24px 0;
-  color: #9ca3af;
+  color: var(--color-text-muted);
   font-size: 0.875rem;
 }
 
@@ -157,7 +157,7 @@ form {
 .divider::after {
   content: '';
   flex: 1;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .divider span {
@@ -174,19 +174,19 @@ form {
   padding: 12px;
   font-size: 15px;
   font-weight: 600;
-  background-color: #ffffff;
-  color: #3c4043;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
+  background-color: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  border: 2px solid var(--color-border-light);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base);
   text-decoration: none;
 }
 
 .google-login-btn:hover {
-  background-color: #f9fafb;
-  border-color: #d1d5db;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-bg-light);
+  border-color: var(--color-border-medium);
+  box-shadow: var(--shadow-md);
 }
 
 .google-login-btn:active {
@@ -203,29 +203,29 @@ form {
 .login-link {
   margin-top: 24px;
   font-size: 0.9375rem;
-  color: #667eea;
+  color: var(--color-primary);
   text-decoration: none;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color var(--transition-base);
   text-align: center;
   font-weight: 500;
 }
 
 .signup-link:hover,
 .login-link:hover {
-  color: #764ba2;
+  color: var(--color-primary-dark);
   text-decoration: underline;
 }
 
 /* Error Message */
 .error-message {
-  color: #dc2626;
-  background-color: #fee2e2;
+  color: var(--color-error);
+  background-color: var(--color-error-bg);
   font-size: 0.875rem;
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   text-align: center;
-  border-left: 4px solid #dc2626;
+  border-left: 4px solid var(--color-error);
   animation: shake 0.3s ease;
 }
 
