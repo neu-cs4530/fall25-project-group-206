@@ -84,6 +84,26 @@ export const getUserByUsername = async (username: string): Promise<UserResponse>
 };
 
 /**
+ * Retrieves a user from the database by their email.
+ *
+ * @param {string} email - The email of the user to find.
+ * @returns {Promise<UserResponse>} - Resolves with the found user object (without the password) or an error message.
+ */
+export const getUserByEmail = async (email: string): Promise<UserResponse> => {
+  try {
+    const user: SafeDatabaseUser | null = await UserModel.findOne({ email }).select('-password');
+
+    if (!user) {
+      throw Error('User not found');
+    }
+
+    return user;
+  } catch (error) {
+    return { error: `Error occurred when finding user by email: ${error}` };
+  }
+};
+
+/**
  * Retrieves all users from the database.
  * Users documents are returned in the order in which they were created, oldest to newest.
  *
