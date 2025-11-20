@@ -5,7 +5,7 @@ import type { NotificationItem } from '../types/types';
 import useUserContext from './useUserContext';
 
 const useNotificationsPage = () => {
-  const { user, socket } = useUserContext(); // <-- get socket from context
+  const { user, socket } = useUserContext();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);

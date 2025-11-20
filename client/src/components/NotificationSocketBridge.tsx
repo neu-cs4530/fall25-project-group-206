@@ -1,21 +1,17 @@
 // client/src/components/NotificationSocketBridge.tsx
 import { useEffect } from 'react';
-import type { FakeSOSocket, NotificationItem } from '../types/types';
+import type { NotificationItem } from '../types/types';
 import useUserContext from '../hooks/useUserContext';
 import { useNotificationToast } from '../contexts/NotificationToastContext';
 import fetchNotificationFeed from '../services/notificationService';
-
-interface NotificationSocketBridgeProps {
-  socket: FakeSOSocket | null;
-}
 
 /**
  * Listens for server-side `notificationPing` events and, when the ping is for
  * the current user, fetches their notification feed and shows the most recent
  * notification as a popup toast.
  */
-const NotificationSocketBridge = ({ socket }: NotificationSocketBridgeProps) => {
-  const { user } = useUserContext();
+const NotificationSocketBridge = () => {
+  const { user, socket } = useUserContext();
   const { pushNotification } = useNotificationToast();
 
   useEffect(() => {

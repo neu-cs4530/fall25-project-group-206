@@ -74,7 +74,7 @@ const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
             <ProtectedRoute user={user} socket={socket}>
               <>
                 {/* Listen for notification pings for the logged-in user */}
-                <NotificationSocketBridge socket={socket} />
+                <NotificationSocketBridge />
 
                 {/* Main layout for the app */}
                 <Layout />
