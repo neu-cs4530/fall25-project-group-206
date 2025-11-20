@@ -90,7 +90,7 @@ const Login = () => {
               <span>OR</span>
             </div>
 
-            <a href='/api/user/auth/google' className='google-login-btn'>
+            <a href='/api/auth/google' className='google-login-btn'>
               <svg className='google-icon' viewBox='0 0 24 24'>
                 <path
                   fill='#4285F4'
