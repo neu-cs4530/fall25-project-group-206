@@ -3,10 +3,9 @@ import { useCallback, useEffect, useState } from 'react';
 import fetchNotificationFeed from '../services/notificationService';
 import type { NotificationItem } from '../types/types';
 import useUserContext from './useUserContext';
-import socket from '../services/socket';
 
 const useNotificationsPage = () => {
-  const { user } = useUserContext();
+  const { user, socket } = useUserContext(); // <-- get socket from context
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +47,7 @@ const useNotificationsPage = () => {
 
   // Socket registration + live reload on notificationPing
   useEffect(() => {
-    if (!user?.username) {
+    if (!user?.username || !socket) {
       return;
     }
 
@@ -70,7 +69,7 @@ const useNotificationsPage = () => {
     return () => {
       socket.off('notificationPing', handler);
     };
-  }, [user?.username, load]);
+  }, [user?.username, socket, load]);
 
   return {
     notifications,
