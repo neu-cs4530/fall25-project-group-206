@@ -6,7 +6,7 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 
-import { getUserByUsername, saveUser } from '../services/user.service';
+import { getUserByUsername, getUserByEmail, saveUser } from '../services/user.service';
 import { SafeDatabaseUser, User } from '../types/types';
 
 const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, CLIENT_URL } = process.env;
@@ -24,32 +24,38 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
           const email = profile.emails?.[0]?.value;
           if (!email) return done(new Error('No email returned from Google'));
 
-          let user = await getUserByUsername(email);
-
-          if ('error' in user) {
-            // Google users need a random hashed password
-            const randomPassword = crypto.randomBytes(20).toString('hex');
-            const hashedPassword = await bcrypt.hash(randomPassword, 10);
-
-            const newUser: User = {
-              username: email,
-              email,
-              password: hashedPassword,
-              dateJoined: new Date(),
-              biography: '',
-              followers: [],
-              following: [],
-            };
-
-            const saved = await saveUser(newUser, 'google-oauth', 'google-oauth');
-
-            if ('error' in saved) return done(saved.error);
-            user = saved;
+          // Look up by email
+          const user = await getUserByEmail(email);
+          if (!('error' in user)) {
+            return done(null, user); // Email matched → login
           }
 
-          done(null, user);
+          // Look up by username
+          const userByUsername = await getUserByUsername(email);
+          if (!('error' in userByUsername)) {
+            return done(null, userByUsername); // Username matched → login
+          }
+
+          // STEP 3: No user exists → Create Google SSO user
+          const randomPassword = crypto.randomBytes(20).toString('hex');
+          const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+          const newUser: User = {
+            username: email, // default to email
+            email,
+            password: hashedPassword,
+            dateJoined: new Date(),
+            biography: '',
+            followers: [],
+            following: [],
+          };
+
+          const saved = await saveUser(newUser, 'google-oauth', 'google-oauth');
+          if ('error' in saved) return done(saved.error);
+
+          return done(null, saved);
         } catch (err) {
-          done(err as Error);
+          return done(err as Error);
         }
       },
     ),

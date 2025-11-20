@@ -9,6 +9,7 @@ jest.mock('../../services/user.service', () => {
   return {
     deleteUserByUsername: jest.fn(),
     getUserByUsername: jest.fn(),
+    getUserByEmail: jest.fn(),
     getUsersList: jest.fn(),
     loginUser: jest.fn(),
     saveUser: jest.fn(),
@@ -33,7 +34,7 @@ import emitNotification from '../../utils/realtime';
 import NotificationModel from '../../models/notification.model';
 
 // Now import the mocked functions and the controller
-import { getUserByUsername, toggleFollowUser } from '../../services/user.service';
+import { getUserByUsername, toggleFollowUser, getUserByEmail } from '../../services/user.service';
 import userController from '../../controllers/user.controller';
 
 const app = express();
@@ -173,5 +174,37 @@ describe('POST /api/user/toggleFollow', () => {
 
     expect(res.status).toBe(400);
     expect(res.text).toBe('Both currentUsername and targetUsername are required');
+  });
+});
+
+describe('getUserByEmail service function', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('resolves with a user when found', async () => {
+    const fakeUser = {
+      _id: new mongoose.Types.ObjectId(),
+      username: 'testuser',
+      email: 'test@example.com',
+    };
+
+    (getUserByEmail as jest.Mock).mockResolvedValueOnce(fakeUser);
+
+    const result = await getUserByEmail('test@example.com');
+
+    expect(getUserByEmail).toHaveBeenCalledWith('test@example.com');
+    expect(result).toEqual(fakeUser);
+  });
+
+  it('returns an error object when user is not found', async () => {
+    const errorResponse = { error: 'User not found' };
+
+    (getUserByEmail as jest.Mock).mockResolvedValueOnce(errorResponse);
+
+    const result = await getUserByEmail('missing@example.com');
+
+    expect(getUserByEmail).toHaveBeenCalledWith('missing@example.com');
+    expect(result).toEqual(errorResponse);
   });
 });
