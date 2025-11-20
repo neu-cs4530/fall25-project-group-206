@@ -490,8 +490,10 @@ describe('Test userController', () => {
 
       const response = await supertest(app).post('/api/user/toggleFollow').send(mockReqBody);
 
+      const openApiError = JSON.parse(response.text);
+
       expect(response.status).toBe(400);
-      expect(response.text).toBe('Both currentUsername and targetUsername are required');
+      expect(openApiError.errors[0].path).toBe('/body/currentUsername');
     });
 
     it('should return 400 for request missing targetUsername', async () => {
@@ -501,8 +503,10 @@ describe('Test userController', () => {
 
       const response = await supertest(app).post('/api/user/toggleFollow').send(mockReqBody);
 
+      const openApiError = JSON.parse(response.text);
+
       expect(response.status).toBe(400);
-      expect(response.text).toBe('Both currentUsername and targetUsername are required');
+      expect(openApiError.errors[0].path).toBe('/body/targetUsername');
     });
 
     it('should return 500 if toggleFollowUser returns an error', async () => {
