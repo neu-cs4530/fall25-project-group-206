@@ -1,4 +1,6 @@
 import express, { Response } from 'express';
+import { notifyOnNewAnswer } from '../services/notificationFanout.service';
+import type { PopulatedDatabaseQuestion } from '../types/types';
 import { ObjectId } from 'mongodb';
 import { Answer, AddAnswerRequest, FakeSOSocket, PopulatedDatabaseAnswer } from '../types/types';
 import { addAnswerToQuestion, saveAnswer } from '../services/answer.service';
@@ -44,6 +46,22 @@ const answerController = (socket: FakeSOSocket) => {
         qid: new ObjectId(qid),
         answer: populatedAns as PopulatedDatabaseAnswer,
       });
+
+      // 🔔 Live notifications for new answer in bookmarked collection/community
+      try {
+        const populatedQuestion = await populateDocument(qid, 'question');
+
+        if (!('error' in populatedQuestion)) {
+          await notifyOnNewAnswer(
+            populatedQuestion as PopulatedDatabaseQuestion,
+            populatedAns as PopulatedDatabaseAnswer,
+          );
+        }
+      } catch (notifyErr) {
+        // eslint-disable-next-line no-console
+        console.error('[notifications] notifyOnNewAnswer failed', notifyErr);
+      }
+
       res.json(ansFromDb);
     } catch (err) {
       res.status(500).send(`Error when adding answer: ${(err as Error).message}`);

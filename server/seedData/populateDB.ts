@@ -13,7 +13,7 @@ import answersResolver from './resolvers/answer';
 import questionsResolver from './resolvers/question';
 import identityResolver from './resolvers/identity';
 
-import { type InsertedDocs } from '../types/populate';
+import { type InsertedDocs, type ReferenceResolver } from '../types/populate';
 
 import { collectionDependencies } from './collectionDependencies';
 import { computeImportOrder, loadJSON, processCollection } from './utils';
@@ -57,7 +57,7 @@ const collectionMapping = {
     model: CollectionModel,
     resolver: collectionsResolver,
   },
-};
+} as const;
 
 console.log('Using computed import order:', IMPORT_ORDER);
 
@@ -91,7 +91,7 @@ async function main(args: string[]) {
   });
 
   const loadedData = await Promise.all(loadPromises);
-  const docsMap = new Map();
+  const docsMap = new Map<string, unknown>();
   loadedData.forEach(({ collectionName, docs }) => {
     docsMap.set(collectionName, docs);
   });
@@ -101,12 +101,18 @@ async function main(args: string[]) {
     console.log(`Processing ${collectionName}...`);
 
     insertedDocs[collectionName] = new Map();
-    const docs = docsMap.get(collectionName) || {};
+    const docs = (docsMap.get(collectionName) || {}) as Record<string, unknown>;
 
-    const { model, resolver } = collectionMapping[collectionName];
+    const { model, resolver } = collectionMapping[collectionName as keyof typeof collectionMapping];
 
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    await processCollection<any, any, any>(model, resolver, docs, insertedDocs, collectionName);
+    await processCollection<any, any, any>(
+      model,
+      resolver as unknown as ReferenceResolver<any, any>,
+      docs,
+      insertedDocs,
+      collectionName,
+    );
   }
 
   await mongoose.disconnect();

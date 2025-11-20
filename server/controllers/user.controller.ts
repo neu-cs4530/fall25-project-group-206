@@ -22,8 +22,8 @@ import {
   disable2FA,
   verify2FAToken,
 } from '../services/user.service';
-import passport from 'passport';
-import '../config/passportGoogle';
+import NotificationModel from '../models/notification.model';
+import emitNotification from '../utils/realtime';
 
 const userController = (socket: FakeSOSocket) => {
   const router: Router = express.Router();
@@ -216,6 +216,10 @@ const userController = (socket: FakeSOSocket) => {
    * @param res The response, either returning the updated user or an error.
    * @returns A promise resolving to void.
    */
+  /**
+   * Toggles follow/unfollow status between the current user and target user.
+   * Also emits a notification when this results in a new follow.
+   */
   const toggleFollow = async (req: Request, res: Response): Promise<void> => {
     try {
       const { currentUsername, targetUsername } = req.body;
@@ -225,13 +229,50 @@ const userController = (socket: FakeSOSocket) => {
         return;
       }
 
+      const [currentBefore, targetUser] = await Promise.all([
+        getUserByUsername(currentUsername),
+        getUserByUsername(targetUsername),
+      ]);
+
+      if ('error' in currentBefore) {
+        throw new Error(currentBefore.error);
+      }
+      if ('error' in targetUser) {
+        throw new Error(targetUser.error);
+      }
+
+      const wasFollowing = currentBefore.following.some(
+        id => id.toString() === targetUser._id.toString(),
+      );
+
       const updatedUser = await toggleFollowUser(currentUsername, targetUsername);
 
       if ('error' in updatedUser) {
         throw new Error(updatedUser.error);
       }
 
-      // Emit socket event for real-time updates
+      // FOLLOW path → create notification, but do it fire-and-forget so we never block the HTTP response.
+      if (!wasFollowing) {
+        NotificationModel.create({
+          user: targetUser.username, // recipient
+          actor: currentUsername, // follower
+          message: `${currentUsername} started following you`,
+          eventDate: new Date(),
+          targetId: currentBefore._id, // follower's id as the "target"
+          targetType: 'User',
+          location: 'following',
+          link: `/user/${currentUsername}`,
+          category: 'follow',
+          isRead: false,
+        }).catch(err => {
+          // optional: log, but do not rethrow
+          // console.error('Error creating follow notification', err);
+        });
+
+        // Real-time ping stays synchronous but cheap
+        emitNotification(targetUser.username);
+      }
+
       socket.emit('userUpdate', {
         user: updatedUser,
         type: 'updated',
@@ -415,27 +456,6 @@ const userController = (socket: FakeSOSocket) => {
     }
   };
 
-  /**
-   * Initiates Google OAuth login.
-   * @param req The request.
-   * @param res Redirects the user to Google's login page.
-   */
-  const googleLoginRedirect = (req: Request, res: Response) => {
-    passport.authenticate('google', { scope: ['profile', 'email'] })(req, res);
-  };
-
-  /**
-   * Handles Google OAuth callback.
-   * @param req The request with user info from Google.
-   * @param res Redirects the user to the frontend with login info.
-   */
-  const googleLoginCallback = (req: Request, res: Response) => {
-    passport.authenticate('google', { failureRedirect: '/login' })(req, res, () => {
-      // Successful login
-      res.redirect('http://localhost:4530?googleLogin=true');
-    });
-  };
-
   router.post('/2fa/generate', generate2FA);
   router.post('/2fa/enable', enable2FAEndpoint);
   router.post('/2fa/disable', disable2FAEndpoint);
@@ -451,8 +471,6 @@ const userController = (socket: FakeSOSocket) => {
   router.get('/:username/following', getUserFollowing);
   router.post('/toggleFollow', toggleFollow);
   router.patch('/updateMessagingSetting', updateMessagingSetting);
-  router.get('/auth/google', googleLoginRedirect);
-  router.get('/auth/google/callback', googleLoginCallback);
 
   return router;
 };

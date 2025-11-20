@@ -1,3 +1,10 @@
+jest.mock('../../services/notificationFanout.service', () => ({
+  __esModule: true,
+  notifyOnNewQuestion: jest.fn().mockResolvedValue(undefined),
+  notifyOnNewAnswer: jest.fn().mockResolvedValue(undefined),
+}));
+
+import { notifyOnNewAnswer } from '../../services/notificationFanout.service';
 import mongoose from 'mongoose';
 import supertest from 'supertest';
 import { ObjectId } from 'mongodb';
@@ -11,8 +18,9 @@ const popDocSpy = jest.spyOn(databaseUtil, 'populateDocument');
 
 describe('POST /addAnswer', () => {
   it('should add a new answer to the question', async () => {
-    const validQid = new mongoose.Types.ObjectId();
+    const validQid = new mongoose.Types.ObjectId().toString();
     const validAid = new mongoose.Types.ObjectId();
+
     const mockReqBody = {
       qid: validQid,
       ans: {
@@ -22,6 +30,7 @@ describe('POST /addAnswer', () => {
       },
     };
 
+    // Saved answer from saveAnswer
     const mockAnswer = {
       _id: validAid,
       text: 'This is a test answer',
@@ -29,37 +38,43 @@ describe('POST /addAnswer', () => {
       ansDateTime: new Date('2024-06-03'),
       comments: [],
     };
+
+    // Populated answer for socket + fanout
+    const populatedAnswer = {
+      _id: validAid,
+      text: 'This is a test answer',
+      ansBy: '65e9b716ff0e892116b2de01',
+      ansDateTime: new Date('2024-06-03'),
+      comments: [],
+    };
+
+    // Populated question for fanout
+    const populatedQuestion = {
+      _id: new mongoose.Types.ObjectId(),
+      title: 'This is a test question',
+      text: 'This is a test question',
+      tags: [],
+      askedBy: '65e9b716ff0e892116b2de01',
+      askDateTime: new Date('2024-06-03'),
+      views: [],
+      upVotes: [],
+      downVotes: [],
+      answers: [populatedAnswer],
+      comments: [],
+      community: null,
+    };
+
     saveAnswerSpy.mockResolvedValueOnce(mockAnswer);
 
     addAnswerToQuestionSpy.mockResolvedValueOnce({
-      _id: validQid,
-      title: 'This is a test question',
-      text: 'This is a test question',
-      tags: [],
-      askedBy: '65e9b716ff0e892116b2de01',
-      askDateTime: new Date('2024-06-03'),
-      views: [],
-      upVotes: [],
-      downVotes: [],
+      ...populatedQuestion,
       answers: [mockAnswer._id],
-      comments: [],
-      community: null,
     });
 
-    popDocSpy.mockResolvedValueOnce({
-      _id: validQid,
-      title: 'This is a test question',
-      text: 'This is a test question',
-      tags: [],
-      askedBy: '65e9b716ff0e892116b2de01',
-      askDateTime: new Date('2024-06-03'),
-      views: [],
-      upVotes: [],
-      downVotes: [],
-      answers: [mockAnswer],
-      comments: [],
-      community: null,
-    });
+    // First populateDocument call: answer
+    // Second populateDocument call: question
+    (popDocSpy as jest.Mock).mockResolvedValueOnce(populatedAnswer);
+    (popDocSpy as jest.Mock).mockResolvedValueOnce(populatedQuestion as any);
 
     const response = await supertest(app).post('/api/answer/addAnswer').send(mockReqBody);
 
@@ -71,6 +86,21 @@ describe('POST /addAnswer', () => {
       ansDateTime: mockAnswer.ansDateTime.toISOString(),
       comments: [],
     });
+
+    // Ensure services were called as expected
+    expect(saveAnswerSpy).toHaveBeenCalledWith({
+      text: mockReqBody.ans.text,
+      ansBy: mockReqBody.ans.ansBy,
+      ansDateTime: expect.any(String), // JSON body -> string
+    });
+    expect(addAnswerToQuestionSpy).toHaveBeenCalledWith(validQid, mockAnswer);
+    expect(addAnswerToQuestionSpy).toHaveBeenCalledWith(validQid, mockAnswer);
+
+    // Both populates happened
+    expect(popDocSpy).toHaveBeenCalledTimes(2);
+
+    // Fanout hook was triggered with populated models
+    expect(notifyOnNewAnswer as jest.Mock).toHaveBeenCalledWith(populatedQuestion, populatedAnswer);
   });
 
   it('should return bad request error if answer text property is missing', async () => {

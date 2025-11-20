@@ -1,4 +1,5 @@
 import express, { Response } from 'express';
+import { notifyOnNewQuestion } from '../services/notificationFanout.service';
 import { ObjectId } from 'mongodb';
 import {
   Question,
@@ -131,6 +132,15 @@ const questionController = (socket: FakeSOSocket) => {
       }
 
       socket.emit('questionUpdate', populatedQuestion as PopulatedDatabaseQuestion);
+
+      // 🔔 Live notifications for new question in bookmarked collection/community
+      try {
+        await notifyOnNewQuestion(populatedQuestion as PopulatedDatabaseQuestion);
+      } catch (notifyErr) {
+        // eslint-disable-next-line no-console
+        console.error('[notifications] notifyOnNewQuestion failed', notifyErr);
+      }
+
       res.json(populatedQuestion);
     } catch (err: unknown) {
       if (err instanceof Error) {

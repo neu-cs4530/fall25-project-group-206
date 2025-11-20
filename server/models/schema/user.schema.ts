@@ -29,7 +29,7 @@ const userSchema: Schema = new Schema(
     },
     email: {
       type: String,
-      unique: true,
+      unique: false,
     },
     dateJoined: {
       type: Date,
