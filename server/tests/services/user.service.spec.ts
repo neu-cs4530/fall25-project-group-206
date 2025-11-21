@@ -2,15 +2,18 @@
 import express from 'express';
 import request from 'supertest';
 import mongoose from 'mongoose';
+import nodemailer from 'nodemailer';
 
 // 1. Mock user.service BEFORE importing the controller
 jest.mock('../../services/user.service', () => {
   // We only need the functions used by toggleFollow route; everything can be jest.fn
+  const originalModule = jest.requireActual('../../services/user.service');
   return {
+    __esModule: true,
+    ...originalModule,
     deleteUserByUsername: jest.fn(),
     getUserByUsername: jest.fn(),
     getUserByEmail: jest.fn(),
-    getUsersList: jest.fn(),
     loginUser: jest.fn(),
     saveUser: jest.fn(),
     updateUser: jest.fn(),
@@ -30,11 +33,21 @@ jest.mock('../../utils/realtime', () => ({
   default: jest.fn(),
 }));
 
+jest.mock('nodemailer', () => ({
+  createTransport: jest.fn(),
+}));
+
 import emitNotification from '../../utils/realtime';
 import NotificationModel from '../../models/notification.model';
 
 // Now import the mocked functions and the controller
-import { getUserByUsername, toggleFollowUser, getUserByEmail } from '../../services/user.service';
+import {
+  getUserByUsername,
+  toggleFollowUser,
+  getUserByEmail,
+  sendNewDeviceEmail,
+  getDeviceId,
+} from '../../services/user.service';
 import userController from '../../controllers/user.controller';
 
 const app = express();
@@ -177,12 +190,21 @@ describe('POST /api/user/toggleFollow', () => {
   });
 });
 
-describe('getUserByEmail service function', () => {
+describe('Device Utilities', () => {
+  describe('getDeviceId', () => {
+    it('returns a SHA-256 hash of IP + userAgent', () => {
+      const hash = getDeviceId('1.1.1.1', 'UA');
+      expect(hash).toHaveLength(64);
+    });
+  });
+});
+
+describe('User Retrieval', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('resolves with a user when found', async () => {
+  it('getUserByEmail resolves user', async () => {
     const fakeUser = {
       _id: new mongoose.Types.ObjectId(),
       username: 'testuser',
@@ -197,7 +219,7 @@ describe('getUserByEmail service function', () => {
     expect(result).toEqual(fakeUser);
   });
 
-  it('returns an error object when user is not found', async () => {
+  it('getUserByEmail returns an error object when user is not found', async () => {
     const errorResponse = { error: 'User not found' };
 
     (getUserByEmail as jest.Mock).mockResolvedValueOnce(errorResponse);
@@ -206,5 +228,72 @@ describe('getUserByEmail service function', () => {
 
     expect(getUserByEmail).toHaveBeenCalledWith('missing@example.com');
     expect(result).toEqual(errorResponse);
+  });
+});
+
+describe('sendNewDeviceEmail', () => {
+  const sendMailMock = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    // Mock the transporter
+    (nodemailer.createTransport as jest.Mock).mockReturnValue({
+      sendMail: sendMailMock,
+    });
+
+    // Provide fake env values
+    process.env.SMTP_HOST = 'smtp.test.com';
+    process.env.SMTP_PORT = '2525';
+    process.env.SMTP_USER = 'test@test.com';
+    process.env.SMTP_PASS = 'password123';
+  });
+
+  it('returns success when email is sent', async () => {
+    sendMailMock.mockResolvedValueOnce({ accepted: ['user@example.com'] });
+
+    const result = await sendNewDeviceEmail('user@example.com', 'IP=1.1.1.1 UA=Chrome');
+
+    expect(nodemailer.createTransport).toHaveBeenCalledWith({
+      host: 'smtp.test.com',
+      port: 2525,
+      secure: false,
+      auth: {
+        user: 'test@test.com',
+        pass: 'password123',
+      },
+    });
+
+    expect(sendMailMock).toHaveBeenCalledTimes(1);
+    expect(sendMailMock).toHaveBeenCalledWith({
+      from: '"Your App" <no-reply@yourapp.com>',
+      to: 'user@example.com',
+      subject: 'New Device Sign-In Detected',
+      text: expect.stringContaining('IP=1.1.1.1'),
+      html: expect.stringContaining('IP=1.1.1.1'),
+    });
+
+    expect(result).toEqual({ success: true });
+  });
+
+  it('returns an error object when sendMail throws', async () => {
+    sendMailMock.mockRejectedValueOnce(new Error('SMTP broke'));
+
+    const result = await sendNewDeviceEmail('user@example.com', 'new device info');
+
+    expect(result).toHaveProperty('error');
+    expect(result.error).toContain('SMTP broke');
+  });
+
+  it('passes correct deviceInfo data into email body', async () => {
+    sendMailMock.mockResolvedValueOnce({});
+
+    const deviceInfo = 'IP=55.22.11.99 UA=Firefox';
+    await sendNewDeviceEmail('abc@test.com', deviceInfo);
+
+    const mailArgs = sendMailMock.mock.calls[0][0];
+
+    expect(mailArgs.text).toContain(deviceInfo);
+    expect(mailArgs.html).toContain(deviceInfo);
   });
 });

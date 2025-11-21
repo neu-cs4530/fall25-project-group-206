@@ -510,20 +510,17 @@ export const getDeviceId = (ip: string, userAgent: string): string => {
 
 /**
  * Sends an email notification to a user when a sign-in is detected from a new device.
- * This function uses SMTP credentials from environment variables to send the email.
- * The email informs the user about the IP address and browser of the new device and
- * advises them to secure their account if the sign-in was not performed by them.
+ * Uses SMTP2GO via standard SMTP credentials.
  *
  * @param to - The recipient's email address.
- * @param deviceInfo - A string describing the device details (e.g., IP and browser).
- * @returns A Promise that resolves when the email has been sent.
+ * @param deviceInfo - The IP + user agent of the new device.
  */
 export const sendNewDeviceEmail = async (to: string, deviceInfo: string) => {
   try {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT),
-      secure: Number(process.env.SMTP_PORT) === 465, // true for 465, false for 587
+      secure: false,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -535,9 +532,14 @@ export const sendNewDeviceEmail = async (to: string, deviceInfo: string) => {
       to,
       subject: 'New Device Sign-In Detected',
       text: `We detected a sign-in from a new device: ${deviceInfo}. If this wasn't you, secure your account immediately.`,
-      html: `<p>We detected a sign-in from a new device: <b>${deviceInfo}</b>.</p>
-             <p>If this wasn't you, secure your account immediately.</p>`,
+      html: `
+        <p>We detected a sign-in from a new device:</p>
+        <p><b>${deviceInfo}</b></p>
+        <p>If this wasn't you, secure your account immediately.</p>
+      `,
     });
+
+    return { success: true };
   } catch (error) {
     return { error: `Error occurred when sending email: ${error}` };
   }
