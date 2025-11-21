@@ -55,6 +55,7 @@ export const saveUser = async (
       followers: [],
       following: [],
       knownDevices: result.knownDevices || [],
+      isGoogleSSO: true,
     };
 
     return safeUser;
@@ -282,6 +283,7 @@ export const toggleFollowUser = async (
       biography: savedCurrent.biography,
       followers: savedCurrent.followers,
       following: savedCurrent.following,
+      isGoogleSSO: true,
     };
 
     return safeUser;

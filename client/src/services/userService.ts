@@ -337,6 +337,35 @@ const verify2FAToken = async (username: string, token: string): Promise<boolean>
   }
 };
 
+/**
+ * Updates whether Google SSO is enabled for a user.
+ *
+ * @param username - The username of the user
+ * @param isGoogleSSO - true to enable Google SSO, false to disable it
+ * @returns A promise resolving to the updated user data
+ * @throws {Error} If the request to the server is unsuccessful
+ */
+const updateGoogleSSOSetting = async (
+  username: string,
+  isGoogleSSO: boolean,
+): Promise<SafeDatabaseUser> => {
+  try {
+    const res = await api.patch(`${USER_API_URL}/updateGoogleSSOSetting`, {
+      username,
+      isGoogleSSO,
+    });
+
+    return res.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      // Pass backend message directly to UI
+      throw new Error(error.response.data || 'Failed to update Google SSO settings.');
+    }
+
+    throw new Error('Failed to update Google SSO settings.');
+  }
+};
+
 export {
   getUsers,
   getUserByUsername,
@@ -353,4 +382,5 @@ export {
   enable2FA,
   disable2FA,
   verify2FAToken,
+  updateGoogleSSOSetting,
 };

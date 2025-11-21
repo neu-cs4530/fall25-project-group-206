@@ -23,6 +23,7 @@ import { SafeDatabaseUser, User } from '../types/types';
  */
 
 const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, CLIENT_URL } = process.env;
+const FRONTEND_LOGIN_URL = CLIENT_URL || 'http://localhost:4530';
 
 /**
  * Configure Google OAuth strategy if credentials exist.
@@ -48,15 +49,19 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
           if (!email) return done(new Error('No email returned from Google'));
 
           // STEP 1: Attempt lookup by email
-          const user = await getUserByEmail(email);
-          if (!('error' in user)) {
-            return done(null, user); // User exists → login
+          let user = await getUserByEmail(email);
+
+          if ('error' in user) {
+            // STEP 2: Attempt lookup by username
+            user = await getUserByUsername(email);
           }
 
-          // STEP 2: Attempt lookup by username
-          const userByUsername = await getUserByUsername(email);
-          if (!('error' in userByUsername)) {
-            return done(null, userByUsername);
+          if (!('error' in user)) {
+            // User exists, check if Google SSO is enabled
+            if (!user.isGoogleSSO) {
+              return done(new Error('Google SSO has been disabled for this account'));
+            }
+            return done(null, user); // User exists and Google SSO is enabled → login
           }
 
           // STEP 3: No user found → create new SSO user
@@ -71,6 +76,7 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
             biography: '',
             followers: [],
             following: [],
+            isGoogleSSO: true,
           };
 
           const saved = await saveUser(newUser, 'google-oauth', 'google-oauth');
@@ -137,15 +143,15 @@ const generateJwt = (user: SafeDatabaseUser) => {
 const authController = () => {
   const router: Router = express.Router();
 
-  /**
-   * GET /api/auth/google
-   * --------------------
-   * Redirects the user to Google's OAuth login page.
-   *
-   * Scope:
-   * - `profile`: basic Google profile info
-   * - `email`: user's Google email
-   */
+  // /**
+  //  * GET /api/auth/google
+  //  * --------------------
+  //  * Redirects the user to Google's OAuth login page.
+  //  *
+  //  * Scope:
+  //  * - `profile`: basic Google profile info
+  //  * - `email`: user's Google email
+  //  */
   const googleAuth = (req: Request, res: Response) => {
     passport.authenticate('google', { scope: ['profile', 'email'] })(req, res);
   };
@@ -162,18 +168,18 @@ const authController = () => {
   const googleCallback = (req: Request, res: Response) => {
     passport.authenticate(
       'google',
-      { failureRedirect: '/login?error=google' },
+      { failureRedirect: `${FRONTEND_LOGIN_URL}/login` }, // fallback if passport fails
       (err: Error | null, user: SafeDatabaseUser | false) => {
         if (err) {
-          return res.redirect(`/login?error=${err.message}`);
+          // Redirect to frontend login page and pass the error message
+          return res.redirect(`${FRONTEND_LOGIN_URL}/?error=${encodeURIComponent(err.message)}`);
         }
         if (!user) {
-          return res.redirect('/login?error=bad_user');
+          return res.redirect(`${FRONTEND_LOGIN_URL}/?error=${encodeURIComponent('Invalid user')}`);
         }
 
         const token = generateJwt(user);
-        res.redirect(`${CLIENT_URL}/oauth-success?token=${token}`);
-        // res.redirect(`localhost:4530/oauth-success?token=${token}`);
+        res.redirect(`${FRONTEND_LOGIN_URL}/oauth-success?token=${token}`);
       },
     )(req, res);
   };

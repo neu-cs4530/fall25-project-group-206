@@ -25,6 +25,7 @@ const mockUser: User = {
   dateJoined: new Date('2024-12-03'),
   followers: [],
   following: [],
+  isGoogleSSO: true,
 };
 
 const mockSafeUser: SafeDatabaseUser = {
@@ -34,6 +35,7 @@ const mockSafeUser: SafeDatabaseUser = {
   dateJoined: new Date('2024-12-03'),
   followers: [],
   following: [],
+  isGoogleSSO: true,
 };
 
 const mockUserJSONResponse = {
@@ -43,6 +45,7 @@ const mockUserJSONResponse = {
   dateJoined: new Date('2024-12-03').toISOString(),
   followers: [],
   following: [],
+  isGoogleSSO: true,
 };
 
 const saveUserSpy = jest.spyOn(util, 'saveUser');
