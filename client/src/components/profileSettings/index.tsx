@@ -37,6 +37,7 @@ const ProfileSettings: React.FC = () => {
     handleDeleteUser,
     handleViewCollectionsPage,
     handleUpdateMessagingSetting,
+    handleUpdateGoogleSSOSetting,
   } = useProfileSettings();
 
   const { user: currentUser } = useUserContext();
@@ -47,6 +48,15 @@ const ProfileSettings: React.FC = () => {
   const [twoFAError, setTwoFAError] = React.useState('');
   type TabId = 'overview' | 'password' | 'messaging' | 'security' | 'social' | 'danger';
   const [active, setActive] = React.useState<TabId>('overview');
+  const [googleSSODisabled, setGoogleSSODisabled] = React.useState(
+    userData ? !userData.isGoogleSSO : false,
+  );
+
+  React.useEffect(() => {
+    if (userData) {
+      setGoogleSSODisabled(!userData.isGoogleSSO);
+    }
+  }, [userData]);
 
   const items = [
     { id: 'overview', label: 'Overview' },
@@ -223,6 +233,25 @@ const ProfileSettings: React.FC = () => {
                         : 'Enable 2FA to add an extra layer of security to your account.'}
                     </p>
                   </div>
+                  <div className='google-sso-section' style={{ marginTop: '20px' }}>
+                    <label>
+                      <input
+                        type='checkbox'
+                        checked={googleSSODisabled}
+                        onChange={async e => {
+                          const disabled = e.target.checked;
+                          setGoogleSSODisabled(disabled);
+                          await handleUpdateGoogleSSOSetting(!disabled);
+                        }}
+                      />
+                      Disable Google Single Sign-On (SSO)
+                    </label>
+                    <p className='info-text'>
+                      {googleSSODisabled
+                        ? 'Google SSO is currently disabled.'
+                        : 'Google SSO is currently enabled.'}
+                    </p>
+                  </div>
                 </>
               )}
               {show2FAModal && (
@@ -282,12 +311,12 @@ const ProfileSettings: React.FC = () => {
                 <FollowersList
                   username={userData.username}
                   refreshTrigger={refreshFollowers}
-                  onUserClick={() => setActive('overview')} // Add this
+                  onUserClick={() => setActive('overview')}
                 />
                 <FollowingList
                   username={userData.username}
                   refreshTrigger={refreshFollowing}
-                  onUserClick={() => setActive('overview')} // Add this
+                  onUserClick={() => setActive('overview')}
                 />
               </div>
             </TabPanel>

@@ -246,6 +246,67 @@
   line-height: 1.5;
 }
 
+/* Google SSO Section */
+.google-sso-section {
+  background: var(--color-bg-light);
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
+  margin-top: 1.75rem;
+  box-shadow: var(--shadow-sm);
+  transition: background-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+/* Title */
+.google-sso-section h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Optional Google Logo (if you add one later) */
+.google-sso-section h4 .google-icon {
+  width: 20px;
+  height: 20px;
+  opacity: 0.85;
+}
+
+/* Checkbox + Label */
+.google-sso-section label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+}
+
+.google-sso-section input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+/* Subtext */
+.google-sso-section .info-text {
+  color: var(--color-text-tertiary);
+  font-size: 0.875rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Disabled State for SSO (Google accounts cannot disable it) */
+.google-sso-section.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+  filter: grayscale(0.2);
+}
+
 /* Follow Lists - Full Width */
 .follow-lists {
   display: flex;

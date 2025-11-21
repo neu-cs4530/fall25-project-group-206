@@ -83,7 +83,9 @@ try {
       apiSpec: './openapi.yaml',
       validateRequests: true,
       validateResponses: true,
-      ignoreUndocumented: true, // Only validate paths defined in the spec
+      ignoreUndocumented: true,
+      // ignorePaths: (req: { path: string }) =>
+      //   req.path === '/api/auth/google' || req.path === '/api/auth/google/callback',
       formats: {
         'object-id': (v: string) => /^[0-9a-fA-F]{24}$/.test(v),
       },

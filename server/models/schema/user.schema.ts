@@ -16,6 +16,7 @@ import { Schema } from 'mongoose';
  * - `twoFactorEnabled`: Boolean indicating if two-factor authentication (2FA) is enabled for the user (default: false).
  * - `twoFactorSecret`: The secret key used for 2FA, or null if 2FA is not enabled.
  * - `knownDevices`: An array of strings representing devices this user has logged in on.
+ * - `isGoogleSSO`: Boolean indicating if user allows for Google SSO.
  */
 const userSchema: Schema = new Schema(
   {
@@ -48,7 +49,7 @@ const userSchema: Schema = new Schema(
     },
     allowOpenMessaging: {
       type: Boolean,
-      default: false, // Default to requiring mutual follows
+      default: false,
     },
     twoFactorEnabled: {
       type: Boolean,
@@ -61,6 +62,10 @@ const userSchema: Schema = new Schema(
     knownDevices: {
       type: [String],
       default: [],
+    },
+    isGoogleSSO: {
+      type: Boolean,
+      default: true,
     },
   },
   { collection: 'User' },
