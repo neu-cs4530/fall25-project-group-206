@@ -2,16 +2,20 @@
   display: flex;
   flex-direction: row;
   height: 90%;
+  background-color: var(--color-bg-page);
 }
 
 .right_main {
   width: 85%;
   overflow: auto;
+  background-color: var(--color-bg-page);
+  padding: 2rem;
 }
 
 .space_between {
   display: flex;
   justify-content: space-between;
+  align-items: center;
 }
 
 .right_padding {
@@ -19,42 +23,70 @@
 }
 
 .bold_title {
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 800;
-  line-height: 40px;
+  line-height: 2.5rem;
+  color: var(--color-text-primary);
 }
 
+/* Primary Button - Purple Theme */
 .bluebtn {
-  background: #3090e2;
-  color: #ffffff;
-  border: #000000 1px solid;
-  font-size: 20px;
-  padding: 10px 10px 10px 10px;
+  background: var(--color-primary-gradient);
+  color: var(--color-text-white);
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
   margin-right: 5%;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-primary);
 }
 
 .bluebtn:hover {
-  background: #0056b3;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.bluebtn:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-primary);
 }
 
 .btn_indicator_container {
   display: flex;
   align-items: center;
-  justify-content: space-between; /* This will push child elements to the extremes of the container */
+  justify-content: space-between;
   width: 100%;
 }
 
+/* Form Submit Button */
 .form_postBtn {
-  background: #3090e2;
-  color: #ffffff;
-  padding: 10px 20px;
+  background: var(--color-primary-gradient);
+  color: var(--color-text-white);
+  padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-primary);
+}
+
+.form_postBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.form_postBtn:active {
+  transform: translateY(0);
 }
 
 .mandatory_indicator {
   font-size: 0.8rem;
-  color: red;
+  color: var(--color-error);
   margin-top: 10px;
+  font-weight: 500;
 }

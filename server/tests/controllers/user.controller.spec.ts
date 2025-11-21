@@ -545,6 +545,32 @@ describe('Test userController', () => {
       expect(emitSpy).toHaveBeenCalledWith('user2');
     });
 
+    it('should return 400 for request missing currentUsername', async () => {
+      const mockReqBody = {
+        targetUsername: 'user2',
+      };
+
+      const response = await supertest(app).post('/api/user/toggleFollow').send(mockReqBody);
+
+      const openApiError = JSON.parse(response.text);
+
+      expect(response.status).toBe(400);
+      expect(openApiError.errors[0].path).toBe('/body/currentUsername');
+    });
+
+    it('should return 400 for request missing targetUsername', async () => {
+      const mockReqBody = {
+        currentUsername: 'user1',
+      };
+
+      const response = await supertest(app).post('/api/user/toggleFollow').send(mockReqBody);
+
+      const openApiError = JSON.parse(response.text);
+
+      expect(response.status).toBe(400);
+      expect(openApiError.errors[0].path).toBe('/body/targetUsername');
+    });
+
     it('should return 500 if toggleFollowUser returns an error', async () => {
       const currentId = new mongoose.Types.ObjectId();
       const targetId = new mongoose.Types.ObjectId();
