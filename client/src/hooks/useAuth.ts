@@ -1,5 +1,5 @@
-import { useNavigate } from 'react-router-dom';
-import { ChangeEvent, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ChangeEvent, useState, useEffect } from 'react';
 import useLoginContext from './useLoginContext';
 import { createUser, loginUser } from '../services/userService';
 import { SafeDatabaseUser } from '@fake-stack-overflow/shared';
@@ -32,6 +32,17 @@ const useAuth = (authType: 'login' | 'signup') => {
   const [requires2FA, setRequires2FA] = useState(false);
   const { setUser } = useLoginContext();
   const navigate = useNavigate();
+
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const urlError = params.get('error');
+
+    if (urlError) {
+      setErr(urlError);
+    }
+  }, [location.search]);
 
   /**
    * Toggles the visibility of the password input field.

@@ -23,7 +23,8 @@ import { SafeDatabaseUser, User } from '../types/types';
  */
 
 const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, CLIENT_URL } = process.env;
-const FRONTEND_LOGIN_URL = CLIENT_URL || 'http://localhost:4530';
+const FRONTEND_LOGIN_URL = CLIENT_URL;
+// const FRONTEND_LOGIN_URL = 'http://localhost:4530';
 
 /**
  * Configure Google OAuth strategy if credentials exist.
