@@ -628,7 +628,8 @@ paths:
               $ref: '#/components/schemas/ToggleSaveQuestionBody'
       responses:
         '200':
-          description: Collection successfully updated. Returns the updated populated collection object.
+          description:
+            Collection successfully updated. Returns the updated populated collection object.
           content:
             application/json:
               schema:
@@ -1005,6 +1006,323 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/ErrorResponse'
+
+  /user/{username}/followers:
+    get:
+      tags:
+        - Users
+      summary: Retrieve the list of followers for a specific user.
+      parameters:
+        - in: path
+          name: username
+          schema:
+            type: string
+          required: true
+          description: The username of the user whose followers to retrieve.
+      responses:
+        '200':
+          description: Successfully retrieved followers list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /user/{username}/following:
+    get:
+      tags:
+        - Users
+      summary: Retrieve the list of users that a specific user is following.
+      parameters:
+        - in: path
+          name: username
+          schema:
+            type: string
+          required: true
+          description: The username of the user whose following list to retrieve.
+      responses:
+        '200':
+          description: Successfully retrieved following list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /user/toggleFollow:
+    post:
+      tags:
+        - Users
+      summary: Toggle follow/unfollow status between two users.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentUsername
+                - targetUsername
+              properties:
+                currentUsername:
+                  type: string
+                  description: The username of the user performing the follow/unfollow action.
+                targetUsername:
+                  type: string
+                  description: The username of the user to follow or unfollow.
+      responses:
+        '200':
+          description: Follow status successfully toggled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /user/updateMessagingSetting:
+    patch:
+      tags:
+        - Users
+      summary: Update a user's messaging settings (allow open messaging or mutual follows only).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - allowOpenMessaging
+              properties:
+                username:
+                  type: string
+                  description: The username of the user.
+                allowOpenMessaging:
+                  type: boolean
+                  description:
+                    Whether to allow anyone to message the user (true) or only mutual follows
+                    (false).
+      responses:
+        '200':
+          description: Messaging setting successfully updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /user/2fa/generate:
+    post:
+      tags:
+        - Users
+        - Two-Factor Authentication
+      summary: Generate a new 2FA secret and QR code for a user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+              properties:
+                username:
+                  type: string
+                  description: The username of the user.
+      responses:
+        '200':
+          description: 2FA secret and QR code successfully generated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  secret:
+                    type: string
+                    description: The base32 encoded secret for the authenticator app.
+                  qrCode:
+                    type: string
+                    description: The QR code data URL for scanning.
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /user/2fa/enable:
+    post:
+      tags:
+        - Users
+        - Two-Factor Authentication
+      summary: Enable 2FA for a user after verifying the token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - secret
+                - token
+              properties:
+                username:
+                  type: string
+                  description: The username of the user.
+                secret:
+                  type: string
+                  description: The 2FA secret generated previously.
+                token:
+                  type: string
+                  description: The 6-digit token from the authenticator app.
+      responses:
+        '200':
+          description: 2FA successfully enabled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /user/2fa/disable:
+    post:
+      tags:
+        - Users
+        - Two-Factor Authentication
+      summary: Disable 2FA for a user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+              properties:
+                username:
+                  type: string
+                  description: The username of the user.
+      responses:
+        '200':
+          description: 2FA successfully disabled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /user/2fa/verify:
+    post:
+      tags:
+        - Users
+        - Two-Factor Authentication
+      summary: Verify a 2FA token during login.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - token
+              properties:
+                username:
+                  type: string
+                  description: The username of the user.
+                token:
+                  type: string
+                  description: The 6-digit token from the authenticator app.
+      responses:
+        '200':
+          description: Token verification result.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    description: Whether the token is valid or not.
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  # --------------------
+  # AUTH CONTROLLER
+  # --------------------
+  # /auth/google:
+  #   get:
+  #     tags:
+  #       - Auth
+  #     summary: Start Google OAuth 2.0 login flow.
+  #     description: |
+  #       Redirects the user to Google's OAuth 2.0 consent page.
+  #       No request body or response body is returned because this is a browser redirect.
+  #     responses:
+  #       '302':
+  #         description: Redirect to Google for authentication.
+  #       '500':
+  #         $ref: '#/components/responses/ErrorResponse'
+
+  # /auth/google/callback:
+  #   get:
+  #     tags:
+  #       - Auth
+  #     summary: Google OAuth callback.
+  #     description: |
+  #       Google redirects back to this endpoint.
+  #       If authentication succeeds, backend generates a JWT and redirects the user to:
+  #       **`${CLIENT_URL}/oauth-success?token=...`**
+  #     parameters:
+  #       - in: query
+  #         name: code
+  #         required: false
+  #         schema:
+  #           type: string
+  #         description: Google OAuth authorization code.
+  #       - in: query
+  #         name: scope
+  #         required: false
+  #         schema:
+  #           type: string
+  #         description: Google OAuth scope returned by Google.
+  #     responses:
+  #       '302':
+  #         description: |
+  #           Redirects back to the client app with a JWT token appended in the URL.
+  #       '400':
+  #         description: Invalid OAuth state or Google returned an error.
+  #       '500':
+  #         $ref: '#/components/responses/ErrorResponse'
+
+  # /auth/logout:
+  #   post:
+  #     tags:
+  #       - Auth
+  #     summary: Logs out the current authenticated user.
+  #     description: |
+  #       Ends the session and clears the Passport login state.
+  #       Returns a success message if logout completes.
+  #     responses:
+  #       '200':
+  #         description: Successfully logged out.
 
 components:
   schemas:

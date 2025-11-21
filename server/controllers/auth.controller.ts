@@ -1,4 +1,3 @@
-// auth.controller.ts
 import express, { Request, Response, Router } from 'express';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
@@ -9,8 +8,33 @@ import jwt from 'jsonwebtoken';
 import { getUserByUsername, getUserByEmail, saveUser } from '../services/user.service';
 import { SafeDatabaseUser, User } from '../types/types';
 
-const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, CLIENT_URL } = process.env;
+/**
+ * Authentication Controller
+ * -------------------------
+ * Handles Google OAuth login, session management, and JWT issuance.
+ *
+ * Flow Summary:
+ * 1. User clicks "Sign in with Google".
+ * 2. Redirects to Google OAuth page -> `/api/auth/google`.
+ * 3. Google redirects back -> `/api/auth/google/callback`.
+ * 4. If Google user email matches an existing account → log in.
+ * 5. If no user exists → create new user using email + random password.
+ * 6. Issue JWT and redirect to CLIENT_URL with token.
+ */
 
+const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, CLIENT_URL } = process.env;
+const FRONTEND_LOGIN_URL = CLIENT_URL || 'http://localhost:4530';
+
+/**
+ * Configure Google OAuth strategy if credentials exist.
+ *
+ * Strategy Behavior:
+ * - Extract user's Google email from OAuth profile.
+ * - Check database for existing user by email.
+ * - If not found, also check by username (email string).
+ * - If no existing user → create a Google SSO user with random password.
+ * - Return the user to Passport's `done()` callback.
+ */
 if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
   passport.use(
     new GoogleStrategy(
@@ -24,30 +48,35 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
           const email = profile.emails?.[0]?.value;
           if (!email) return done(new Error('No email returned from Google'));
 
-          // Look up by email
-          const user = await getUserByEmail(email);
+          // STEP 1: Attempt lookup by email
+          let user = await getUserByEmail(email);
+
+          if ('error' in user) {
+            // STEP 2: Attempt lookup by username
+            user = await getUserByUsername(email);
+          }
+
           if (!('error' in user)) {
-            return done(null, user); // Email matched → login
+            // User exists, check if Google SSO is enabled
+            if (!user.isGoogleSSO) {
+              return done(new Error('Google SSO has been disabled for this account'));
+            }
+            return done(null, user); // User exists and Google SSO is enabled → login
           }
 
-          // Look up by username
-          const userByUsername = await getUserByUsername(email);
-          if (!('error' in userByUsername)) {
-            return done(null, userByUsername); // Username matched → login
-          }
-
-          // STEP 3: No user exists → Create Google SSO user
+          // STEP 3: No user found → create new SSO user
           const randomPassword = crypto.randomBytes(20).toString('hex');
           const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
           const newUser: User = {
-            username: email, // default to email
+            username: email,
             email,
             password: hashedPassword,
             dateJoined: new Date(),
             biography: '',
             followers: [],
             following: [],
+            isGoogleSSO: true,
           };
 
           const saved = await saveUser(newUser, 'google-oauth', 'google-oauth');
@@ -62,12 +91,20 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
   );
 }
 
-// Serialize full user object
+/**
+ * Serialize user object into the session.
+ *
+ * Stores the full user object as the session payload.
+ */
 passport.serializeUser((user: Express.User, done) => {
   done(null, user);
 });
 
-// Deserialize user based on username/id
+/**
+ * Deserialize user from session.
+ *
+ * Looks up the full user record using the username from the session.
+ */
 passport.deserializeUser(async (user: SafeDatabaseUser, done) => {
   try {
     const found = await getUserByUsername(user.username);
@@ -78,9 +115,10 @@ passport.deserializeUser(async (user: SafeDatabaseUser, done) => {
 });
 
 /**
- * Generates a signed JWT for a given user.
- * @param user - The user object containing at least a `username` property.
- * @returns A signed JWT string.
+ * Generates a signed JWT for authenticated users.
+ *
+ * @param user - Database user object.
+ * @returns A signed JWT valid for 1 hour.
  */
 const generateJwt = (user: SafeDatabaseUser) => {
   return jwt.sign(
@@ -97,39 +135,70 @@ const generateJwt = (user: SafeDatabaseUser) => {
   );
 };
 
+/**
+ * Main Auth Controller Factory
+ * ----------------------------
+ * Returns an Express Router containing authentication endpoints.
+ */
 const authController = () => {
   const router: Router = express.Router();
 
+  // /**
+  //  * GET /api/auth/google
+  //  * --------------------
+  //  * Redirects the user to Google's OAuth login page.
+  //  *
+  //  * Scope:
+  //  * - `profile`: basic Google profile info
+  //  * - `email`: user's Google email
+  //  */
   const googleAuth = (req: Request, res: Response) => {
     passport.authenticate('google', { scope: ['profile', 'email'] })(req, res);
   };
 
+  /**
+   * GET /api/auth/google/callback
+   * -----------------------------
+   * Handles Google's OAuth callback.
+   *
+   * Behavior:
+   * - If login fails → redirect to `/login?error=<reason>`
+   * - If successful → generate JWT and redirect to CLIENT_URL/oauth-success
+   */
   const googleCallback = (req: Request, res: Response) => {
     passport.authenticate(
       'google',
-      { failureRedirect: '/login?error=google' },
-      (err: Error | null, user: SafeDatabaseUser | false, info: object | undefined) => {
+      { failureRedirect: `${FRONTEND_LOGIN_URL}/login` }, // fallback if passport fails
+      (err: Error | null, user: SafeDatabaseUser | false) => {
         if (err) {
-          return res.redirect(`/login?error=${err.message}`);
+          // Redirect to frontend login page and pass the error message
+          return res.redirect(`${FRONTEND_LOGIN_URL}/?error=${encodeURIComponent(err.message)}`);
         }
         if (!user) {
-          return res.redirect('/login?error=bad_user');
+          return res.redirect(`${FRONTEND_LOGIN_URL}/?error=${encodeURIComponent('Invalid user')}`);
         }
 
-        // Generate JWT for frontend
         const token = generateJwt(user);
-        res.redirect(`${CLIENT_URL}/oauth-success?token=${token}`);
-        // res.redirect(`http://localhost:4530/oauth-success?token=${token}`);
+        res.redirect(`${FRONTEND_LOGIN_URL}/oauth-success?token=${token}`);
       },
     )(req, res);
   };
 
+  /**
+   * POST /api/auth/logout
+   * ----------------------
+   * Ends user session and logs out the authenticated user.
+   *
+   * Response:
+   * - { message: "Logged out successfully" }
+   */
   const logout = (req: Request, res: Response) => {
     req.logout(() => {
       res.status(200).json({ message: 'Logged out successfully' });
     });
   };
 
+  // Route Bindings
   router.get('/google', googleAuth);
   router.get('/google/callback', googleCallback);
   router.post('/logout', logout);

@@ -49,12 +49,13 @@ export const saveUser = async (
     const safeUser: SafeDatabaseUser = {
       _id: result._id,
       username: result.username,
-      email: result.username,
+      email: result.email,
       dateJoined: result.dateJoined,
       biography: result.biography,
       followers: [],
       following: [],
       knownDevices: result.knownDevices || [],
+      isGoogleSSO: true,
     };
 
     return safeUser;
@@ -236,7 +237,9 @@ export const toggleFollowUser = async (
       throw Error('User not found');
     }
 
-    const isFollowing = currentUser.following.includes(targetUser._id);
+    const isFollowing = currentUser.following.some(
+      id => id.toString() === targetUser._id.toString(),
+    );
 
     if (isFollowing) {
       // Unfollow: Remove targetUser from currentUser's following
@@ -282,6 +285,7 @@ export const toggleFollowUser = async (
       biography: savedCurrent.biography,
       followers: savedCurrent.followers,
       following: savedCurrent.following,
+      isGoogleSSO: true,
     };
 
     return safeUser;

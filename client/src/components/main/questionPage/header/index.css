@@ -1,0 +1,119 @@
+/* Question Header Container */
+.question-header-wrapper {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Override any other space_between styles */
+.question-header-wrapper .space_between {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+/* Question Header - First Row */
+.question-header-wrapper .space_between:first-child {
+  padding-bottom: 1.5rem !important;
+  border-bottom: 1px solid var(--color-border-light);
+  margin-bottom: 1.5rem;
+}
+
+/* Second Row - Remove padding override */
+.question-header-wrapper .space_between:last-child {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Question Count */
+#question_count {
+  font-size: 1rem;
+  color: var(--color-text-tertiary);
+  font-weight: 600;
+}
+
+/* Order Buttons Container */
+.btns {
+  display: flex !important;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Individual Order Button */
+.btn {
+  background: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  border: 2px solid var(--color-border-light);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background: var(--color-hover);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Active/Selected State for Order Button */
+.btn.active {
+  background: var(--color-primary-gradient);
+  color: var(--color-text-white);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-primary);
+}
+
+.btn.active:hover {
+  transform: translateY(0);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .question-header-wrapper {
+    padding: 1rem 1.5rem;
+  }
+
+  .question-header-wrapper .space_between {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 1rem;
+  }
+
+  .question-header-wrapper .space_between:first-child {
+    padding-bottom: 1rem !important;
+    margin-bottom: 1rem;
+  }
+
+  .btns {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn {
+    flex: 1;
+    min-width: fit-content;
+  }
+
+  #question_count {
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .btns {
+    flex-direction: column !important;
+    width: 100%;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}

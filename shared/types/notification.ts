@@ -38,6 +38,8 @@ export interface NotificationItem {
 
   link?: string;
 
+  sources?: NotificationLocation[];
+
   /**
    * Used to distinguish backfilled entries vs future real-time notifications.
    * - 'backfill' → bookmark-based backfill

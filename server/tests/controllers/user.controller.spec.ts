@@ -25,6 +25,7 @@ const mockUser: User = {
   dateJoined: new Date('2024-12-03'),
   followers: [],
   following: [],
+  isGoogleSSO: true,
 };
 
 const mockSafeUser: SafeDatabaseUser = {
@@ -34,6 +35,7 @@ const mockSafeUser: SafeDatabaseUser = {
   dateJoined: new Date('2024-12-03'),
   followers: [],
   following: [],
+  isGoogleSSO: true,
 };
 
 const mockUserJSONResponse = {
@@ -43,6 +45,7 @@ const mockUserJSONResponse = {
   dateJoined: new Date('2024-12-03').toISOString(),
   followers: [],
   following: [],
+  isGoogleSSO: true,
 };
 
 const saveUserSpy = jest.spyOn(util, 'saveUser');
@@ -543,6 +546,32 @@ describe('Test userController', () => {
 
       // Realtime ping to target user
       expect(emitSpy).toHaveBeenCalledWith('user2');
+    });
+
+    it('should return 400 for request missing currentUsername', async () => {
+      const mockReqBody = {
+        targetUsername: 'user2',
+      };
+
+      const response = await supertest(app).post('/api/user/toggleFollow').send(mockReqBody);
+
+      const openApiError = JSON.parse(response.text);
+
+      expect(response.status).toBe(400);
+      expect(openApiError.errors[0].path).toBe('/body/currentUsername');
+    });
+
+    it('should return 400 for request missing targetUsername', async () => {
+      const mockReqBody = {
+        currentUsername: 'user1',
+      };
+
+      const response = await supertest(app).post('/api/user/toggleFollow').send(mockReqBody);
+
+      const openApiError = JSON.parse(response.text);
+
+      expect(response.status).toBe(400);
+      expect(openApiError.errors[0].path).toBe('/body/targetUsername');
     });
 
     it('should return 500 if toggleFollowUser returns an error', async () => {

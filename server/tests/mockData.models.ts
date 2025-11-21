@@ -210,6 +210,7 @@ export const user: User = {
   allowOpenMessaging: false,
   twoFactorEnabled: false,
   knownDevices: [],
+  isGoogleSSO: true,
 };
 
 export const safeUser: SafeDatabaseUser = {
@@ -222,4 +223,5 @@ export const safeUser: SafeDatabaseUser = {
   allowOpenMessaging: false,
   twoFactorEnabled: false,
   knownDevices: [],
+  isGoogleSSO: true,
 };

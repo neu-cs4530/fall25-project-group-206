@@ -1,43 +1,29 @@
 .profile-settings {
-  --color-bg: #f2f4f7;
-  --color-card-bg: #ffffff;
-  --color-border: #e5e7eb;
-  --color-primary: #2563eb;
-  --color-primary-hover: #1e40af;
-  --color-danger: #dc2626;
-  --color-danger-hover: #991b1b;
-  --color-success: #16a34a;
-  --color-error: #b91c1c;
-  --radius: 0.75rem;
-  --spacing: 1rem;
-  --font-md: 1rem;
-  --font-lg: 1.5rem;
-
-  background-color: var(--color-bg);
+  background-color: var(--color-bg-page);
   padding: 2rem;
   display: flex;
   justify-content: center;
   min-height: 100vh;
-  color: #111827;
+  color: var(--color-text-primary);
 }
 
 .profile-settings .profile-card {
-  background: var(--color-card-bg);
+  background: var(--color-bg-card);
   padding: 0;
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   max-width: 800px;
   width: 100%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
 }
 
 /* Header Section */
 .profile-settings h2 {
-  font-size: var(--font-lg);
+  font-size: 1.5rem;
   margin: 0;
   padding: 2rem 2rem 1rem 2rem;
-  color: #1f2937;
-  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 /* Tab Content */
@@ -69,7 +55,7 @@
 
 .profile-settings p strong {
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-secondary);
   display: inline-block;
   min-width: 120px;
 }
@@ -78,15 +64,15 @@
   margin-top: 1.5rem;
   margin-bottom: 1rem;
   font-size: 1.125rem;
-  color: #1f2937;
+  color: var(--color-text-primary);
   font-weight: 600;
 }
 
 /* Follow Actions at Top of Social Tab */
 .follow-actions {
-  background: #f9fafb;
+  background: var(--color-bg-light);
   padding: 1rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
@@ -100,27 +86,27 @@
   padding: 0.75rem;
   margin-top: 0.5rem;
   margin-bottom: 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.5rem;
+  border: 2px solid var(--color-border-light);
+  border-radius: var(--radius-md);
   font-size: 0.95rem;
-  transition: border-color 0.2s ease;
+  transition: all var(--transition-base);
 }
 
 .profile-settings .input-text:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 /* Buttons */
 .profile-settings .button {
   padding: 0.625rem 1.25rem;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base);
   margin-right: 0.5rem;
   display: inline-flex;
   align-items: center;
@@ -133,71 +119,85 @@
 }
 
 .profile-settings .button-primary {
-  background-color: var(--color-primary);
-  color: white;
+  background: var(--color-primary-gradient);
+  color: var(--color-text-white);
+  box-shadow: var(--shadow-primary);
 }
 
 .profile-settings .button-primary:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
 .profile-settings .button-danger {
-  background-color: var(--color-danger);
-  color: white;
+  background-color: var(--color-error);
+  color: var(--color-text-white);
 }
 
 .profile-settings .button-danger:hover:not(:disabled) {
-  background-color: var(--color-danger-hover);
+  background-color: #b91c1c;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
 .profile-settings .button-secondary {
-  background-color: #e5e7eb;
-  color: #374151;
+  background-color: var(--color-bg-light);
+  color: var(--color-text-secondary);
+  border: 2px solid var(--color-border-light);
 }
 
 .profile-settings .button-secondary:hover:not(:disabled) {
-  background-color: #d1d5db;
+  background-color: var(--color-border-light);
 }
 
 /* Messages */
 .profile-settings .success-message {
   color: var(--color-success);
-  background-color: #dcfce7;
+  background-color: var(--color-success-bg);
   padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   font-weight: 500;
   margin-bottom: 1rem;
   border-left: 4px solid var(--color-success);
+  animation: slideIn 0.3s ease;
 }
 
 .profile-settings .error-message {
   color: var(--color-error);
-  background-color: #fee2e2;
+  background-color: var(--color-error-bg);
   padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   font-weight: 500;
   margin-bottom: 1rem;
   border-left: 4px solid var(--color-error);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* Biography Section */
 .bio-section {
   margin: 1rem 0;
   padding: 1rem;
-  background-color: #f9fafb;
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-light);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
 }
 
 .profile-settings .markdown {
   margin-bottom: 1rem;
   white-space: pre-wrap;
   line-height: 1.6;
-  color: #374151;
+  color: var(--color-text-secondary);
 }
 
 .profile-settings .bio-edit {
@@ -217,10 +217,10 @@
 
 /* 2FA Section */
 .twofa-section {
-  background: #f9fafb;
+  background: var(--color-bg-light);
   padding: 1.5rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
 }
 
 .twofa-section label {
@@ -236,13 +236,75 @@
   width: 1.25rem;
   height: 1.25rem;
   cursor: pointer;
+  accent-color: var(--color-primary);
 }
 
 .twofa-section .info-text {
-  color: #6b7280;
+  color: var(--color-text-tertiary);
   font-size: 0.875rem;
   margin: 0;
   line-height: 1.5;
+}
+
+/* Google SSO Section */
+.google-sso-section {
+  background: var(--color-bg-light);
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
+  margin-top: 1.75rem;
+  box-shadow: var(--shadow-sm);
+  transition: background-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+/* Title */
+.google-sso-section h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Optional Google Logo (if you add one later) */
+.google-sso-section h4 .google-icon {
+  width: 20px;
+  height: 20px;
+  opacity: 0.85;
+}
+
+/* Checkbox + Label */
+.google-sso-section label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+}
+
+.google-sso-section input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+/* Subtext */
+.google-sso-section .info-text {
+  color: var(--color-text-tertiary);
+  font-size: 0.875rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Disabled State for SSO (Google accounts cannot disable it) */
+.google-sso-section.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+  filter: grayscale(0.2);
 }
 
 /* Follow Lists - Full Width */
@@ -253,18 +315,11 @@
   margin-top: 1.5rem;
 }
 
-@media (max-width: 768px) {
-  .follow-lists {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-}
-
 .followers-list,
 .following-list {
-  background: #f9fafb;
-  border: 1px solid var(--color-border);
-  border-radius: 0.5rem;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
   padding: 1rem;
 }
 
@@ -274,8 +329,8 @@
   font-weight: 600;
   margin: 0 0 1rem 0;
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid var(--color-border);
-  color: #1f2937;
+  border-bottom: 2px solid var(--color-border-light);
+  color: var(--color-text-primary);
 }
 
 .followers-items,
@@ -291,9 +346,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border-light);
   gap: 1rem;
-  transition: background-color 0.2s ease;
+  transition: background-color var(--transition-base);
+  border-radius: var(--radius-sm);
 }
 
 .follower-item:last-child,
@@ -303,7 +359,7 @@
 
 .follower-item:hover,
 .following-item:hover {
-  background-color: #ffffff;
+  background-color: var(--color-bg-card);
 }
 
 .follower-link,
@@ -324,8 +380,8 @@
 .follower-username,
 .following-username {
   font-weight: 600;
-  color: #1f2937;
-  transition: color 0.2s ease;
+  color: var(--color-text-primary);
+  transition: color var(--transition-base);
 }
 
 .follower-link:hover .follower-username,
@@ -336,7 +392,7 @@
 .follower-bio,
 .following-bio {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--color-text-tertiary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -348,11 +404,22 @@
   font-size: 0.875rem;
   min-width: 90px;
   margin: 0;
+  background: var(--color-bg-card);
+  border: 2px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  transition: all var(--transition-base);
+}
+
+.follow-btn-inline:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
 .no-followers,
 .no-following {
-  color: #9ca3af;
+  color: var(--color-text-muted);
   font-size: 0.875rem;
   text-align: center;
   padding: 1.5rem;
@@ -365,7 +432,7 @@
 .following-list.error {
   padding: 1.5rem;
   text-align: center;
-  color: #6b7280;
+  color: var(--color-text-tertiary);
 }
 
 /* Checkbox Styling */
@@ -381,7 +448,7 @@ label {
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
-  color: #374151;
+  color: var(--color-text-secondary);
 }
 
 /* Modal */
@@ -399,12 +466,12 @@ label {
 }
 
 .profile-settings .modal-content {
-  background: white;
+  background: var(--color-bg-card);
   padding: 2rem;
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   width: 90%;
   max-width: 450px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-xl);
   text-align: center;
 }
 
@@ -422,7 +489,7 @@ label {
   }
 
   .profile-settings .profile-card {
-    border-radius: 0.5rem;
+    border-radius: var(--radius-md);
   }
 
   .tab-panel {

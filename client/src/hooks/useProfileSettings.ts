@@ -6,6 +6,7 @@ import {
   resetPassword,
   updateBiography,
   updateMessagingSetting,
+  updateGoogleSSOSetting,
 } from '../services/userService';
 import { SafeDatabaseUser } from '../types/types';
 import useUserContext from './useUserContext';
@@ -35,6 +36,8 @@ const useProfileSettings = () => {
 
   const [allowOpenMessaging, setAllowOpenMessaging] = useState(false);
 
+  const [googleSSOEnabled, setGoogleSSOEnabled] = useState(false);
+
   const canEditProfile =
     currentUser.username && userData?.username ? currentUser.username === userData.username : false;
 
@@ -47,6 +50,7 @@ const useProfileSettings = () => {
         const data = await getUserByUsername(username);
         setUserData(data);
         setAllowOpenMessaging(data.allowOpenMessaging || false);
+        setGoogleSSOEnabled(data.isGoogleSSO ?? false);
       } catch (error) {
         setErrorMessage('Error fetching user profile');
         setUserData(null);
@@ -141,6 +145,27 @@ const useProfileSettings = () => {
   };
 
   /**
+   * Update Google SSO toggle
+   */
+  const handleUpdateGoogleSSOSetting = async (newValue: boolean) => {
+    if (!username) return;
+
+    try {
+      const updatedUser = await updateGoogleSSOSetting(username, newValue);
+      setUserData(updatedUser);
+      setGoogleSSOEnabled(newValue);
+      setSuccessMessage(
+        newValue ? 'Google SSO has been enabled.' : 'Google SSO has been disabled.',
+      );
+      setErrorMessage(null);
+    } catch (error) {
+      setErrorMessage(`Failed to update Google SSO settings:${error}`);
+      setSuccessMessage(null);
+      setGoogleSSOEnabled(!newValue);
+    }
+  };
+
+  /**
    * Handler for deleting the user (triggers confirmation modal)
    */
   const handleDeleteUser = () => {
@@ -187,6 +212,8 @@ const useProfileSettings = () => {
     showPassword,
     togglePasswordVisibility,
     allowOpenMessaging,
+    googleSSOEnabled,
+    handleUpdateGoogleSSOSetting,
     handleResetPassword,
     handleUpdateBiography,
     handleDeleteUser,

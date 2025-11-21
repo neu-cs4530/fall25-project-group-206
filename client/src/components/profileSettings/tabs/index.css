@@ -45,16 +45,16 @@
 }
 
 .tabs-header .tab--active {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #ffffff;
-  border-color: #2563eb;
+  border-color: #667eea;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
   transform: translateY(0);
 }
 
 .tabs-header .tab--active:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, #5a73e8 0%, #6b42a0 100%);
   transform: translateY(-1px);
 }
 

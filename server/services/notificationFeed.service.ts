@@ -1,4 +1,5 @@
-// server/services/notificationFeed.service.ts
+/* eslint no-console: "off" */
+
 import { ObjectId } from 'mongodb';
 import BookmarkModel from '../models/bookmark.model';
 import CommunityModel from '../models/community.model';
@@ -19,6 +20,74 @@ import QuestionModel from '../models/questions.model';
 import NotificationModel from '../models/notification.model';
 
 /**
+ * Internal helper type: a NotificationItem that always has a `sources` array.
+ * `sources` is where we keep track of all origins (e.g., "collection", "community", "following").
+ */
+type NotificationWithSources = NotificationItem & {
+  sources: string[];
+};
+
+/**
+ * Normalize a NotificationItem into a NotificationWithSources by
+ * ensuring `sources` exists and at least contains the current `location`.
+ */
+const ensureSources = (n: NotificationItem | NotificationWithSources): NotificationWithSources => {
+  if ('sources' in n && Array.isArray((n as NotificationWithSources).sources)) {
+    return n as NotificationWithSources;
+  }
+
+  return {
+    ...n,
+    sources: [n.location],
+  };
+};
+
+/**
+ * Merge two notifications that correspond to the same underlying event.
+ *
+ * Rules:
+ *  - `sources` = union of sources from both notifications.
+ *  - If ANY source is "following", the primary `location` becomes "following".
+ *  - Between the two versions, we prefer:
+ *      * the one that has "following" as a source when the other does not, OR
+ *      * otherwise, the one with the newer `eventDate`.
+ */
+const mergeNotification = (
+  existing: NotificationWithSources | undefined,
+  incoming: NotificationItem | NotificationWithSources,
+): NotificationWithSources => {
+  const normalizedIncoming = ensureSources(incoming);
+
+  if (!existing) {
+    return normalizedIncoming;
+  }
+
+  const normalizedExisting: NotificationWithSources = existing;
+
+  const mergedSources = Array.from(
+    new Set([...normalizedExisting.sources, ...normalizedIncoming.sources]),
+  );
+
+  const hasFollowing = mergedSources.includes('following');
+
+  const incomingHasFollowing =
+    normalizedIncoming.sources.includes('following') &&
+    !normalizedExisting.sources.includes('following');
+
+  const incomingIsNewer =
+    normalizedIncoming.eventDate.getTime() >= normalizedExisting.eventDate.getTime();
+
+  const preferIncoming = incomingHasFollowing || incomingIsNewer;
+  const base = preferIncoming ? normalizedIncoming : normalizedExisting;
+
+  return {
+    ...base,
+    location: hasFollowing ? 'following' : base.location,
+    sources: mergedSources,
+  };
+};
+
+/**
  * Builds notifications based on bookmarks (collections + communities).
  *
  * Flow:
@@ -32,13 +101,20 @@ export const buildNotificationsFromBookmarks = async (
   username: string,
 ): Promise<NotificationItem[] | { error: string }> => {
   try {
+    console.log(`[NOTIF][Bookmarks] Building notifications from bookmarks for user="${username}"`);
+
     // 1. Only bookmarks that can contribute to the feed
     const bookmarks = await BookmarkModel.find({
       username,
       targetType: { $in: ['Collection', 'Community'] },
-    }); // NOTE: no `.exec()` here
+    });
+
+    console.log(
+      `[NOTIF][Bookmarks] Found ${bookmarks?.length ?? 0} bookmark(s) for user="${username}"`,
+    );
 
     if (!bookmarks || bookmarks.length === 0) {
+      console.log('[NOTIF][Bookmarks] No bookmarks found, returning empty array.');
       return [];
     }
 
@@ -47,13 +123,15 @@ export const buildNotificationsFromBookmarks = async (
 
     for (const b of bookmarks) {
       if (b.targetType === 'Collection') {
-        // populateDocument expects string id
         collectionTargetIds.push(b.targetId.toString());
       } else if (b.targetType === 'Community') {
-        // keep ObjectId for CommunityModel.find
         communityObjectIds.push(b.targetId as DatabaseCommunity['_id']);
       }
     }
+
+    console.log(
+      `[NOTIF][Bookmarks] Collection IDs=${collectionTargetIds.length}, Community IDs=${communityObjectIds.length}`,
+    );
 
     // 2. Hydrate collections and communities in parallel
     const [collections, communities] = await Promise.all([
@@ -61,7 +139,13 @@ export const buildNotificationsFromBookmarks = async (
       Promise.all(
         collectionTargetIds.map(async id => {
           const result = await populateDocument(id, 'collection');
-          return 'error' in result ? null : (result as PopulatedDatabaseCollection);
+          if ('error' in result) {
+            console.log(
+              `[NOTIF][Bookmarks] populateDocument error for collection id="${id}": ${result.error}`,
+            );
+            return null;
+          }
+          return result as PopulatedDatabaseCollection;
         }),
       ).then(items => items.filter((c): c is PopulatedDatabaseCollection => c !== null)),
 
@@ -76,7 +160,10 @@ export const buildNotificationsFromBookmarks = async (
     // 3. Delegate to core backfill builder
     const notifications = await buildBackfillNotificationsForUser(collections, communities);
 
-    return notifications;
+    // Ensure each has `sources` that at least includes its current location (e.g. "collection" / "community").
+    const withSources: NotificationWithSources[] = notifications.map(n => ensureSources(n));
+
+    return withSources;
   } catch (error) {
     return { error: (error as Error).message };
   }
@@ -86,8 +173,7 @@ export const buildNotificationsFromBookmarks = async (
  * Builds notifications based on users that `username` is following.
  *
  * For each question and answer authored by a followed user, we emit a
- * NotificationItem with location "following". These will later override
- * bookmark-based notifications for the same underlying event.
+ * NotificationItem with location "following".
  */
 export const buildNotificationsFromFollowing = async (
   username: string,
@@ -155,7 +241,10 @@ export const buildNotificationsFromFollowing = async (
     // Newest → oldest
     notifications.sort((a, b) => b.eventDate.getTime() - a.eventDate.getTime());
 
-    return notifications;
+    // Mark all as having "following" as a source.
+    const withSources: NotificationWithSources[] = notifications.map(n => ensureSources(n));
+
+    return withSources;
   } catch (error) {
     return { error: (error as Error).message };
   }
@@ -171,23 +260,31 @@ export const buildNotificationsFromFollowing = async (
  *
  * Precedence:
  *  - For the same underlying Q/A event, "following" notifications override
- *    collection/community notifications.
+ *    collection/community notifications as the primary `location`, but we keep
+ *    all contributing sources in `sources`.
  */
 export const buildNotificationFeedForUser = async (
   username: string,
 ): Promise<NotificationItem[] | { error: string }> => {
   try {
-    // 1) Base source: bookmarks
-    const fromBookmarks = await buildNotificationsFromBookmarks(username);
-    if ('error' in fromBookmarks) {
-      return fromBookmarks;
+    // 1) Base source: bookmarks (collections + communities)
+    const fromBookmarksResult = await buildNotificationsFromBookmarks(username);
+    if ('error' in fromBookmarksResult) {
+      return fromBookmarksResult;
     }
 
+    // Normalize to NotificationWithSources to be safe
+    const bookmarkItems: NotificationWithSources[] = fromBookmarksResult.map(n => ensureSources(n));
+
     // 2) Following-based Q/A activity
-    const fromFollowing = await buildNotificationsFromFollowing(username);
-    if ('error' in fromFollowing) {
-      return fromFollowing;
+    const fromFollowingResult = await buildNotificationsFromFollowing(username);
+    if ('error' in fromFollowingResult) {
+      return fromFollowingResult;
     }
+
+    const followingItems: NotificationWithSources[] = fromFollowingResult.map(n =>
+      ensureSources(n),
+    );
 
     // 3) "X started following you" events from the Notification collection
     const rawFollowDocs = (await NotificationModel.find({
@@ -198,7 +295,7 @@ export const buildNotificationFeedForUser = async (
       .lean()
       .exec()) as DatabaseNotification[];
 
-    const fromFollowEvents: NotificationItem[] = rawFollowDocs.map(doc => ({
+    const followEvents: NotificationItem[] = rawFollowDocs.map(doc => ({
       _id: doc._id,
       actor: doc.actor,
       message: doc.message,
@@ -210,34 +307,49 @@ export const buildNotificationFeedForUser = async (
       category: doc.category,
     }));
 
-    // 4) Merge with precedence: following-based Q/A notifications
-    // override bookmark-based ones for the same underlying event.
-    const merged = new Map<string, NotificationItem>();
+    // 4) Filter out self-authored activity from bookmarks + following.
+    // This prevents "you posted ..." notifications when looking at your own feed
+    // AND stops those events from powering the popup toast.
+    const filteredBookmarks = bookmarkItems.filter(n => n.actor !== username);
+    const filteredFollowing = followingItems.filter(n => n.actor !== username);
+
+    // 5) Merge with precedence using mergeNotification:
+    //    - union of `sources`
+    //    - if any source is "following", location becomes "following"
+    //    - tie-breaking by "following" vs non-following, then by eventDate
+    const merged = new Map<string, NotificationWithSources>();
 
     const makeKey = (n: NotificationItem): string => {
       const targetIdStr = n.targetId.toString();
       const eventMs = n.eventDate.getTime();
-
-      // Key is purely about the underlying event, not category.
       return `${n.targetType}:${targetIdStr}:${n.actor}:${eventMs}`;
     };
 
+    const addToMerged = (n: NotificationItem | NotificationWithSources) => {
+      const key = makeKey(n);
+      const existing = merged.get(key);
+      const mergedNotif = mergeNotification(existing, n);
+      merged.set(key, mergedNotif);
+    };
+
     // First, bookmark-based entries
-    for (const n of fromBookmarks) {
-      merged.set(makeKey(n), n);
+    for (const n of filteredBookmarks) {
+      addToMerged(n);
     }
 
-    // Then, following-based Q/A entries override those
-    for (const n of fromFollowing) {
-      merged.set(makeKey(n), n);
+    // Then, following-based Q/A entries (they will "win" as location='following'
+    // when the same event is also present via bookmarks)
+    for (const n of filteredFollowing) {
+      addToMerged(n);
     }
 
     // Finally, follow-you events (targetType === 'User') simply add in
-    for (const n of fromFollowEvents) {
-      merged.set(makeKey(n), n);
+    for (const n of followEvents) {
+      addToMerged(n);
     }
 
-    const combined = Array.from(merged.values());
+    // 6) Build final array, newest → oldest by eventDate
+    const combined: NotificationItem[] = Array.from(merged.values());
     combined.sort((a, b) => b.eventDate.getTime() - a.eventDate.getTime());
 
     return combined;
