@@ -12,6 +12,16 @@ export interface NotificationPreferences {
   perCategory: Map<string, NotificationPriority>;
   perLocation: Map<string, NotificationPriority>;
   defaultPriority: NotificationPriority;
+
+  dndEnabled: boolean;
+  silentHours?: {
+    start?: string | null;
+    end?: string | null;
+  } | null;
+
+  muteHighGroups?: boolean;
+  muteNormalGroups?: boolean;
+  muteLowGroups?: boolean;
 }
 
 const NotificationPreferencesModel: Model<NotificationPreferences> =

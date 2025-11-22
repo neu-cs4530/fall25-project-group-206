@@ -50,6 +50,17 @@ export interface NotificationPreferencesDTO {
   perCategory: Record<string, NotificationPriority>;
   perLocation: Record<string, NotificationPriority>;
   defaultPriority: NotificationPriority;
+
+  // NEW: global Do Not Disturb and optional daily quiet hours
+  dndEnabled?: boolean;
+  silentHours?: {
+    start: string; // 'HH:MM' 24h (server time for now)
+    end: string; // 'HH:MM'
+  } | null;
+
+  muteHighGroups?: boolean;
+  muteNormalGroups?: boolean;
+  muteLowGroups?: boolean;
 }
 
 export type DigestPriority = NotificationPriority | 'muted';

@@ -579,6 +579,11 @@ const buildDigestLabel = (
  *  - For the same underlying Q/A event, "following" notifications override
  *    collection/community notifications as the primary `location`, but we keep
  *    all contributing sources in `sources`.
+ *
+ * Tier muting:
+ *  - If muteHighGroups / muteNormalGroups / muteLowGroups is set in prefs,
+ *    notifications with that priority are hidden from the **feed**.
+ *    They still appear in the digest.
  */
 export const buildNotificationFeedForUser = async (
   username: string,
@@ -590,13 +595,26 @@ export const buildNotificationFeedForUser = async (
     const filteredWithPriority: NotificationItem[] = [];
 
     for (const notif of combined) {
+      // 1. Per-notification muting (DND, silent hours, muted users/communities/collections)
       const muted = await isNotificationMuted(notif, prefs);
       if (muted) {
         continue;
       }
 
+      // 2. Resolve effective priority for this notification
       const priority = resolvePriorityForNotification(notif, prefs);
 
+      // 3. Tier muting for the **feed** (not the digest)
+      if (
+        (priority === 'high' && prefs.muteHighGroups) ||
+        (priority === 'normal' && prefs.muteNormalGroups) ||
+        (priority === 'low' && prefs.muteLowGroups)
+      ) {
+        // Skip this notification entirely from the feed
+        continue;
+      }
+
+      // 4. Keep the notification in the feed with its computed priority
       filteredWithPriority.push({
         ...notif,
         priority,
@@ -628,16 +646,20 @@ export const buildNotificationDigestForUser = async (
     for (const rawNotif of combined) {
       const notif = rawNotif as NotificationWithSources;
 
+      // Apply user-level muting (DND, silent hours, muted users/communities/collections)
       const muted = await isNotificationMuted(notif, prefs);
+
+      // If muted by those rules, mark the group as "muted" priority;
+      // otherwise use resolved high/normal/low.
       const effectivePriority: DigestPriority = muted
         ? 'muted'
         : resolvePriorityForNotification(notif, prefs);
 
       const category = notif.category ?? 'question';
       const location = notif.location;
-
       const eventMs = notif.eventDate.getTime();
 
+      // Decide which digest group this notification belongs to
       const { key: groupKey, labelContext } = computeDigestGrouping(notif, effectivePriority);
 
       let group = groups.get(groupKey);
@@ -652,19 +674,22 @@ export const buildNotificationDigestForUser = async (
           labelContext,
         };
         groups.set(groupKey, group);
-      } else if (labelContext && !group.labelContext) {
+      } else {
         // First non-empty context wins
-        group.labelContext = labelContext;
+        if (labelContext && !group.labelContext) {
+          group.labelContext = labelContext;
+        }
+
+        if (eventMs > group.latestEventMs) {
+          group.latestEventMs = eventMs;
+        }
       }
 
+      // Store underlying notifications with their per-item priority
       group.notifications.push({
         ...notif,
         priority: muted ? undefined : (effectivePriority as NotificationPriority),
       });
-
-      if (eventMs > group.latestEventMs) {
-        group.latestEventMs = eventMs;
-      }
     }
 
     const response: NotificationDigestResponse = {

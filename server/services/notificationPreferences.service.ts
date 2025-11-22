@@ -23,6 +23,22 @@ export interface NotificationPreferencesDTO {
   perCategory: Record<string, NotificationPriority>;
   perLocation: Record<string, NotificationPriority>;
   defaultPriority: NotificationPriority;
+
+  dndEnabled: boolean;
+  silentHours: {
+    start: string;
+    end: string;
+  } | null;
+
+  muteHighGroups?: boolean;
+  muteNormalGroups?: boolean;
+  muteLowGroups?: boolean;
+}
+
+const PRIORITY_ORDER: NotificationPriority[] = ['low', 'normal', 'high'];
+
+function maxPriority(a: NotificationPriority, b: NotificationPriority): NotificationPriority {
+  return PRIORITY_ORDER.indexOf(a) >= PRIORITY_ORDER.indexOf(b) ? a : b;
 }
 
 /**
@@ -35,6 +51,10 @@ export type NotificationPreferencesUpdate = Partial<NotificationPreferencesDTO>;
  * Convert a NotificationPreferences mongoose document into a plain DTO.
  */
 function toDTO(prefs: NotificationPreferences): NotificationPreferencesDTO {
+  const silent = prefs.silentHours as { start?: string | null; end?: string | null } | undefined;
+
+  const hasSilent = silent && (silent.start || silent.end);
+
   return {
     mutedUsers: [...prefs.mutedUsers],
     mutedCommunities: prefs.mutedCommunities.map(id => id.toString()),
@@ -43,6 +63,18 @@ function toDTO(prefs: NotificationPreferences): NotificationPreferencesDTO {
     perCategory: Object.fromEntries(prefs.perCategory ?? []),
     perLocation: Object.fromEntries(prefs.perLocation ?? []),
     defaultPriority: prefs.defaultPriority,
+
+    dndEnabled: prefs.dndEnabled ?? false,
+    silentHours: hasSilent
+      ? {
+          start: silent?.start ?? '',
+          end: silent?.end ?? '',
+        }
+      : null,
+
+    muteHighGroups: prefs.muteHighGroups ?? false,
+    muteNormalGroups: prefs.muteNormalGroups ?? false,
+    muteLowGroups: prefs.muteLowGroups ?? false,
   };
 }
 
@@ -69,6 +101,13 @@ export async function getOrCreatePreferences(username: string): Promise<Notifica
       perCategory: new Map(),
       perLocation: new Map(),
       defaultPriority: 'normal',
+
+      // NEW
+      dndEnabled: false,
+      silentHours: { start: null, end: null },
+      muteHighGroups: false,
+      muteNormalGroups: false,
+      muteLowGroups: false,
     } as unknown as NotificationPreferences;
   }
 
@@ -91,6 +130,12 @@ export async function getOrCreatePreferences(username: string): Promise<Notifica
     perCategory: {},
     perLocation: {},
     defaultPriority: 'normal',
+
+    dndEnabled: false,
+    silentHours: { start: null, end: null },
+    muteHighGroups: false,
+    muteNormalGroups: false,
+    muteLowGroups: false,
   });
 
   return createdDoc as unknown as NotificationPreferences;
@@ -105,22 +150,11 @@ export async function getPreferencesDTO(username: string): Promise<NotificationP
   return toDTO(prefs);
 }
 
-/**
- * Resolve the priority for a given notification.
- *
- * Precedence:
- *  1. perCategoryLocation: "category:location"
- *  2. perCategory: "category"
- *  3. perLocation: "location"
- *  4. defaultPriority
- */
-export function resolvePriorityForNotification(
-  notification: NotificationItem,
+function resolvePriorityForCategoryLocation(
+  category: string,
+  location: string,
   prefs: NotificationPreferences,
 ): NotificationPriority {
-  const category = notification.category ?? 'question';
-  const location = notification.location;
-
   const keyCategoryLocation = `${category}:${location}`;
 
   const fromCategoryLocation = prefs.perCategoryLocation.get(keyCategoryLocation) as
@@ -144,6 +178,74 @@ export function resolvePriorityForNotification(
 }
 
 /**
+ * Resolve the priority for a given notification.
+ *
+ * Precedence:
+ *  1. perCategoryLocation: "category:location"
+ *  2. perCategory: "category"
+ *  3. perLocation: "location"
+ *  4. defaultPriority
+ */
+export function resolvePriorityForNotification(
+  notification: NotificationItem,
+  prefs: NotificationPreferences,
+): NotificationPriority {
+  const category = notification.category ?? 'question';
+
+  // Always at least the main location; add any extra “sources” if present.
+  const locations = new Set<string>([notification.location, ...(notification.sources ?? [])]);
+
+  let resolved: NotificationPriority | null = null;
+
+  for (const loc of locations) {
+    const p = resolvePriorityForCategoryLocation(category, loc, prefs);
+    resolved = resolved ? maxPriority(resolved, p) : p;
+  }
+
+  // Safety fallback
+  return resolved ?? prefs.defaultPriority;
+}
+
+interface SilentHoursConfig {
+  start: string;
+  end: string;
+}
+
+const parseTimeToMinutes = (hhmm: string): number | null => {
+  if (!hhmm) return null;
+  const [hStr, mStr] = hhmm.split(':');
+  const h = Number(hStr);
+  const m = Number(mStr);
+  if (Number.isNaN(h) || Number.isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) {
+    return null;
+  }
+  return h * 60 + m;
+};
+
+const isWithinSilentHours = (silentHours: SilentHoursConfig | null | undefined): boolean => {
+  if (!silentHours?.start || !silentHours?.end) {
+    return false;
+  }
+
+  const start = parseTimeToMinutes(silentHours.start);
+  const end = parseTimeToMinutes(silentHours.end);
+  if (start === null || end === null) {
+    return false;
+  }
+
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  // Non-wrapping interval, e.g. 09:00–17:00
+  if (start <= end) {
+    return currentMinutes >= start && currentMinutes < end;
+  }
+
+  // Wrapping over midnight, e.g. 22:00–07:00
+  return currentMinutes >= start || currentMinutes < end;
+};
+
+/**
  * Determine whether a notification should be muted for this user.
  *
  * Rules:
@@ -155,6 +257,26 @@ export async function isNotificationMuted(
   notification: NotificationItem,
   prefs: NotificationPreferences,
 ): Promise<boolean> {
+  // Global Do Not Disturb
+  if (prefs.dndEnabled) {
+    return true;
+  }
+
+  // Silent hours
+  const rawSilent = prefs.silentHours;
+  const silentConfig: SilentHoursConfig | null =
+    rawSilent && (rawSilent.start || rawSilent.end)
+      ? {
+          start: rawSilent.start ?? '',
+          end: rawSilent.end ?? '',
+        }
+      : null;
+
+  if (isWithinSilentHours(silentConfig)) {
+    return true;
+  }
+
+  // Existing per-user / per-community / per-collection logic
   if (prefs.mutedUsers.includes(notification.actor)) {
     return true;
   }
@@ -262,6 +384,43 @@ export async function updatePreferencesForUser(
 
   if (update.defaultPriority) {
     prefsDoc.defaultPriority = update.defaultPriority;
+  }
+
+  if (typeof update.dndEnabled === 'boolean') {
+    prefsDoc.dndEnabled = update.dndEnabled;
+  }
+
+  if (update.silentHours !== undefined) {
+    prefsDoc.silentHours = update.silentHours
+      ? { start: update.silentHours.start, end: update.silentHours.end }
+      : null;
+  }
+
+  if (typeof update.muteHighGroups === 'boolean') {
+    prefsDoc.muteHighGroups = update.muteHighGroups;
+  }
+  if (typeof update.muteNormalGroups === 'boolean') {
+    prefsDoc.muteNormalGroups = update.muteNormalGroups;
+  }
+  if (typeof update.muteLowGroups === 'boolean') {
+    prefsDoc.muteLowGroups = update.muteLowGroups;
+  }
+
+  // NEW: global DND toggle
+  if (typeof update.dndEnabled === 'boolean') {
+    prefsDoc.dndEnabled = update.dndEnabled;
+  }
+
+  // NEW: silent hours
+  if (update.silentHours !== undefined) {
+    if (update.silentHours === null) {
+      prefsDoc.silentHours = { start: null, end: null };
+    } else {
+      prefsDoc.silentHours = {
+        start: update.silentHours.start ?? null,
+        end: update.silentHours.end ?? null,
+      };
+    }
   }
 
   await (prefsDoc as unknown as mongoose.Document).save();

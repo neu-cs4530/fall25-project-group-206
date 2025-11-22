@@ -41,6 +41,16 @@ const notificationPreferencesSchema = new Schema(
       enum: ['high', 'normal', 'low'],
       default: 'normal',
     },
+
+    dndEnabled: { type: Boolean, default: false },
+    silentHours: {
+      start: { type: String, default: null }, // e.g. '22:00'
+      end: { type: String, default: null }, // e.g. '07:00'
+    },
+
+    muteHighGroups: { type: Boolean, default: false },
+    muteNormalGroups: { type: Boolean, default: false },
+    muteLowGroups: { type: Boolean, default: false },
   },
   {
     collection: 'NotificationPreferences',

@@ -1,11 +1,25 @@
 // FILE: client/src/components/main/notificationsPage/NotificationPreferencesPanel.tsx
 import { useEffect, useState, useCallback } from 'react';
 import useNotificationPreferencesPage from '../../../hooks/useNotificationPreferencesPage';
-import type { NotificationPriority, NotificationPreferencesDTO } from '../../../types/types';
+import type {
+  NotificationPriority,
+  NotificationPreferencesDTO,
+  NotificationLocation,
+} from '../../../types/types';
 
 interface Props {
   onClose: () => void;
 }
+
+/**
+ * Local helper types for the grid keys.
+ * These mirror the keys we use for category/location.
+ */
+type NotificationCategoryKey = 'question' | 'answer' | 'follow' | 'direct';
+type NotificationLocationKey = Extract<
+  NotificationLocation,
+  'collection' | 'community' | 'following' | 'direct'
+>;
 
 /**
  * Normalize undefined priority to 'normal' for display/fallback.
@@ -31,22 +45,48 @@ const NotificationPreferencesPanel = ({ onClose }: Props) => {
   // Static metadata for the priority grid
   const priorityOptions: NotificationPriority[] = ['high', 'normal', 'low'];
 
-  const categories: { key: string; label: string }[] = [
+  const categories: { key: NotificationCategoryKey; label: string }[] = [
     { key: 'question', label: 'Questions' },
     { key: 'answer', label: 'Answers' },
     { key: 'follow', label: 'Follows' },
     { key: 'direct', label: 'Direct / Chat' },
   ];
 
-  const locations: { key: string; label: string }[] = [
+  const locations: { key: NotificationLocationKey; label: string }[] = [
     { key: 'collection', label: 'Collections' },
     { key: 'community', label: 'Communities' },
     { key: 'following', label: 'Following' },
     { key: 'direct', label: 'Direct' },
   ];
 
+  /**
+   * Matrix of which category/location pairs can actually occur.
+   *
+   * - Questions / Answers: can appear from collections, communities, following
+   * - Follows: only makes sense in "Following"
+   * - Direct / Chat: only makes sense in "Direct"
+   */
+  const allowedMatrix: Record<NotificationCategoryKey, NotificationLocationKey[]> = {
+    question: ['collection', 'community', 'following'],
+    answer: ['collection', 'community', 'following'],
+    follow: ['following'],
+    direct: ['direct'],
+  };
+
+  // Ensure we always have sensible defaults for the new fields
   useEffect(() => {
-    setLocalPrefs(prefs);
+    if (!prefs) {
+      setLocalPrefs(null);
+      return;
+    }
+    setLocalPrefs({
+      ...prefs,
+      dndEnabled: prefs.dndEnabled ?? false,
+      silentHours: prefs.silentHours ?? null,
+      muteHighGroups: prefs.muteHighGroups ?? false,
+      muteNormalGroups: prefs.muteNormalGroups ?? false,
+      muteLowGroups: prefs.muteLowGroups ?? false,
+    });
   }, [prefs]);
 
   const handleSave = useCallback(async () => {
@@ -170,6 +210,48 @@ const NotificationPreferencesPanel = ({ onClose }: Props) => {
     });
   };
 
+  /**
+   * DND / Silent-hours handlers
+   */
+  const toggleDnd = () => {
+    setLocalPrefs(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        dndEnabled: !(prev.dndEnabled ?? false),
+      };
+    });
+  };
+
+  const handleSilentHoursChange = (field: 'start' | 'end', value: string) => {
+    setLocalPrefs(prev => {
+      if (!prev) return prev;
+
+      const existing = prev.silentHours ?? { start: '', end: '' };
+      const next = {
+        ...existing,
+        [field]: value,
+      };
+
+      // If both empty, treat as "no silent hours"
+      if (!next.start && !next.end) {
+        return {
+          ...prev,
+          silentHours: null,
+        };
+      }
+
+      return {
+        ...prev,
+        silentHours: next,
+      };
+    });
+  };
+
+  const clearSilentHours = () => {
+    setLocalPrefs(prev => (prev ? { ...prev, silentHours: null } : prev));
+  };
+
   if (loading || !localPrefs) {
     return (
       <div className='notifications-page'>
@@ -195,6 +277,9 @@ const NotificationPreferencesPanel = ({ onClose }: Props) => {
     id => !bookmarkedCollections.some(coll => coll.id === id),
   );
 
+  const dndEnabled = localPrefs.dndEnabled ?? false;
+  const silent = localPrefs.silentHours ?? null;
+
   return (
     <div className='notifications-page'>
       <div className='notifications-header'>
@@ -214,6 +299,47 @@ const NotificationPreferencesPanel = ({ onClose }: Props) => {
           <span>{error}</span>
         </div>
       )}
+
+      {/* Global Do Not Disturb + silent hours */}
+      <section className='notifications-section'>
+        <h3>Do Not Disturb</h3>
+        <p>
+          Enable Do Not Disturb to mute all notifications. You can also configure daily silent hours
+          if you only want notifications outside a specific time range.
+        </p>
+
+        <label className='notif-pref-row'>
+          <input type='checkbox' checked={dndEnabled} onChange={toggleDnd} /> Enable Do Not Disturb
+          (mute all notifications)
+        </label>
+
+        <div className='notifications-dnd-hours'>
+          <h4>Silent hours (optional)</h4>
+          <p>
+            Choose a daily time window when notifications should be silenced. Leave both times empty
+            to disable silent hours. Overnight windows (for example, 22:00–07:00) are supported.
+          </p>
+          <div className='notifications-dnd-hours-inputs'>
+            <span>From</span>
+            <input
+              type='time'
+              value={silent?.start ?? ''}
+              onChange={e => handleSilentHoursChange('start', e.target.value)}
+              disabled={dndEnabled}
+            />
+            <span>to</span>
+            <input
+              type='time'
+              value={silent?.end ?? ''}
+              onChange={e => handleSilentHoursChange('end', e.target.value)}
+              disabled={dndEnabled}
+            />
+            <button type='button' onClick={clearSilentHours} disabled={dndEnabled}>
+              Clear
+            </button>
+          </div>
+        </div>
+      </section>
 
       {/* Muted users based on following list */}
       <section className='notifications-section'>
@@ -356,13 +482,47 @@ const NotificationPreferencesPanel = ({ onClose }: Props) => {
         )}
       </section>
 
-      {/* Priority levels */}
       <section className='notifications-section notifications-priority-section'>
         <h3>Priority levels</h3>
         <p>
           Set how prominently different types of notifications should appear. Changing the default
           will update all rows below; you can then override individual cells.
         </p>
+
+        <div className='notifications-priority-mute-tiers'>
+          <label>
+            <input
+              type='checkbox'
+              checked={localPrefs.muteHighGroups ?? false}
+              onChange={e =>
+                setLocalPrefs(prev => (prev ? { ...prev, muteHighGroups: e.target.checked } : prev))
+              }
+            />{' '}
+            Hide high-priority notifications from the feed
+          </label>
+          <label>
+            <input
+              type='checkbox'
+              checked={localPrefs.muteNormalGroups ?? false}
+              onChange={e =>
+                setLocalPrefs(prev =>
+                  prev ? { ...prev, muteNormalGroups: e.target.checked } : prev,
+                )
+              }
+            />{' '}
+            Hide normal-priority notifications from the feed
+          </label>
+          <label>
+            <input
+              type='checkbox'
+              checked={localPrefs.muteLowGroups ?? false}
+              onChange={e =>
+                setLocalPrefs(prev => (prev ? { ...prev, muteLowGroups: e.target.checked } : prev))
+              }
+            />{' '}
+            Hide low-priority notifications from the feed
+          </label>
+        </div>
 
         <div className='notifications-priority-default'>
           <span className='notifications-priority-label'>
@@ -400,6 +560,19 @@ const NotificationPreferencesPanel = ({ onClose }: Props) => {
                   <td>{cat.label}</td>
                   {locations.map(loc => {
                     const pairKey = `${cat.key}:${loc.key}`;
+                    const isAllowed = allowedMatrix[cat.key].includes(loc.key);
+
+                    if (!isAllowed) {
+                      // Impossible combination → gray, non-interactive cell
+                      return (
+                        <td
+                          key={pairKey}
+                          className='notifications-priority-cell notifications-priority-cell--disabled'>
+                          <span className='notifications-priority-na'>—</span>
+                        </td>
+                      );
+                    }
+
                     const current = getEffectivePriority(
                       localPrefs.perCategoryLocation[pairKey] ??
                         localPrefs.perCategory[cat.key] ??
@@ -408,7 +581,7 @@ const NotificationPreferencesPanel = ({ onClose }: Props) => {
                     );
 
                     return (
-                      <td key={pairKey}>
+                      <td key={pairKey} className='notifications-priority-cell'>
                         <select
                           value={current}
                           onChange={e =>
