@@ -11,7 +11,8 @@ export type NotificationLocation =
   | 'collection'
   | 'community'
   | 'collection/community'
-  | 'following';
+  | 'following'
+  | 'direct';
 
 /**
  * What kind of thing this notification is about.
@@ -46,7 +47,7 @@ export interface NotificationItem {
    * - 'question' / 'answer' → live persisted Q/A events
    * - 'follow' → user-follow events
    */
-  category?: 'backfill' | 'question' | 'answer' | 'follow';
+  category?: 'backfill' | 'question' | 'answer' | 'follow' | 'direct';
 }
 
 /**

@@ -287,15 +287,15 @@ export const buildNotificationFeedForUser = async (
     );
 
     // 3) "X started following you" events from the Notification collection
-    const rawFollowDocs = (await NotificationModel.find({
+    const rawUserDocs = (await NotificationModel.find({
       user: username,
-      category: 'follow',
+      category: { $in: ['follow', 'direct'] },
     })
       .sort({ eventDate: -1 })
       .lean()
       .exec()) as DatabaseNotification[];
 
-    const followEvents: NotificationItem[] = rawFollowDocs.map(doc => ({
+    const userEvents: NotificationItem[] = rawUserDocs.map(doc => ({
       _id: doc._id,
       actor: doc.actor,
       message: doc.message,
@@ -344,7 +344,7 @@ export const buildNotificationFeedForUser = async (
     }
 
     // Finally, follow-you events (targetType === 'User') simply add in
-    for (const n of followEvents) {
+    for (const n of userEvents) {
       addToMerged(n);
     }
 

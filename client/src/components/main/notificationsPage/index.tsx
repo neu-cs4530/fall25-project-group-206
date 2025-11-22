@@ -151,8 +151,8 @@ const NotificationsPage = () => {
 
             displayMessage = `${n.actor} ${action} in ${whereLabel} you have bookmarked.`;
           }
-
           const eventDateValue = n.eventDate as unknown as Date | string;
+          const targetTypeLabel = n.targetType ? n.targetType.toLowerCase() : 'activity';
 
           return (
             <li key={key} className='notification-card' onClick={() => handleClick(n)}>
@@ -179,8 +179,8 @@ const NotificationsPage = () => {
 
                 <span className='notification-separator'>•</span>
                 <span
-                  className={`notification-type badge-${n.targetType?.toLowerCase() ?? 'activity'}`}>
-                  {n.targetType ?? 'Activity'}
+                  className={`notification-type badge-${(n.targetType ?? 'activity').toLowerCase()}`}>
+                  {targetTypeLabel}
                 </span>
               </div>
             </li>

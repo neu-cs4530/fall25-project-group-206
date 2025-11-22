@@ -493,6 +493,89 @@ describe('notificationFeed.service', () => {
       );
     });
 
+    it('includes "direct" category notifications from NotificationModel in the feed', async () => {
+      // 1) No bookmarks → bookmarks branch returns []
+      jest.spyOn(BookmarkModel, 'find').mockResolvedValueOnce([] as any);
+      buildBackfillMock.mockResolvedValueOnce([] as any);
+      jest.spyOn(CommunityModel, 'find').mockResolvedValueOnce([] as any);
+
+      // 2) No following → following branch returns []
+      const fakeUser: DatabaseUser & { following: DatabaseUser[] } = {
+        _id: new mongoose.Types.ObjectId(),
+        username: 'alice',
+        email: 'alice@example.com',
+        password: 'hashed',
+        dateJoined: new Date(),
+        followers: [],
+        following: [],
+      } as any;
+
+      jest.spyOn(UserModel, 'findOne').mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(fakeUser),
+      } as any);
+
+      jest.spyOn(QuestionModel, 'find').mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([] as any),
+      } as any);
+
+      // 3) Direct message notifications from NotificationModel
+      const olderDate = new Date('2024-03-01T10:00:00Z');
+      const newerDate = new Date('2024-03-02T10:00:00Z');
+
+      const directDoc1: DatabaseNotification = {
+        _id: new mongoose.Types.ObjectId(),
+        user: 'alice',
+        actor: 'bob',
+        message: 'bob sent you a message: "hey"',
+        eventDate: olderDate,
+        targetId: new mongoose.Types.ObjectId(),
+        targetType: 'User',
+        location: 'direct',
+        link: '/messaging',
+        category: 'direct',
+        isRead: false,
+      } as any;
+
+      const directDoc2: DatabaseNotification = {
+        _id: new mongoose.Types.ObjectId(),
+        user: 'alice',
+        actor: 'carol',
+        message: 'carol sent you a message: "yo"',
+        eventDate: newerDate,
+        targetId: new mongoose.Types.ObjectId(),
+        targetType: 'User',
+        location: 'direct',
+        link: '/messaging',
+        category: 'direct',
+        isRead: false,
+      } as any;
+
+      jest.spyOn(NotificationModel, 'find').mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([directDoc1, directDoc2]),
+      } as any);
+
+      const feedResult = await buildNotificationFeedForUser('alice');
+
+      if ('error' in feedResult) {
+        fail(`Expected notifications array but received error: ${feedResult.error}`);
+      }
+
+      const feed = feedResult as NotificationItem[];
+
+      // Should get both direct notifications, newest → oldest
+      expect(feed).toHaveLength(2);
+      expect(feed[0].category).toBe('direct');
+      expect(feed[0].actor).toBe('carol');
+      expect(feed[0].message).toBe('carol sent you a message: "yo"');
+      expect(feed[1].category).toBe('direct');
+      expect(feed[1].actor).toBe('bob');
+      expect(feed[1].message).toBe('bob sent you a message: "hey"');
+    });
+
     it('prefers following-based notifications over bookmark-based ones for the same question and answer', async () => {
       const qId = new mongoose.Types.ObjectId();
       const questionDate = new Date('2024-02-01T10:00:00Z');

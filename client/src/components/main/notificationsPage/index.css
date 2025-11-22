@@ -147,3 +147,15 @@
   border-color: #3b82f6; /* Blue */
   background-color: #e0f2fe; /* Light Blue */
 }
+
+/* Direct message location badge */
+.badge-direct {
+  border-color: #fb7185;      /* rose */
+  background-color: #ffe4e6;  /* light rose */
+}
+
+/* "user" targetType badge (for direct messages, follows, etc.) */
+.badge-user {
+  border-color: #6366f1;      /* indigo */
+  background-color: #e0e7ff;  /* light indigo */
+}
