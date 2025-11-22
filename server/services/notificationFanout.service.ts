@@ -11,6 +11,8 @@ import type {
   NotificationLocation,
   DatabaseUser,
   DatabaseNotification,
+  DatabaseMessage,
+  DatabaseChat,
 } from '../types/types';
 import UserModel from '../models/users.model';
 
@@ -236,6 +238,61 @@ export async function notifyOnNewAnswer(
   }
 
   for (const username of allRecipients) {
+    emitNotification(username);
+  }
+}
+
+export async function notifyOnDirectMessage(
+  message: DatabaseMessage,
+  chat: DatabaseChat,
+): Promise<void> {
+  // Only care about direct messages
+  if (message.type !== 'direct') {
+    return;
+  }
+
+  const rawText = (message.msg ?? '').toString().trim();
+  const snippet =
+    rawText.length === 0
+      ? '(no message text)'
+      : rawText.length > 140
+        ? `${rawText.slice(0, 137)}…`
+        : rawText;
+
+  const eventDate = message.msgDateTime ?? new Date();
+
+  const participants = chat.participants ?? [];
+
+  // participants are usernames; filter out the sender
+  const recipientUsernames = participants.filter(
+    uname => typeof uname === 'string' && uname !== message.msgFrom,
+  );
+
+  if (!recipientUsernames.length) {
+    return;
+  }
+
+  const baseDoc: Omit<DatabaseNotification, '_id'> = {
+    user: '', // filled per-recipient below
+    actor: message.msgFrom,
+    message: `${message.msgFrom} sent you a message: "${snippet}"`,
+    eventDate,
+    targetId: message._id,
+    targetType: 'User',
+    location: 'direct',
+    link: '/messaging', // or your actual chat route
+    category: 'direct',
+    isRead: false,
+  };
+
+  const docs: Omit<DatabaseNotification, '_id'>[] = recipientUsernames.map(username => ({
+    ...baseDoc,
+    user: username,
+  }));
+
+  await NotificationModel.insertMany(docs);
+
+  for (const username of recipientUsernames) {
     emitNotification(username);
   }
 }

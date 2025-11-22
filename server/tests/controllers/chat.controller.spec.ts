@@ -1,3 +1,10 @@
+jest.mock('../../services/notificationFanout.service', () => ({
+  __esModule: true,
+  notifyOnNewQuestion: jest.fn().mockResolvedValue(undefined),
+  notifyOnNewAnswer: jest.fn().mockResolvedValue(undefined),
+  notifyOnDirectMessage: jest.fn().mockResolvedValue(undefined),
+}));
+
 import mongoose from 'mongoose';
 import supertest from 'supertest';
 import { Server, type Socket as ServerSocket } from 'socket.io';
@@ -10,7 +17,6 @@ import * as chatService from '../../services/chat.service';
 import * as databaseUtil from '../../utils/database.util';
 import { DatabaseChat, PopulatedDatabaseChat, Message } from '../../types/types';
 import chatController from '../../controllers/chat.controller';
-
 /**
  * Spies on the service functions
  */

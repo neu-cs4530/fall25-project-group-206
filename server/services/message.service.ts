@@ -7,6 +7,7 @@ import { DatabaseMessage, DatabaseUser, Message, MessageResponse } from '../type
  * @param {Message} message - The message to save
  * @returns {Promise<MessageResponse>} - The saved message or an error message
  */
+// server/services/message.service.ts
 export const saveMessage = async (message: Message): Promise<MessageResponse> => {
   try {
     const user: DatabaseUser | null = await UserModel.findOne({ username: message.msgFrom });
@@ -15,7 +16,13 @@ export const saveMessage = async (message: Message): Promise<MessageResponse> =>
       throw new Error('Message sender is invalid or does not exist.');
     }
 
-    const result: DatabaseMessage = await MessageModel.create(message);
+    const normalized: Message = {
+      ...message,
+      msg: (message.msg ?? '').toString(),
+      msgDateTime: message.msgDateTime ?? new Date(),
+    };
+
+    const result: DatabaseMessage = await MessageModel.create(normalized);
     return result;
   } catch (error) {
     return { error: `Error when saving a message: ${(error as Error).message}` };

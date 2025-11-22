@@ -15,8 +15,11 @@ import {
   ChatIdRequest,
   GetChatByParticipantsRequest,
   PopulatedDatabaseChat,
+  DatabaseChat,
+  DatabaseMessage,
 } from '../types/types';
 import { saveMessage } from '../services/message.service';
+import { notifyOnDirectMessage } from '../services/notificationFanout.service';
 
 /*
  * This controller handles chat-related routes.
@@ -94,6 +97,15 @@ const chatController = (socket: FakeSOSocket) => {
       socket
         .to(chatId)
         .emit('chatUpdate', { chat: populatedChat as PopulatedDatabaseChat, type: 'newMessage' });
+
+      // Direct message notifications (everyone except sender)
+      try {
+        await notifyOnDirectMessage(newMessage as DatabaseMessage, updatedChat as DatabaseChat);
+      } catch (notifyErr: unknown) {
+        // eslint-disable-next-line no-console
+        console.error('Error sending direct message notification:', (notifyErr as Error).message);
+      }
+
       res.json(populatedChat);
     } catch (err: unknown) {
       res.status(500).send(`Error adding a message to chat: ${(err as Error).message}`);

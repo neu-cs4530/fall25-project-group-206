@@ -5,11 +5,17 @@ import CollectionModel from '../../models/collection.model';
 import NotificationModel from '../../models/notification.model';
 import UserModel from '../../models/users.model';
 
-import { notifyOnNewQuestion, notifyOnNewAnswer } from '../../services/notificationFanout.service';
+import {
+  notifyOnNewQuestion,
+  notifyOnNewAnswer,
+  notifyOnDirectMessage,
+} from '../../services/notificationFanout.service';
 import type {
   PopulatedDatabaseQuestion,
   PopulatedDatabaseAnswer,
   DatabaseCommunity,
+  DatabaseMessage,
+  DatabaseChat,
 } from '../../types/types';
 
 // Mock emitNotification so we do not rely on real sockets
@@ -198,4 +204,80 @@ describe('notificationFanout.service', () => {
     expect(emitSpy).toHaveBeenCalledTimes(1);
     expect(emitSpy).toHaveBeenCalledWith('dave');
   });
+});
+
+test('notifyOnDirectMessage is a no-op for non-direct messages', async () => {
+  const message: DatabaseMessage = {
+    _id: new mongoose.Types.ObjectId(),
+    msg: 'Hello from global',
+    msgFrom: 'alice',
+    msgDateTime: new Date('2024-01-05T10:00:00Z'),
+    type: 'global', // not "direct"
+  } as any;
+
+  const chat: DatabaseChat = {
+    _id: new mongoose.Types.ObjectId(),
+    participants: ['alice', 'bob'],
+    messages: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  } as any;
+
+  const insertManySpy = jest.spyOn(NotificationModel, 'insertMany').mockResolvedValue([] as any);
+  const emitSpy = emitNotification as jest.Mock;
+
+  await notifyOnDirectMessage(message, chat);
+
+  expect(insertManySpy).not.toHaveBeenCalled();
+  expect(emitSpy).not.toHaveBeenCalled();
+});
+
+test('notifyOnDirectMessage fan-outs to all other participants and pings them', async () => {
+  const msgDate = new Date('2024-01-06T12:00:00Z');
+
+  const message: DatabaseMessage = {
+    _id: new mongoose.Types.ObjectId(),
+    msg: 'Hey team, quick sync?',
+    msgFrom: 'alice',
+    msgDateTime: msgDate,
+    type: 'direct',
+  } as any;
+
+  const chat: DatabaseChat = {
+    _id: new mongoose.Types.ObjectId(),
+    participants: ['alice', 'bob', 'carol'],
+    messages: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  } as any;
+
+  const insertManySpy = jest.spyOn(NotificationModel, 'insertMany').mockResolvedValue([] as any);
+  const emitSpy = emitNotification as jest.Mock;
+
+  await notifyOnDirectMessage(message, chat);
+
+  expect(insertManySpy).toHaveBeenCalledTimes(1);
+  const docs = insertManySpy.mock.calls[0][0] as any[];
+
+  // Should notify bob and carol, not alice
+  expect(docs).toHaveLength(2);
+  const users = docs.map(d => d.user).sort();
+  expect(users).toEqual(['bob', 'carol']);
+
+  for (const d of docs) {
+    expect(d.actor).toBe('alice');
+    expect(d.message).toBe('alice sent you a message: "Hey team, quick sync?"');
+    expect(d.eventDate.getTime()).toBe(msgDate.getTime());
+    expect(d.targetId.toString()).toBe(message._id.toString());
+    expect(d.targetType).toBe('User');
+    expect(d.location).toBe('direct');
+    expect(d.link).toBe('/messaging');
+    expect(d.category).toBe('direct');
+    expect(d.isRead).toBe(false);
+  }
+
+  // emitNotification should have been called once per recipient
+  expect(emitSpy).toHaveBeenCalledTimes(2);
+  expect(emitSpy).toHaveBeenCalledWith('bob');
+  expect(emitSpy).toHaveBeenCalledWith('carol');
 });

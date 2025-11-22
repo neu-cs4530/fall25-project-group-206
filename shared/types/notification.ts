@@ -1,59 +1,83 @@
+// client/src/types/types.d.ts
 import { ObjectId } from 'mongodb';
 
-/**
- * Where this activity happened, from the perspective of the current user.
- * - 'collection'           → only in a bookmarked collection
- * - 'community'            → only in a bookmarked community
- * - 'collection/community' → appears in both a bookmarked collection and community
- * - 'following'            → activity from someone you follow
- */
 export type NotificationLocation =
   | 'collection'
   | 'community'
   | 'collection/community'
-  | 'following';
+  | 'following'
+  | 'direct';
 
-/**
- * What kind of thing this notification is about.
- */
 export type NotificationTargetType = 'Question' | 'Answer' | 'User';
 
-/**
- * Backfill / inbox notification item.
- */
-export interface NotificationItem {
-  _id?: ObjectId;
+export type NotificationPriority = 'low' | 'normal' | 'high';
 
-  actor: string;
-
-  message: string;
-
-  eventDate: Date;
-
-  targetId: ObjectId;
-
-  targetType: NotificationTargetType;
-
-  location: NotificationLocation;
-
-  link?: string;
-
-  sources?: NotificationLocation[];
-
-  /**
-   * Used to distinguish backfilled entries vs future real-time notifications.
-   * - 'backfill' → bookmark-based backfill
-   * - 'question' / 'answer' → live persisted Q/A events
-   * - 'follow' → user-follow events
-   */
-  category?: 'backfill' | 'question' | 'answer' | 'follow';
+export interface NotificationDigestMeta {
+  collectionName?: string;
+  communityName?: string;
 }
 
-/**
- * Database-persisted notification.
- */
+export interface NotificationItem {
+  _id?: ObjectId;
+  actor: string;
+  message: string;
+  eventDate: Date;
+  targetId: ObjectId;
+  targetType: NotificationTargetType;
+  location: NotificationLocation;
+  link?: string;
+  sources?: NotificationLocation[];
+  category?: 'backfill' | 'question' | 'answer' | 'follow' | 'direct';
+  priority?: NotificationPriority;
+  digestMeta?: NotificationDigestMeta;
+}
+
 export interface DatabaseNotification extends Omit<NotificationItem, '_id'> {
   _id: ObjectId;
   user: string;
   isRead: boolean;
+}
+
+/**
+ * Client-side DTO for notification preferences.
+ * Matches the server's NotificationPreferencesDTO shape.
+ */
+export interface NotificationPreferencesDTO {
+  mutedUsers: string[];
+  mutedCommunities: string[]; // ids as strings
+  mutedCollections: string[]; // ids as strings
+  perCategoryLocation: Record<string, NotificationPriority>;
+  perCategory: Record<string, NotificationPriority>;
+  perLocation: Record<string, NotificationPriority>;
+  defaultPriority: NotificationPriority;
+
+  // NEW: global Do Not Disturb and optional daily quiet hours
+  dndEnabled?: boolean;
+  silentHours?: {
+    start: string; // 'HH:MM' 24h (server time for now)
+    end: string; // 'HH:MM'
+  } | null;
+
+  muteHighGroups?: boolean;
+  muteNormalGroups?: boolean;
+  muteLowGroups?: boolean;
+}
+
+export type DigestPriority = NotificationPriority | 'muted';
+
+export interface NotificationDigestItem {
+  id: string;
+  priority: DigestPriority;
+  category?: NotificationItem['category'];
+  location: NotificationLocation;
+  count: number;
+  label: string;
+  notifications: NotificationItem[];
+}
+
+export interface NotificationDigestResponse {
+  high: NotificationDigestItem[];
+  normal: NotificationDigestItem[];
+  low: NotificationDigestItem[];
+  muted: NotificationDigestItem[];
 }

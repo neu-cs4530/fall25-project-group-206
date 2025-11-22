@@ -35,7 +35,7 @@ const notificationSchema = new Schema(
       type: String,
       required: true,
       // ADD 'following'
-      enum: ['collection', 'community', 'collection/community', 'following'],
+      enum: ['collection', 'community', 'collection/community', 'following', 'direct'],
     },
     link: {
       type: String,
@@ -44,7 +44,7 @@ const notificationSchema = new Schema(
     category: {
       type: String,
       // ADD 'follow'
-      enum: ['backfill', 'question', 'answer', 'follow'],
+      enum: ['backfill', 'question', 'answer', 'follow', 'direct'],
       default: 'question',
     },
     isRead: {
