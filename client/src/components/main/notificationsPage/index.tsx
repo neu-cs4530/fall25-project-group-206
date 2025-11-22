@@ -1,4 +1,4 @@
-// client/src/components/main/notifications/index.tsx
+// client/src/components/main/notificationsPage/index.tsx
 import './index.css';
 import { useNavigate } from 'react-router-dom';
 import useNotificationsPage from '../../../hooks/useNotificationsPage';
@@ -68,6 +68,14 @@ const NotificationsPage = () => {
     ].join(':');
   };
 
+  const formatLocationLabel = (src: NotificationItem['location']): string => {
+    if (src === 'collection/community') {
+      return 'collection & community';
+    }
+    // You can prettify further if you want (capitalize, etc.)
+    return src;
+  };
+
   if (loading) {
     return <div className='notifications-page'>Loading notifications...</div>;
   }
@@ -110,30 +118,69 @@ const NotificationsPage = () => {
         {notifications.map((n, index) => {
           const key = makeKey(n, index);
 
-          // These fields are string literal unions on the shared type,
-          // which are fine to pass to string methods.
-          const locationSlug = n.location.replace('/', '-') ?? 'unknown';
-          const locationLabel = n.location ?? 'feed';
+          // NEW: use `sources` if present, otherwise fall back to the single `location`
+          const effectiveSources = n.sources && n.sources.length > 0 ? n.sources : [n.location];
 
-          const targetTypeLabel = n.targetType ?? 'Activity';
-          const targetTypeSlug = n.targetType?.toLowerCase() ?? 'activity';
+          const hasFollowing = effectiveSources.includes('following');
+          const hasCollectionSource = effectiveSources.some(
+            src => src === 'collection' || src === 'collection/community',
+          );
+          const hasCommunitySource = effectiveSources.some(
+            src => src === 'community' || src === 'collection/community',
+          );
+          const hasBookmarkSource = hasCollectionSource || hasCommunitySource;
+
+          // NEW: special message when an event is both from someone you follow AND
+          // in a bookmarked collection/community.
+          let displayMessage = n.message;
+
+          if (
+            (n.category === 'question' || n.category === 'answer') &&
+            hasFollowing &&
+            hasBookmarkSource
+          ) {
+            const whereParts: string[] = [];
+            if (hasCollectionSource) whereParts.push('a collection');
+            if (hasCommunitySource) whereParts.push('a community');
+
+            const whereLabel =
+              whereParts.length === 2 ? 'a collection and a community' : whereParts[0];
+
+            const action =
+              n.category === 'question' ? 'posted a new question' : 'posted a new answer';
+
+            displayMessage = `${n.actor} ${action} in ${whereLabel} you have bookmarked.`;
+          }
 
           const eventDateValue = n.eventDate as unknown as Date | string;
 
           return (
             <li key={key} className='notification-card' onClick={() => handleClick(n)}>
-              <div className='notification-message'>{n.message}</div>
+              <div className='notification-message'>{displayMessage}</div>
               <div className='notification-meta'>
                 <span className='notification-actor'>by {n.actor}</span>
                 <span className='notification-separator'>•</span>
                 <span className='notification-time'>{formatRelativeTime(eventDateValue)}</span>
                 <span className='notification-separator'>•</span>
-                <span className={`notification-location badge-${locationSlug}`}>
-                  {locationLabel}
+
+                {/* NEW: render ALL sources as badges (Following + Collection/Community, etc.) */}
+                <span className='notification-sources'>
+                  {effectiveSources.map((src, srcIndex) => {
+                    const slug = src.replace('/', '-'); // e.g. "collection/community" → "collection-community"
+                    return (
+                      <span
+                        key={`${key}-src-${src}-${srcIndex}`}
+                        className={`notification-location badge-${slug}`}>
+                        {formatLocationLabel(src)}
+                      </span>
+                    );
+                  })}
                 </span>
+
                 <span className='notification-separator'>•</span>
-                <span className={`notification-type badge-${targetTypeSlug}`}>
-                  {targetTypeLabel}
+                <span
+                  className={`notification-type badge-${n.targetType?.toLowerCase() ?? 'activity'}`}>
+                  {n.targetType ?? 'Activity'}
                 </span>
               </div>
             </li>

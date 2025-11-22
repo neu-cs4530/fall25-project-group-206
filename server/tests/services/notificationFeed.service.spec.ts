@@ -128,7 +128,8 @@ describe('notificationFeed.service', () => {
 
       buildBackfillMock.mockResolvedValueOnce(fakeNotifications);
 
-      const result = await buildNotificationsFromBookmarks('alice');
+      const raw = await buildNotificationsFromBookmarks('alice');
+      const result = expectNotifications(raw);
 
       // populateDocument should be called for the collection bookmark
       expect(populateDocumentMock).toHaveBeenCalledWith(collId.toString(), 'collection');
@@ -136,7 +137,10 @@ describe('notificationFeed.service', () => {
       // CommunityModel.find should be called with the community id
       expect(CommunityModel.find).toHaveBeenCalledTimes(1);
       expect(buildBackfillMock).toHaveBeenCalledWith([hydratedCollection], [hydratedCommunity]);
-      expect(result).toEqual(fakeNotifications);
+
+      // Service may add extra fields (e.g., `sources`), so do a partial match
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject(fakeNotifications[0]);
     });
 
     it('returns { error } when an exception is thrown', async () => {
@@ -386,6 +390,240 @@ describe('notificationFeed.service', () => {
       // For Q1, the "following" notification should override the bookmarks one
       expect(second.location).toBe('following');
       expect(second.message).toBe('Someone you follow, bob, posted a question "Q1".');
+    });
+
+    it('includes following-based notifications when there are no bookmark-based notifications', async () => {
+      // No bookmarks → buildNotificationsFromBookmarks returns []
+      jest.spyOn(BookmarkModel, 'find').mockResolvedValueOnce([] as any);
+      buildBackfillMock.mockResolvedValueOnce([] as any);
+      jest.spyOn(CommunityModel, 'find').mockResolvedValueOnce([] as any);
+
+      // User follows bob
+      const followedUser: DatabaseUser = {
+        _id: new mongoose.Types.ObjectId(),
+        username: 'bob',
+        email: 'bob@example.com',
+        password: 'hashed',
+        dateJoined: new Date(),
+        followers: [],
+        following: [],
+      } as any;
+
+      const fakeUser: DatabaseUser & { following: DatabaseUser[] } = {
+        _id: new mongoose.Types.ObjectId(),
+        username: 'alice',
+        email: 'alice@example.com',
+        password: 'hashed',
+        dateJoined: new Date(),
+        followers: [],
+        following: [followedUser],
+      } as any;
+
+      jest.spyOn(UserModel, 'findOne').mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(fakeUser),
+      } as any);
+
+      const qId = new mongoose.Types.ObjectId();
+      const questionDate = new Date('2024-01-01T10:00:00Z');
+      const answerDate = new Date('2024-01-02T10:00:00Z');
+
+      const question: PopulatedDatabaseQuestion = {
+        _id: qId,
+        title: 'Standalone Q',
+        text: 'body',
+        askedBy: 'bob',
+        askDateTime: questionDate,
+        answers: [],
+        tags: [],
+        comments: [],
+        views: [],
+        upVotes: [],
+        downVotes: [],
+        community: null, // explicitly no community
+      } as any;
+
+      const answer: PopulatedDatabaseAnswer = {
+        _id: new mongoose.Types.ObjectId(),
+        text: 'answer body',
+        ansBy: 'bob',
+        ansDateTime: answerDate,
+        comments: [],
+      } as any;
+
+      (question as any).answers = [answer];
+
+      jest.spyOn(QuestionModel, 'find').mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([question]),
+      } as any);
+
+      // No "follow-you" docs for this scenario
+      jest.spyOn(NotificationModel, 'find').mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([] as any),
+      } as any);
+
+      const feedResult = await buildNotificationFeedForUser('alice');
+      if ('error' in feedResult) {
+        fail(`Expected notifications array but received error: ${feedResult.error}`);
+      }
+
+      const feed = feedResult as NotificationItem[];
+
+      // Expect two items in the feed: one Answer, one Question (newest → oldest)
+      expect(feed).toHaveLength(2);
+
+      const answerNotif = feed.find(n => n.targetType === 'Answer');
+      const questionNotif = feed.find(n => n.targetType === 'Question');
+
+      expect(answerNotif).toBeDefined();
+      expect(answerNotif?.location).toBe('following');
+      expect(answerNotif?.actor).toBe('bob');
+      expect(answerNotif?.message).toBe(
+        'Someone you follow, bob, posted an answer to "Standalone Q".',
+      );
+
+      expect(questionNotif).toBeDefined();
+      expect(questionNotif?.location).toBe('following');
+      expect(questionNotif?.actor).toBe('bob');
+      expect(questionNotif?.message).toBe(
+        'Someone you follow, bob, posted a question "Standalone Q".',
+      );
+    });
+
+    it('prefers following-based notifications over bookmark-based ones for the same question and answer', async () => {
+      const qId = new mongoose.Types.ObjectId();
+      const questionDate = new Date('2024-02-01T10:00:00Z');
+      const answerDate = new Date('2024-02-02T10:00:00Z');
+
+      // Bookmark-based notifications (e.g., via collection/community backfill)
+      const bookmarkQuestionNotif: NotificationItem = {
+        actor: 'bob',
+        message: 'bob via bookmarks (question)',
+        eventDate: questionDate,
+        targetId: qId,
+        targetType: 'Question',
+        location: 'collection',
+        category: 'question',
+        link: `/question/${qId.toString()}`,
+      };
+
+      const bookmarkAnswerNotif: NotificationItem = {
+        actor: 'bob',
+        message: 'bob via bookmarks (answer)',
+        eventDate: answerDate,
+        targetId: qId,
+        targetType: 'Answer',
+        location: 'collection',
+        category: 'answer',
+        link: `/question/${qId.toString()}`,
+      };
+
+      const fromBookmarks: NotificationItem[] = [bookmarkQuestionNotif, bookmarkAnswerNotif];
+
+      // Mock BookmarkModel / populateDocument / CommunityModel / backfill → fromBookmarks
+      jest.spyOn(BookmarkModel, 'find').mockResolvedValueOnce([
+        {
+          username: 'alice',
+          targetId: new mongoose.Types.ObjectId(),
+          targetType: 'Collection',
+        },
+      ] as any);
+      populateDocumentMock.mockResolvedValueOnce({} as any);
+      jest.spyOn(CommunityModel, 'find').mockResolvedValueOnce([] as any);
+      buildBackfillMock.mockResolvedValueOnce(fromBookmarks);
+
+      // Following-based source: alice follows bob
+      const followedUser: DatabaseUser = {
+        _id: new mongoose.Types.ObjectId(),
+        username: 'bob',
+        email: 'bob@example.com',
+        password: 'hashed',
+        dateJoined: new Date(),
+        followers: [],
+        following: [],
+      } as any;
+
+      const fakeUser: DatabaseUser & { following: DatabaseUser[] } = {
+        _id: new mongoose.Types.ObjectId(),
+        username: 'alice',
+        email: 'alice@example.com',
+        password: 'hashed',
+        dateJoined: new Date(),
+        followers: [],
+        following: [followedUser],
+      } as any;
+
+      jest.spyOn(UserModel, 'findOne').mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(fakeUser),
+      } as any);
+
+      const question: PopulatedDatabaseQuestion = {
+        _id: qId,
+        title: 'Overlap Q',
+        text: 'body',
+        askedBy: 'bob',
+        askDateTime: questionDate,
+        answers: [],
+        tags: [],
+        comments: [],
+        views: [],
+        upVotes: [],
+        downVotes: [],
+        community: null,
+      } as any;
+
+      const answer: PopulatedDatabaseAnswer = {
+        _id: new mongoose.Types.ObjectId(),
+        text: 'answer body',
+        ansBy: 'bob',
+        ansDateTime: answerDate,
+        comments: [],
+      } as any;
+
+      (question as any).answers = [answer];
+
+      jest.spyOn(QuestionModel, 'find').mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([question]),
+      } as any);
+
+      // No follow-you docs for this scenario
+      jest.spyOn(NotificationModel, 'find').mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([] as any),
+      } as any);
+
+      const feedResult = await buildNotificationFeedForUser('alice');
+      if ('error' in feedResult) {
+        fail(`Expected notifications array but received error: ${feedResult.error}`);
+      }
+
+      const feed = feedResult as NotificationItem[];
+
+      // We expect two notifications (question + answer), but both from "following"
+      expect(feed).toHaveLength(2);
+
+      const questionNotif = feed.find(n => n.targetType === 'Question');
+      const answerNotif = feed.find(n => n.targetType === 'Answer');
+
+      expect(questionNotif).toBeDefined();
+      expect(questionNotif?.location).toBe('following');
+      expect(questionNotif?.actor).toBe('bob');
+      expect(questionNotif?.message).toBe(
+        'Someone you follow, bob, posted a question "Overlap Q".',
+      );
+
+      expect(answerNotif).toBeDefined();
+      expect(answerNotif?.location).toBe('following');
+      expect(answerNotif?.actor).toBe('bob');
+      expect(answerNotif?.message).toBe(
+        'Someone you follow, bob, posted an answer to "Overlap Q".',
+      );
     });
 
     it('returns { error } when bookmark builder returns error', async () => {
