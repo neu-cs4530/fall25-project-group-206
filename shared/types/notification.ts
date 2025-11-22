@@ -12,6 +12,11 @@ export type NotificationTargetType = 'Question' | 'Answer' | 'User';
 
 export type NotificationPriority = 'low' | 'normal' | 'high';
 
+export interface NotificationDigestMeta {
+  collectionName?: string;
+  communityName?: string;
+}
+
 export interface NotificationItem {
   _id?: ObjectId;
   actor: string;
@@ -24,6 +29,7 @@ export interface NotificationItem {
   sources?: NotificationLocation[];
   category?: 'backfill' | 'question' | 'answer' | 'follow' | 'direct';
   priority?: NotificationPriority;
+  digestMeta?: NotificationDigestMeta;
 }
 
 export interface DatabaseNotification extends Omit<NotificationItem, '_id'> {
@@ -44,4 +50,23 @@ export interface NotificationPreferencesDTO {
   perCategory: Record<string, NotificationPriority>;
   perLocation: Record<string, NotificationPriority>;
   defaultPriority: NotificationPriority;
+}
+
+export type DigestPriority = NotificationPriority | 'muted';
+
+export interface NotificationDigestItem {
+  id: string;
+  priority: DigestPriority;
+  category?: NotificationItem['category'];
+  location: NotificationLocation;
+  count: number;
+  label: string;
+  notifications: NotificationItem[];
+}
+
+export interface NotificationDigestResponse {
+  high: NotificationDigestItem[];
+  normal: NotificationDigestItem[];
+  low: NotificationDigestItem[];
+  muted: NotificationDigestItem[];
 }

@@ -11,6 +11,50 @@ import type {
 } from '../types/types';
 
 /**
+ * Extra metadata used only by the digest builder so it can group by
+ * specific collections / communities.
+ */
+interface BackfillDigestMeta {
+  collectionName?: string;
+  communityName?: string;
+}
+
+/**
+ * Compute digest metadata (collection/community names) for a given
+ * question + location.
+ */
+function buildBackfillDigestMeta(
+  question: PopulatedDatabaseQuestion,
+  questionIdStr: string,
+  location: NotificationLocation,
+  communitiesById: Map<string, DatabaseCommunity>,
+  collectionsByQuestionId: Map<string, string[]>,
+): BackfillDigestMeta {
+  const meta: BackfillDigestMeta = {};
+
+  // If this involves a collection at all, grab the first collection name.
+  if (location === 'collection' || location === 'collection/community') {
+    const collectionNames = collectionsByQuestionId.get(questionIdStr);
+    const firstCollectionName = collectionNames?.[0]?.trim();
+    if (firstCollectionName) {
+      meta.collectionName = firstCollectionName;
+    }
+  }
+
+  // If this question belongs to a community, grab that name.
+  const rawCommunityId = question.community as ObjectId | undefined | null;
+  if (rawCommunityId) {
+    const community = communitiesById.get(rawCommunityId.toString());
+    const communityName = community?.name;
+    if (communityName && communityName.trim().length > 0) {
+      meta.communityName = communityName;
+    }
+  }
+
+  return meta;
+}
+
+/**
  * Internal helper: convert the set of flags into a single location string.
  */
 function resolveLocation(flags: {
@@ -87,6 +131,14 @@ function buildQuestionNotification(
     collectionsByQuestionId,
   );
 
+  const digestMeta = buildBackfillDigestMeta(
+    question,
+    questionIdStr,
+    location,
+    communitiesById,
+    collectionsByQuestionId,
+  );
+
   return {
     actor: question.askedBy,
     message: `${question.askedBy} posted a question "${question.title}" in ${locationPhrase}`,
@@ -95,6 +147,7 @@ function buildQuestionNotification(
     targetType: 'Question',
     location,
     category: 'backfill',
+    digestMeta, // <- strongly typed, no any
   };
 }
 
@@ -117,6 +170,14 @@ function buildAnswerNotifications(
     collectionsByQuestionId,
   );
 
+  const digestMeta = buildBackfillDigestMeta(
+    question,
+    questionIdStr,
+    location,
+    communitiesById,
+    collectionsByQuestionId,
+  );
+
   return answers.map(ans => ({
     actor: ans.ansBy,
     message: `${ans.ansBy} posted an answer to "${question.title}" in ${locationPhrase}`,
@@ -125,6 +186,7 @@ function buildAnswerNotifications(
     targetType: 'Answer',
     location,
     category: 'backfill',
+    digestMeta, // <- same typed metadata
   }));
 }
 

@@ -14,6 +14,7 @@ import type {
   PopulatedDatabaseQuestion,
   PopulatedDatabaseAnswer,
   DatabaseNotification,
+  NotificationPriority,
 } from '../types/types';
 import UserModel from '../models/users.model';
 import QuestionModel from '../models/questions.model';
@@ -23,6 +24,7 @@ import {
   resolvePriorityForNotification,
   isNotificationMuted,
 } from './notificationPreferences.service';
+
 /**
  * Internal helper type: a NotificationItem that always has a `sources` array.
  * `sources` is where we keep track of all origins (e.g., "collection", "community", "following").
@@ -84,10 +86,23 @@ const mergeNotification = (
   const preferIncoming = incomingHasFollowing || incomingIsNewer;
   const base = preferIncoming ? normalizedIncoming : normalizedExisting;
 
+  const existingMeta = normalizedExisting.digestMeta;
+  const incomingMeta = normalizedIncoming.digestMeta;
+
+  // Merge digestMeta so we keep collection/community names from backfill
+  const mergedDigestMeta =
+    existingMeta || incomingMeta
+      ? {
+          collectionName: incomingMeta?.collectionName ?? existingMeta?.collectionName,
+          communityName: incomingMeta?.communityName ?? existingMeta?.communityName,
+        }
+      : undefined;
+
   return {
     ...base,
     location: hasFollowing ? 'following' : base.location,
     sources: mergedSources,
+    ...(mergedDigestMeta ? { digestMeta: mergedDigestMeta } : {}),
   };
 };
 
@@ -255,12 +270,310 @@ export const buildNotificationsFromFollowing = async (
 };
 
 /**
+ * Internal helper: build the merged notification list for a user
+ * BEFORE applying preferences (muting / priority).
+ *
+ * This is shared by:
+ *  - buildNotificationFeedForUser (main feed)
+ *  - buildNotificationDigestForUser (digest view, including muted)
+ */
+const buildNotificationBaseForUser = async (
+  username: string,
+): Promise<NotificationWithSources[]> => {
+  // 1) Base source: bookmarks (collections + communities)
+  const fromBookmarksResult = await buildNotificationsFromBookmarks(username);
+  if ('error' in fromBookmarksResult) {
+    throw new Error(fromBookmarksResult.error);
+  }
+
+  const bookmarkItems: NotificationWithSources[] = fromBookmarksResult.map(n => ensureSources(n));
+
+  // 2) Following-based Q/A activity
+  const fromFollowingResult = await buildNotificationsFromFollowing(username);
+  if ('error' in fromFollowingResult) {
+    throw new Error(fromFollowingResult.error);
+  }
+
+  const followingItems: NotificationWithSources[] = fromFollowingResult.map(n => ensureSources(n));
+
+  // 3) "X started following you" + "direct" events from the Notification collection
+  const rawUserDocs = (await NotificationModel.find({
+    user: username,
+    category: { $in: ['follow', 'direct'] },
+  })
+    .sort({ eventDate: -1 })
+    .lean()
+    .exec()) as DatabaseNotification[];
+
+  const userEvents: NotificationItem[] = rawUserDocs.map(doc => ({
+    _id: doc._id,
+    actor: doc.actor,
+    message: doc.message,
+    eventDate: doc.eventDate,
+    targetId: doc.targetId,
+    targetType: doc.targetType,
+    location: doc.location,
+    link: doc.link,
+    category: doc.category,
+  }));
+
+  // 4) Filter out self-authored activity from bookmarks + following.
+  const filteredBookmarks = bookmarkItems.filter(n => n.actor !== username);
+  const filteredFollowing = followingItems.filter(n => n.actor !== username);
+
+  // 5) Merge with precedence using mergeNotification:
+  const merged = new Map<string, NotificationWithSources>();
+
+  const makeKey = (n: NotificationItem): string => {
+    const targetIdStr = n.targetId.toString();
+    const eventMs = n.eventDate.getTime();
+    return `${n.targetType}:${targetIdStr}:${n.actor}:${eventMs}`;
+  };
+
+  const addToMerged = (n: NotificationItem | NotificationWithSources) => {
+    const key = makeKey(n);
+    const existing = merged.get(key);
+    const mergedNotif = mergeNotification(existing, n);
+    merged.set(key, mergedNotif);
+  };
+
+  // First, bookmark-based entries
+  for (const n of filteredBookmarks) {
+    addToMerged(n);
+  }
+
+  // Then, following-based Q/A entries
+  for (const n of filteredFollowing) {
+    addToMerged(n);
+  }
+
+  // Finally, follow/direct events
+  for (const n of userEvents) {
+    addToMerged(n);
+  }
+
+  // 6) Build final array, newest → oldest by eventDate
+  const combined: NotificationWithSources[] = Array.from(merged.values());
+  combined.sort((a, b) => b.eventDate.getTime() - a.eventDate.getTime());
+
+  return combined;
+};
+
+/**
+ * Digest-specific types
+ */
+
+type DigestPriority = NotificationPriority | 'muted';
+
+export interface NotificationDigestItem {
+  id: string;
+  priority: DigestPriority;
+  category?: NotificationItem['category'];
+  location: NotificationItem['location'];
+  count: number;
+  label: string;
+  notifications: NotificationItem[];
+}
+
+export interface NotificationDigestResponse {
+  high: NotificationDigestItem[];
+  normal: NotificationDigestItem[];
+  low: NotificationDigestItem[];
+  muted: NotificationDigestItem[];
+}
+
+interface NotificationDigestGroupInternal {
+  id: string;
+  priority: DigestPriority;
+  category?: NotificationItem['category'];
+  location: NotificationItem['location'];
+  notifications: NotificationItem[];
+  latestEventMs: number;
+  labelContext?: string;
+}
+
+interface DigestGroupingResult {
+  key: string;
+  labelContext?: string;
+}
+
+/**
+ * Decide how to group a notification in the digest:
+ *  - Backfill (bookmarks) → per collection / community name if available
+ *  - Following Q/A → per followed user (actor)
+ *  - Direct / follow → per actor
+ *  - Fallback → by priority + category + location
+ */
+const computeDigestGrouping = (
+  notif: NotificationWithSources,
+  effectivePriority: DigestPriority,
+): DigestGroupingResult => {
+  const category = notif.category ?? 'question';
+  const location = notif.location;
+
+  // 1) Bookmark backfill notifications
+  if (category === 'backfill') {
+    const meta = notif.digestMeta;
+    const collectionName = meta?.collectionName?.trim();
+    const communityName = meta?.communityName?.trim();
+
+    // Collection-only group
+    if (location === 'collection' && collectionName) {
+      return {
+        key: `${effectivePriority}:backfill:collection:${collectionName}`,
+        labelContext: `your bookmarked collection "${collectionName}"`,
+      };
+    }
+
+    // Community-only group
+    if (location === 'community' && communityName) {
+      return {
+        key: `${effectivePriority}:backfill:community:${communityName}`,
+        labelContext: `your bookmarked community "${communityName}"`,
+      };
+    }
+
+    // Both collection and community contributed
+    if (location === 'collection/community') {
+      if (collectionName && communityName) {
+        return {
+          key: `${effectivePriority}:backfill:collection-community:${collectionName}:${communityName}`,
+          labelContext: `your bookmarked collection "${collectionName}" and community "${communityName}"`,
+        };
+      }
+      if (collectionName) {
+        return {
+          key: `${effectivePriority}:backfill:collection:${collectionName}`,
+          labelContext: `your bookmarked collection "${collectionName}"`,
+        };
+      }
+      if (communityName) {
+        return {
+          key: `${effectivePriority}:backfill:community:${communityName}`,
+          labelContext: `your bookmarked community "${communityName}"`,
+        };
+      }
+    }
+  }
+
+  // 2) Direct messages → group per sender
+  if (category === 'direct' || location === 'direct') {
+    const actor = notif.actor;
+    return {
+      key: `${effectivePriority}:direct:${actor}`,
+      labelContext: actor,
+    };
+  }
+
+  // 3) Follow events → group per follower
+  if (category === 'follow') {
+    const actor = notif.actor;
+    return {
+      key: `${effectivePriority}:follow:${actor}`,
+      labelContext: actor,
+    };
+  }
+
+  // 4) Questions/answers from people you follow → group per user
+  if (location === 'following' && (category === 'question' || category === 'answer')) {
+    const actor = notif.actor;
+    return {
+      key: `${effectivePriority}:${category}:following:${actor}`,
+      labelContext: actor,
+    };
+  }
+
+  // 5) Fallback: old behaviour (priority + category + location)
+  return {
+    key: `${effectivePriority}:${category}:${location}`,
+  };
+};
+
+/**
+ * Helper to build a human-readable label for a digest group.
+ * Example: "5 answers were posted in your communities (muted)"
+ */
+const buildDigestLabel = (
+  count: number,
+  category: NotificationItem['category'] | undefined,
+  location: NotificationItem['location'],
+  priority: DigestPriority,
+  context?: string,
+): string => {
+  const cat = category ?? 'question';
+
+  const defaultLocationLabel = (() => {
+    switch (location) {
+      case 'collection/community':
+        return 'your bookmarked collections and communities';
+      case 'collection':
+        return 'your bookmarked collections';
+      case 'community':
+        return 'your bookmarked communities';
+      case 'following':
+        return 'people you follow';
+      case 'direct':
+        return 'your direct messages';
+      default:
+        return location;
+    }
+  })();
+
+  // 1) Backfill groups: use context if provided (specific collection/community)
+  if (cat === 'backfill') {
+    const where = context ?? defaultLocationLabel;
+    const base = `${count} update${count === 1 ? '' : 's'} in ${where}`;
+    if (priority === 'muted') return `${base} (muted for you)`;
+    return base;
+  }
+
+  // 2) Direct messages / follows with specific actor
+  if (cat === 'direct' && context) {
+    return `${count} direct message${count === 1 ? '' : 's'} from ${context}`;
+  }
+  if (cat === 'follow' && context) {
+    return `${count} follow event${count === 1 ? '' : 's'} from ${context}`;
+  }
+
+  // 3) Following Q/A with specific actor
+  if (location === 'following' && context) {
+    const noun = cat === 'answer' ? 'answer' : 'question';
+    const base = `${count} ${noun}${count === 1 ? '' : 's'} from ${context} (people you follow)`;
+    if (priority === 'muted') return `${base} (muted for you)`;
+    return base;
+  }
+
+  // 4) Generic bookmark-driven groups
+  if (cat === 'answer') {
+    return `${count} answer${count === 1 ? '' : 's'} were posted in ${defaultLocationLabel}`;
+  }
+  if (cat === 'question') {
+    return `${count} question${count === 1 ? '' : 's'} were posted in ${defaultLocationLabel}`;
+  }
+  if (cat === 'direct') {
+    const base = `${count} direct message${count === 1 ? '' : 's'} arrived`;
+    if (priority === 'muted') return `${base} (muted for you)`;
+    return base;
+  }
+  if (cat === 'follow') {
+    const base = `${count} follow event${count === 1 ? '' : 's'} occurred`;
+    if (priority === 'muted') return `${base} (muted for you)`;
+    return base;
+  }
+
+  // 5) Fallback
+  const base = `${count} notification${count === 1 ? '' : 's'}`;
+  if (priority === 'muted') return `${base} (muted for you)`;
+  return base;
+};
+
+/**
  * Top-level orchestrator for the notification feed.
  *
  * Sources:
  *  - Bookmarks (collections + communities)
  *  - Posts by users you follow (questions + answers)
- *  - Direct "follow" events (X started following you) from Notification collection
+ *  - Direct "follow" / "direct" events from Notification collection
  *
  * Precedence:
  *  - For the same underlying Q/A event, "following" notifications override
@@ -271,94 +584,7 @@ export const buildNotificationFeedForUser = async (
   username: string,
 ): Promise<NotificationItem[] | { error: string }> => {
   try {
-    // 1) Base source: bookmarks (collections + communities)
-    const fromBookmarksResult = await buildNotificationsFromBookmarks(username);
-    if ('error' in fromBookmarksResult) {
-      return fromBookmarksResult;
-    }
-
-    // Normalize to NotificationWithSources to be safe
-    const bookmarkItems: NotificationWithSources[] = fromBookmarksResult.map(n => ensureSources(n));
-
-    // 2) Following-based Q/A activity
-    const fromFollowingResult = await buildNotificationsFromFollowing(username);
-    if ('error' in fromFollowingResult) {
-      return fromFollowingResult;
-    }
-
-    const followingItems: NotificationWithSources[] = fromFollowingResult.map(n =>
-      ensureSources(n),
-    );
-
-    // 3) "X started following you" events from the Notification collection
-    const rawUserDocs = (await NotificationModel.find({
-      user: username,
-      category: { $in: ['follow', 'direct'] },
-    })
-      .sort({ eventDate: -1 })
-      .lean()
-      .exec()) as DatabaseNotification[];
-
-    const userEvents: NotificationItem[] = rawUserDocs.map(doc => ({
-      _id: doc._id,
-      actor: doc.actor,
-      message: doc.message,
-      eventDate: doc.eventDate,
-      targetId: doc.targetId,
-      targetType: doc.targetType,
-      location: doc.location,
-      link: doc.link,
-      category: doc.category,
-    }));
-
-    // 4) Filter out self-authored activity from bookmarks + following.
-    // This prevents "you posted ..." notifications when looking at your own feed
-    // AND stops those events from powering the popup toast.
-    const filteredBookmarks = bookmarkItems.filter(n => n.actor !== username);
-    const filteredFollowing = followingItems.filter(n => n.actor !== username);
-
-    // 5) Merge with precedence using mergeNotification:
-    //    - union of `sources`
-    //    - if any source is "following", location becomes "following"
-    //    - tie-breaking by "following" vs non-following, then by eventDate
-    const merged = new Map<string, NotificationWithSources>();
-
-    const makeKey = (n: NotificationItem): string => {
-      const targetIdStr = n.targetId.toString();
-      const eventMs = n.eventDate.getTime();
-      return `${n.targetType}:${targetIdStr}:${n.actor}:${eventMs}`;
-    };
-
-    const addToMerged = (n: NotificationItem | NotificationWithSources) => {
-      const key = makeKey(n);
-      const existing = merged.get(key);
-      const mergedNotif = mergeNotification(existing, n);
-      merged.set(key, mergedNotif);
-    };
-
-    // First, bookmark-based entries
-    for (const n of filteredBookmarks) {
-      addToMerged(n);
-    }
-
-    // Then, following-based Q/A entries (they will "win" as location='following'
-    // when the same event is also present via bookmarks)
-    for (const n of filteredFollowing) {
-      addToMerged(n);
-    }
-
-    // Finally, follow-you events (targetType === 'User') simply add in
-    for (const n of userEvents) {
-      addToMerged(n);
-    }
-
-    // 6) Build final array, newest → oldest by eventDate
-    const combined: NotificationItem[] = Array.from(merged.values());
-    combined.sort((a, b) => b.eventDate.getTime() - a.eventDate.getTime());
-
-    // 7) Apply per-user notification preferences:
-    //    - drop muted notifications
-    //    - annotate each with a priority level
+    const combined = await buildNotificationBaseForUser(username);
     const prefs = await getOrCreatePreferences(username);
 
     const filteredWithPriority: NotificationItem[] = [];
@@ -381,4 +607,123 @@ export const buildNotificationFeedForUser = async (
   } catch (error) {
     return { error: (error as Error).message };
   }
+};
+
+/**
+ * Digest builder:
+ *  - Uses the same base notifications as the main feed
+ *  - Classifies each notification as "high", "normal", "low", or "muted"
+ *  - Groups by (priority, category, location)
+ *  - For each group returns a summary label and the underlying notifications
+ */
+export const buildNotificationDigestForUser = async (
+  username: string,
+): Promise<NotificationDigestResponse | { error: string }> => {
+  try {
+    const combined = await buildNotificationBaseForUser(username);
+    const prefs = await getOrCreatePreferences(username);
+
+    const groups = new Map<string, NotificationDigestGroupInternal>();
+
+    for (const rawNotif of combined) {
+      const notif = rawNotif as NotificationWithSources;
+
+      const muted = await isNotificationMuted(notif, prefs);
+      const effectivePriority: DigestPriority = muted
+        ? 'muted'
+        : resolvePriorityForNotification(notif, prefs);
+
+      const category = notif.category ?? 'question';
+      const location = notif.location;
+
+      const eventMs = notif.eventDate.getTime();
+
+      const { key: groupKey, labelContext } = computeDigestGrouping(notif, effectivePriority);
+
+      let group = groups.get(groupKey);
+      if (!group) {
+        group = {
+          id: groupKey,
+          priority: effectivePriority,
+          category,
+          location,
+          notifications: [],
+          latestEventMs: eventMs,
+          labelContext,
+        };
+        groups.set(groupKey, group);
+      } else if (labelContext && !group.labelContext) {
+        // First non-empty context wins
+        group.labelContext = labelContext;
+      }
+
+      group.notifications.push({
+        ...notif,
+        priority: muted ? undefined : (effectivePriority as NotificationPriority),
+      });
+
+      if (eventMs > group.latestEventMs) {
+        group.latestEventMs = eventMs;
+      }
+    }
+
+    const response: NotificationDigestResponse = {
+      high: [],
+      normal: [],
+      low: [],
+      muted: [],
+    };
+
+    for (const group of groups.values()) {
+      const count = group.notifications.length;
+      const label = buildDigestLabel(
+        count,
+        group.category,
+        group.location,
+        group.priority,
+        group.labelContext,
+      );
+
+      const digestItem: NotificationDigestItem = {
+        id: group.id,
+        priority: group.priority,
+        category: group.category,
+        location: group.location,
+        count,
+        label,
+        notifications: group.notifications,
+      };
+
+      if (group.priority === 'muted') {
+        response.muted.push(digestItem);
+      } else if (group.priority === 'high') {
+        response.high.push(digestItem);
+      } else if (group.priority === 'low') {
+        response.low.push(digestItem);
+      } else {
+        response.normal.push(digestItem);
+      }
+    }
+
+    // Sort groups in each bucket by latest event date (newest first)
+    const sortByLatest = (a: NotificationDigestItem, b: NotificationDigestItem) => {
+      const aLatest = Math.max(...a.notifications.map(n => n.eventDate.getTime() || 0));
+      const bLatest = Math.max(...b.notifications.map(n => n.eventDate.getTime() || 0));
+      return bLatest - aLatest;
+    };
+
+    response.high.sort(sortByLatest);
+    response.normal.sort(sortByLatest);
+    response.low.sort(sortByLatest);
+    response.muted.sort(sortByLatest);
+
+    return response;
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
+};
+
+export const testInternals = {
+  computeDigestGrouping,
+  buildDigestLabel,
 };

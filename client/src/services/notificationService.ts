@@ -1,12 +1,28 @@
 // FILE: client/src/services/notificationService.ts
 import api from './config';
-import type { NotificationItem, NotificationPreferencesDTO } from '../types/types';
+import type {
+  NotificationItem,
+  NotificationPreferencesDTO,
+  NotificationDigestResponse,
+} from '../types/types';
 
 /**
  * Fetches the notification feed for a given username.
  */
 const fetchNotificationFeed = async (username: string): Promise<NotificationItem[]> => {
   const response = await api.get<NotificationItem[]>(`/api/notification/feed/${username}`);
+  return response.data;
+};
+
+/**
+ * Fetches the digest of notifications for a given username.
+ */
+export const fetchNotificationDigest = async (
+  username: string,
+): Promise<NotificationDigestResponse> => {
+  const response = await api.get<NotificationDigestResponse>(
+    `/api/notification/digest/${encodeURIComponent(username)}`,
+  );
   return response.data;
 };
 
