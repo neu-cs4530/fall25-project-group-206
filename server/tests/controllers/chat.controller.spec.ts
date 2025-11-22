@@ -17,8 +17,6 @@ import * as chatService from '../../services/chat.service';
 import * as databaseUtil from '../../utils/database.util';
 import { DatabaseChat, PopulatedDatabaseChat, Message } from '../../types/types';
 import chatController from '../../controllers/chat.controller';
-import { notifyOnDirectMessage } from '../../services/notificationFanout.service';
-
 /**
  * Spies on the service functions
  */
