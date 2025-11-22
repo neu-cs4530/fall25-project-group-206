@@ -18,7 +18,11 @@ import type {
 import UserModel from '../models/users.model';
 import QuestionModel from '../models/questions.model';
 import NotificationModel from '../models/notification.model';
-
+import {
+  getOrCreatePreferences,
+  resolvePriorityForNotification,
+  isNotificationMuted,
+} from './notificationPreferences.service';
 /**
  * Internal helper type: a NotificationItem that always has a `sources` array.
  * `sources` is where we keep track of all origins (e.g., "collection", "community", "following").
@@ -352,7 +356,28 @@ export const buildNotificationFeedForUser = async (
     const combined: NotificationItem[] = Array.from(merged.values());
     combined.sort((a, b) => b.eventDate.getTime() - a.eventDate.getTime());
 
-    return combined;
+    // 7) Apply per-user notification preferences:
+    //    - drop muted notifications
+    //    - annotate each with a priority level
+    const prefs = await getOrCreatePreferences(username);
+
+    const filteredWithPriority: NotificationItem[] = [];
+
+    for (const notif of combined) {
+      const muted = await isNotificationMuted(notif, prefs);
+      if (muted) {
+        continue;
+      }
+
+      const priority = resolvePriorityForNotification(notif, prefs);
+
+      filteredWithPriority.push({
+        ...notif,
+        priority,
+      });
+    }
+
+    return filteredWithPriority;
   } catch (error) {
     return { error: (error as Error).message };
   }

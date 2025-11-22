@@ -1,12 +1,6 @@
+// client/src/types/types.d.ts
 import { ObjectId } from 'mongodb';
 
-/**
- * Where this activity happened, from the perspective of the current user.
- * - 'collection'           → only in a bookmarked collection
- * - 'community'            → only in a bookmarked community
- * - 'collection/community' → appears in both a bookmarked collection and community
- * - 'following'            → activity from someone you follow
- */
 export type NotificationLocation =
   | 'collection'
   | 'community'
@@ -14,47 +8,40 @@ export type NotificationLocation =
   | 'following'
   | 'direct';
 
-/**
- * What kind of thing this notification is about.
- */
 export type NotificationTargetType = 'Question' | 'Answer' | 'User';
 
-/**
- * Backfill / inbox notification item.
- */
+export type NotificationPriority = 'low' | 'normal' | 'high';
+
 export interface NotificationItem {
   _id?: ObjectId;
-
   actor: string;
-
   message: string;
-
   eventDate: Date;
-
   targetId: ObjectId;
-
   targetType: NotificationTargetType;
-
   location: NotificationLocation;
-
   link?: string;
-
   sources?: NotificationLocation[];
-
-  /**
-   * Used to distinguish backfilled entries vs future real-time notifications.
-   * - 'backfill' → bookmark-based backfill
-   * - 'question' / 'answer' → live persisted Q/A events
-   * - 'follow' → user-follow events
-   */
   category?: 'backfill' | 'question' | 'answer' | 'follow' | 'direct';
+  priority?: NotificationPriority;
 }
 
-/**
- * Database-persisted notification.
- */
 export interface DatabaseNotification extends Omit<NotificationItem, '_id'> {
   _id: ObjectId;
   user: string;
   isRead: boolean;
+}
+
+/**
+ * Client-side DTO for notification preferences.
+ * Matches the server's NotificationPreferencesDTO shape.
+ */
+export interface NotificationPreferencesDTO {
+  mutedUsers: string[];
+  mutedCommunities: string[]; // ids as strings
+  mutedCollections: string[]; // ids as strings
+  perCategoryLocation: Record<string, NotificationPriority>;
+  perCategory: Record<string, NotificationPriority>;
+  perLocation: Record<string, NotificationPriority>;
+  defaultPriority: NotificationPriority;
 }
