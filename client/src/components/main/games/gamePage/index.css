@@ -1,7 +1,7 @@
 /* General Styles */
 body {
   font-family: Arial, sans-serif;
-  background-color: #f8f9fa;
+  background-color: var(--color-bg-page);
   margin: 0;
   padding: 0;
 }
@@ -10,18 +10,18 @@ body {
   padding: 20px;
   max-width: 900px;
   margin: 0 auto;
-  background: #fff;
+  background: var(--color-bg-card);
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .game-header h1 {
   font-size: 24px;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .game-status {
-  color: #666;
+  color: var(--color-text-tertiary);
   margin-left: 20px;
 }
 
@@ -41,32 +41,36 @@ button {
 .btn-leave-game,
 .btn-refresh-list,
 .btn-join-game {
-  background: #007bff;
+  background: var(--color-primary-gradient);
   color: white;
   padding: 10px 20px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 16px;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .btn-create-game:hover,
 .btn-leave-game:hover,
 .btn-refresh-list:hover,
 .btn-join-game:hover {
-  background: #0056b3;
+  background: linear-gradient(135deg, #5a73e8 0%, #6b42a0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 button:disabled {
-  background: #ccc;
+  background: var(--color-border-medium);
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* Available Games List */
 .game-list {
   margin-top: 15px;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--color-border-light);
   padding-top: 15px;
 }
 
@@ -77,14 +81,21 @@ button:disabled {
 }
 
 .game-item {
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border-light);
   border-radius: 6px;
   padding: 15px;
-  background: #f9f9f9;
+  background: var(--color-bg-light);
+  transition: all 0.2s ease;
+}
+
+.game-item:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
 }
 
 .game-item p {
   margin: 5px 0;
+  color: var(--color-text-secondary);
 }
 
 .game-item ul {
@@ -94,10 +105,12 @@ button:disabled {
 }
 
 .game-item li {
-  background: #eef2f3;
+  background: var(--color-bg-card);
   margin: 3px 0;
   padding: 5px 10px;
   border-radius: 4px;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-light);
 }
 
 .game-item button {
@@ -108,7 +121,11 @@ button:disabled {
 
 /* Error Message */
 .game-error {
-  color: red;
+  color: var(--color-error);
   font-weight: bold;
   margin-top: 15px;
+  background-color: var(--color-error-bg);
+  padding: 12px;
+  border-radius: 6px;
+  border-left: 4px solid var(--color-error);
 }

@@ -1,6 +1,6 @@
 .community-card {
-  background-color: white;
-  border: 1px solid #ddd;
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
   border-radius: 12px;
   padding: 1.5rem;
   width: 300px;
@@ -12,29 +12,59 @@
 
 .community-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  border-color: var(--color-primary);
+}
+
+.community-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
 }
 
 .community-card-title {
   font-size: 1.25rem;
-  margin-bottom: 0.5rem;
-  color: #333;
+  margin: 0;
+  color: var(--color-text-primary);
+  font-weight: 700;
 }
 
 .community-card-description {
   font-size: 1rem;
-  color: #555;
+  color: var(--color-text-secondary);
   margin-bottom: 1rem;
 }
 
 .community-card-meta {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--color-text-tertiary);
   margin-bottom: 0.25rem;
+}
+
+.community-card-meta strong {
+  color: var(--color-text-secondary);
 }
 
 .community-card-actions {
   margin-top: 1rem;
+}
+
+.btn-action-community {
+  background: var(--color-primary-gradient);
+  color: var(--color-text-white);
+  border: none;
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn-action-community:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 .bookmark-icon-btn {

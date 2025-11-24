@@ -313,7 +313,7 @@ describe('notificationFeed.service – full feed (core)', () => {
       targetId: new mongoose.Types.ObjectId(),
       targetType: 'User',
       location: 'direct',
-      link: '/messaging',
+      link: '/messaging/direct-message',
       category: 'direct',
       isRead: false,
     } as any;
@@ -327,7 +327,7 @@ describe('notificationFeed.service – full feed (core)', () => {
       targetId: new mongoose.Types.ObjectId(),
       targetType: 'User',
       location: 'direct',
-      link: '/messaging',
+      link: '/messaging/direct-message',
       category: 'direct',
       isRead: false,
     } as any;

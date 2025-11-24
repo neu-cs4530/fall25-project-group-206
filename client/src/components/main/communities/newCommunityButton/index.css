@@ -1,11 +1,11 @@
 .new-community-button {
-  background-color: #3b82f6;
-  color: #fff;
+  background: var(--color-primary-gradient);
+  color: var(--color-text-white);
   padding: 0.5rem 1.25rem;
   font-size: 1rem;
   border: none;
   border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
   cursor: pointer;
   transition:
     background-color 0.2s ease,
@@ -13,9 +13,12 @@
 }
 
 .new-community-button:hover {
-  background-color: #2563eb;
+  background: linear-gradient(135deg, #5a73e8 0%, #6b42a0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 .new-community-button:active {
-  background-color: #2563eb;
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }

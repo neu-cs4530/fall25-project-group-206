@@ -1,6 +1,6 @@
 .collections-page {
   padding: 2rem;
-  background-color: #f9f9f9;
+  background-color: var(--color-bg-page);
   font-family: Arial, sans-serif;
   min-height: 100vh;
 }
@@ -14,11 +14,11 @@
 
 .collections-title {
   font-size: 2rem;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .collections-create-btn {
-  background-color: #2563eb;
+  background: var(--color-primary-gradient);
   color: white;
   padding: 0.6rem 1.2rem;
   font-size: 1rem;
@@ -28,44 +28,51 @@
   transition:
     background-color 0.2s ease,
     transform 0.1s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .collections-create-btn:hover {
-  background-color: #1e40af;
+  background: linear-gradient(135deg, #5a73e8 0%, #6b42a0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 .collections-create-btn:active {
-  background-color: #163493;
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .collections-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 1.5rem;
 }
 
 .collection-card {
-  background-color: #fff;
-  padding: 1rem 1.25rem; /* Reduced vertical + horizontal padding */
+  background-color: var(--color-bg-card);
+  padding: 1rem 1.25rem;
   border-radius: 8px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
   cursor: pointer;
   transition: box-shadow 0.2s ease;
+  border: 1px solid var(--color-border-light);
 }
 
 .collection-card:hover {
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 3px 8px rgba(102, 126, 234, 0.15);
+  border-color: var(--color-primary);
 }
 
 .collection-name {
-  font-size: 1.15rem; /* Slightly smaller */
+  font-size: 1.15rem;
   font-weight: 600;
   margin-bottom: 0.3rem;
+  color: var(--color-text-primary);
 }
 
 .collection-description {
   margin-bottom: 0.3rem;
-  color: #555;
+  color: var(--color-text-secondary);
   font-size: 0.95rem;
 
   display: -webkit-box;
@@ -81,12 +88,6 @@
 .collection-privacy,
 .collection-questions {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--color-text-tertiary);
   margin: 0.1rem 0;
-}
-
-.collections-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1.5rem;
 }
