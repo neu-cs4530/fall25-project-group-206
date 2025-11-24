@@ -1,9 +1,9 @@
+// client/src/components/main/collections/collectionPage/index.tsx
 import QuestionView from '../../questionPage/question';
 import useCollectionPage from '../../../../hooks/useCollectionPage';
 import './index.css';
 import DeleteCollectionButton from '../deleteCollectionButton';
-import useBookmarkToggle from '../../../../hooks/useBookmarkToggle';
-import { Star, StarOff } from 'lucide-react';
+import BookmarkButton from '../../bookmarkButton';
 
 /**
  * Displays a single collection page with its metadata, description,
@@ -12,43 +12,21 @@ import { Star, StarOff } from 'lucide-react';
 const CollectionPage = () => {
   const { collection, isOwner } = useCollectionPage();
 
-  // Integrate bookmark hook (for collections)
-  const {
-    isBookmarked,
-    loading: bookmarkLoading,
-    handleToggleBookmark,
-  } = useBookmarkToggle(collection?._id?.toString() ?? '', 'Collection');
-
   if (!collection) {
-    return <div className='loading'>Loading...</div>;
+    return <div className='collection-page loading'>Loading...</div>;
   }
-
-  const handleBookmarkClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    handleToggleBookmark();
-  };
 
   return (
     <div className='collection-page'>
-      <div className='collection-header'>
-        <div className='header-row'>
-          <h1 className='collection-title'>{collection.name}</h1>
+      <header className='collection-header'>
+        <div className='collection-header-top'>
+          <div className='collection-title-wrap'>
+            <h1 className='collection-title'>{collection.name}</h1>
+            <span className='collection-title-accent' />
+          </div>
 
-          <div className='header-controls'>
-            {/* Bookmark button */}
-            <button
-              className='bookmark-icon-btn'
-              onClick={handleBookmarkClick}
-              disabled={bookmarkLoading}
-              title={isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'}>
-              {isBookmarked ? (
-                <StarOff size={20} color='#facc15' fill='#facc15' strokeWidth={2} />
-              ) : (
-                <Star size={20} color='#9ca3af' strokeWidth={2} />
-              )}
-            </button>
-
-            {/* Delete button (only for owner) */}
+          <div className='collection-header-actions'>
+            <BookmarkButton targetId={collection._id.toString()} targetType='Collection' />
             {isOwner && <DeleteCollectionButton collectionId={collection._id.toString()} />}
           </div>
         </div>
@@ -57,13 +35,27 @@ const CollectionPage = () => {
         <p className='collection-meta'>
           {collection.isPrivate ? 'Private' : 'Public'} • by {collection.username}
         </p>
-      </div>
+      </header>
 
-      <div className='questions-list'>
-        {collection.questions.map(q => (
-          <QuestionView question={q} key={q._id.toString()} />
-        ))}
-      </div>
+      <section className='collection-questions-section'>
+        <h2 className='collection-questions-title'>
+          Questions in this collection ({collection.questions.length})
+        </h2>
+
+        {collection.questions.length === 0 ? (
+          <p className='collection-questions-empty'>
+            There are no questions in this collection yet.
+          </p>
+        ) : (
+          <ul className='collection-questions-list'>
+            {collection.questions.map(q => (
+              <li key={q._id.toString()} className='collection-question-card'>
+                <QuestionView question={q} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 };

@@ -1,7 +1,11 @@
-.btns {
-  margin-right: 15%;
+/* Question list container */
+.question_list {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
 }
 
+/* Remove old bottom border strip */
 .question_list:last-child {
-  border-bottom: 1px solid var(--color-border-light);
+  border-bottom: none;
 }

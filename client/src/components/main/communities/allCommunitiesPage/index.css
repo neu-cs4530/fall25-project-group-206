@@ -1,16 +1,36 @@
+/* client/src/components/main/communities/allCommunitiesPage/index.css */
+
 .community-page {
-  padding: 2rem;
+  /* align with Collections / Bookmarks / Users */
+  padding: 2.5rem 3rem 3rem;
+
   font-family: Arial, sans-serif;
-  background-color: #f9f9f9;
+  background-color: var(--color-bg-page);
   min-height: 100vh;
+
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
 .community-title {
-  font-size: 2rem;
-  color: #333;
+  font-size: 2.1rem;
+  font-weight: 700;
+  color: #536dff; /* same as collections */
+  margin: 0 0 0.75rem;
+  position: relative;
+}
+
+/* gradient underline like Notifications */
+.community-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -0.35rem;
+  width: 60px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6c5ce7, #a855f7);
 }
 
 .community-controls {

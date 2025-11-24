@@ -606,7 +606,7 @@ const NotificationsPage = () => {
                   : 'notifications-filter'
               }
               onClick={() => setPriorityFilter('highOnly')}>
-              High only
+              High
             </button>
             <button
               type='button'
@@ -616,7 +616,7 @@ const NotificationsPage = () => {
                   : 'notifications-filter'
               }
               onClick={() => setPriorityFilter('normalPlusHigh')}>
-              Normal + High
+              Normal & High
             </button>
             <button
               type='button'

@@ -1,42 +1,58 @@
 .question {
   display: flex;
-  flex-direction: row;
-  border-top: 1px solid var(--color-border-light);
-  padding: 1rem 0;
-  transition: all 0.2s ease;
+  align-items: flex-start;
+  gap: 0.75rem;
+
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.5rem;
+  margin-bottom: 0.25rem;
+
   cursor: pointer;
+  transition: all var(--transition-base);
 }
 
 .question:hover {
   background: var(--color-bg-light);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
+/* Answers / views column */
 .postStats {
-  color: var(--color-text-muted);
-  text-align: center;
-  width: 10%;
+  flex: 0 0 110px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+
+  font-size: 0.85rem;
+  color: var(--color-text-tertiary);
+  line-height: 1.1;
 }
 
+/* Middle column: title + tags */
 .question_mid {
-  width: 60%;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .postTitle {
-  color: var(--color-primary);
+  color: var(--color-text-primary); /* main page text color */
   font-weight: 600;
+  font-size: 1rem;
 }
 
-.question_tags {
-  margin-top: 1%;
-}
-
+/* Tags unchanged, just spacing stays nice */
 .question_tag_button {
   color: var(--color-text-white);
-  background: var(--color-text-tertiary);
+  background: var(--color-text-muted);
   border-width: 0;
-  border-radius: 8px;
-  margin-left: 2%;
-  padding: 1% 3% 1% 3%;
+  border-radius: 10px;
+  margin-left: 0%;
+  padding: 1% 1% 1% 1%;
   cursor: pointer;
   transition: background 0.2s ease;
 }
@@ -49,10 +65,15 @@
   margin-left: 0;
 }
 
+/* Right column: author + time */
 .lastActivity {
-  width: 30%;
+  flex: 0 0 auto;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--color-text-tertiary);
 }
 
 .question_author {
@@ -64,17 +85,21 @@
   color: var(--color-text-muted);
 }
 
+/* Edit My Collections button on the far right */
 .question .collections-btn {
+  align-self: center;
+  margin-left: 1.25rem;
+
   background: var(--color-primary-gradient);
   font-weight: bold;
   color: white;
   border: none;
-  border-radius: 8px;
-  padding: 10px 5px;
-  font-size: 14px;
+  border-radius: 999px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  width: auto;
+  white-space: nowrap;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
@@ -82,4 +107,26 @@
   background: linear-gradient(135deg, #5a73e8 0%, #6b42a0 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Responsive tweaks so cards do not feel cramped on smaller screens */
+@media (max-width: 900px) {
+  .question {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .postStats {
+    flex: 0 0 100px;
+  }
+
+  .lastActivity {
+    align-items: flex-start;
+    margin-top: 0.5rem;
+  }
+
+  .question .collections-btn {
+    margin-left: 0;
+    margin-top: 0.75rem;
+  }
 }
