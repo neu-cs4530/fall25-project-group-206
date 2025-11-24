@@ -23,27 +23,29 @@ const CommunityPage = () => {
         ))}
       </main>
 
-      <div className='community-sidebar'>
-        <h2 className='community-title'>{community.name}</h2>
+      <aside className='community-sidebar'>
+        <h2 className='community-sidebar-title'>{community.name}</h2>
         <p className='community-description'>{community.description}</p>
+
+        <CommunityMembershipButton community={community} />
+
         {community.admin === username && (
           <button className='delete-community-btn' onClick={handleDeleteCommunity}>
             Delete Community
           </button>
         )}
-        <CommunityMembershipButton community={community} />
 
         <div className='community-members'>
-          <h3 className='section-heading'>Members</h3>
+          <h3 className='members-heading'>Members</h3>
           <ul className='members-list'>
-            {community?.participants.map(username => (
-              <li key={username} className='member-item'>
-                {username}
+            {community.participants.map(memberUsername => (
+              <li key={memberUsername} className='member-item'>
+                {memberUsername}
               </li>
             ))}
           </ul>
         </div>
-      </div>
+      </aside>
     </div>
   );
 };

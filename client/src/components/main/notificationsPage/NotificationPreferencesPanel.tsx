@@ -223,6 +223,20 @@ const NotificationPreferencesPanel = ({ onClose }: Props) => {
     });
   };
 
+  if (loading || !localPrefs) {
+    return (
+      <div className='notifications-page'>
+        <div className='notifications-header'>
+          <h2>Notification Preferences</h2>
+          <button type='button' onClick={onClose}>
+            Back to Feed
+          </button>
+        </div>
+        <p>Loading preferences...</p>
+      </div>
+    );
+  }
+
   const handleSilentHoursChange = (field: 'start' | 'end', value: string) => {
     setLocalPrefs(prev => {
       if (!prev) return prev;
@@ -251,20 +265,6 @@ const NotificationPreferencesPanel = ({ onClose }: Props) => {
   const clearSilentHours = () => {
     setLocalPrefs(prev => (prev ? { ...prev, silentHours: null } : prev));
   };
-
-  if (loading || !localPrefs) {
-    return (
-      <div className='notifications-page'>
-        <div className='notifications-header'>
-          <h2>Notification Preferences</h2>
-          <button type='button' onClick={onClose}>
-            Back to Feed
-          </button>
-        </div>
-        <p>Loading preferences...</p>
-      </div>
-    );
-  }
 
   // For robustness: muted items that are no longer in the friend/bookmark lists.
   const extraMutedUsers = localPrefs.mutedUsers.filter(
