@@ -147,6 +147,9 @@ const ProfileSettings: React.FC = () => {
                 <strong>Username:</strong> {userData.username}
               </p>
               <p>
+                <strong>Email:</strong> {userData.email}
+              </p>
+              <p>
                 <strong>Date Joined:</strong>{' '}
                 {userData.dateJoined ? new Date(userData.dateJoined).toLocaleDateString() : 'N/A'}
               </p>
