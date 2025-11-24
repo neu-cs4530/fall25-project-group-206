@@ -271,7 +271,7 @@ test('notifyOnDirectMessage fan-outs to all other participants and pings them', 
     expect(d.targetId.toString()).toBe(message._id.toString());
     expect(d.targetType).toBe('User');
     expect(d.location).toBe('direct');
-    expect(d.link).toBe('/messaging');
+    expect(d.link).toBe('/messaging/direct-message');
     expect(d.category).toBe('direct');
     expect(d.isRead).toBe(false);
   }

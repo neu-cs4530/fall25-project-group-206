@@ -2,7 +2,7 @@
   padding: 2rem;
   max-width: 600px;
   margin: 0 auto;
-  background-color: #f9f9f9;
+  background-color: var(--color-bg-card);
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
@@ -10,7 +10,7 @@
 .new-collection-title {
   font-size: 1.8rem;
   margin-bottom: 1.5rem;
-  color: #1e293b;
+  color: var(--color-text-primary);
 }
 
 .new-collection-input {
@@ -20,14 +20,14 @@
   padding: 0.75rem 1rem;
   font-size: 1rem;
   border-radius: 8px;
-  border: 1px solid #cbd5e1;
-  background-color: #fff;
+  border: 1px solid var(--color-border-light);
+  background-color: var(--color-bg-card);
 }
 
 .new-collection-input:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
 
 .new-collection-checkbox {
@@ -36,11 +36,15 @@
   gap: 0.5rem;
   margin-bottom: 1.5rem;
   font-size: 1rem;
-  color: #334155;
+  color: var(--color-text-secondary);
+}
+
+.new-collection-checkbox input[type="checkbox"] {
+  accent-color: var(--color-primary);
 }
 
 .new-collection-btn {
-  background-color: #2563eb;
+  background: var(--color-primary-gradient);
   color: white;
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
@@ -50,17 +54,21 @@
   transition:
     background-color 0.2s ease,
     transform 0.1s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .new-collection-btn:hover {
-  background-color: #1e40af;
+  background: linear-gradient(135deg, #5a73e8 0%, #6b42a0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 .new-collection-btn:active {
-  background-color: #163493;
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .new-collection-error {
-  color: #dc2626;
+  color: var(--color-error);
   margin-top: 1rem;
 }

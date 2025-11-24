@@ -1,6 +1,6 @@
 .bookmarks-page {
   padding: 2rem;
-  background-color: #f9f9f9;
+  background-color: var(--color-bg-page);
   font-family: Arial, sans-serif;
   min-height: 100vh;
   display: flex;
@@ -16,12 +16,12 @@
 
 .bookmarks-title {
   font-size: 2rem;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .bookmark-section-title {
   font-size: 1.5rem;
-  color: #333;
+  color: var(--color-text-primary);
   margin-top: 1rem;
   margin-bottom: 0.5rem;
 }
@@ -33,8 +33,8 @@
 }
 
 .bookmark-card {
-  background-color: #fff;
-  border: 1px solid #ddd;
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
   border-radius: 10px;
   padding: 1.25rem;
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
@@ -44,17 +44,19 @@
 
 .bookmark-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.15);
+  border-color: var(--color-primary);
 }
 
 .bookmark-name {
   font-size: 1.2rem;
-  color: #1e293b;
+  color: var(--color-primary);
   margin-bottom: 0.3rem;
+  font-weight: 600;
 }
 
 .bookmark-description {
-    color: #475569;
+    color: var(--color-text-secondary);
     font-size: 0.95rem;
     margin-bottom: 0.5rem;
 
@@ -69,12 +71,12 @@
 
 .bookmark-meta {
   font-size: 0.85rem;
-  color: #64748b;
+  color: var(--color-text-tertiary);
 }
 
 .no-bookmarks {
   text-align: center;
   font-size: 1rem;
-  color: #666;
+  color: var(--color-text-tertiary);
   margin-top: 2rem;
 }

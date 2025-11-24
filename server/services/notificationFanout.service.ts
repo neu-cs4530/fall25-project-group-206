@@ -280,7 +280,7 @@ export async function notifyOnDirectMessage(
     targetId: message._id,
     targetType: 'User',
     location: 'direct',
-    link: '/messaging', // or your actual chat route
+    link: '/messaging/direct-message', // or your actual chat route
     category: 'direct',
     isRead: false,
   };

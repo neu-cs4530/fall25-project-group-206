@@ -102,7 +102,7 @@ describe('notificationFeed.service – filters and priority', () => {
       targetId: new mongoose.Types.ObjectId(),
       targetType: 'User',
       location: 'direct',
-      link: '/messaging',
+      link: '/messaging/direct-message',
       category: 'direct',
       isRead: false,
     } as any;
@@ -116,7 +116,7 @@ describe('notificationFeed.service – filters and priority', () => {
       targetId: new mongoose.Types.ObjectId(),
       targetType: 'User',
       location: 'direct',
-      link: '/messaging',
+      link: '/messaging/direct-message',
       category: 'direct',
       isRead: false,
     } as any;
