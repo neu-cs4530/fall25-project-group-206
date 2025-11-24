@@ -2,6 +2,7 @@ import './index.css';
 import useBookmarksPage from '../../../hooks/useBookmarksPage';
 import { useNavigate } from 'react-router-dom';
 import useUserContext from '../../../hooks/useUserContext';
+import BookmarkButton from '../bookmarkButton';
 
 /**
  * BookmarksPage component displays all bookmarks for the logged-in user.
@@ -61,7 +62,16 @@ const BookmarksPage = () => {
                   key={c._id}
                   className='bookmark-card'
                   onClick={() => handleCollectionClick(c._id!, c.username ?? '')}>
-                  <h3 className='bookmark-name'>{c.name ?? 'Unnamed Collection'}</h3>
+                  <div className='bookmark-card-header'>
+                    <h3 className='bookmark-name'>{c.name ?? 'Unnamed Collection'}</h3>
+                    <BookmarkButton
+                      targetId={c._id.toString()}
+                      targetType='Collection'
+                      confirmOnRemove
+                      confirmMessage='Remove this collection from your bookmarks?'
+                    />
+                  </div>
+
                   <p className='bookmark-description'>{c.description ?? ''}</p>
                   <p className='bookmark-meta'>
                     {c.isPrivate ? 'Private' : 'Public'} • {c.questions?.length ?? 0} Questions
@@ -94,7 +104,16 @@ const BookmarksPage = () => {
                   key={comm._id}
                   className='bookmark-card'
                   onClick={() => handleCommunityClick(comm._id!)}>
-                  <h3 className='bookmark-name'>{comm.name ?? 'Unnamed Community'}</h3>
+                  <div className='bookmark-card-header'>
+                    <h3 className='bookmark-name'>{comm.name ?? 'Unnamed Community'}</h3>
+                    <BookmarkButton
+                      targetId={comm._id.toString()}
+                      targetType='Community'
+                      confirmOnRemove
+                      confirmMessage='Remove this community from your bookmarks?'
+                    />
+                  </div>
+
                   <p className='bookmark-description'>{comm.description ?? ''}</p>
                   <p className='bookmark-meta'>
                     {comm.visibility ?? 'Unknown'} • {comm.participants?.length ?? 0} participants

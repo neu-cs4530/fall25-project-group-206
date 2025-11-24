@@ -8,6 +8,10 @@
   cursor: pointer;
   transition: all 0.2s ease;
   margin-top: 0.4rem;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .bookmark-btn:hover {
@@ -23,4 +27,8 @@
 .bookmark-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.bookmark-btn-icon {
+  display: inline-block;
 }
