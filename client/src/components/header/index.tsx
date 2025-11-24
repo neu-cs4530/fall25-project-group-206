@@ -16,7 +16,7 @@ const Header = () => {
   return (
     <div id='header' className='header'>
       <div className='title' onClick={() => navigate('/home')}>
-        StackApp
+        CodeStack
       </div>
 
       <input
