@@ -1,8 +1,9 @@
 /* Header Container */
+/* Header Container */
 .header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;          /* center the middle item */
   padding: 1rem 2rem;
   background: var(--color-primary-gradient);
   box-shadow: var(--shadow-primary);
@@ -12,8 +13,10 @@
   gap: 1.5rem;
 }
 
+
 /* Logo/Title */
 .title {
+  flex: 1 1 0;                      /* left column */
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--color-text-white);
@@ -27,10 +30,11 @@
   transform: scale(1.02);
 }
 
-/* Search Bar */
+/* Search Bar - fixed-ish width in the center */
 #searchBar {
-  flex: 1;
-  max-width: 500px;
+  flex: 0 0 500px;                  /* center column, fixed basis */
+  max-width: 100%;
+  margin: 0 1.5rem;                 /* space from title/buttons */
   padding: 0.75rem 1.25rem;
   font-size: 0.9375rem;
   border: 2px solid rgba(255, 255, 255, 0.2);
@@ -53,7 +57,9 @@
 
 /* Button Container */
 .header-buttons {
+  flex: 1 1 0;                      /* right column, same width as title */
   display: flex;
+  justify-content: flex-end;        /* keep buttons right-aligned */
   gap: 0.75rem;
   align-items: center;
 }

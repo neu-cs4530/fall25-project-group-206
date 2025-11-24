@@ -16,12 +16,12 @@ const Header = () => {
   return (
     <div id='header' className='header'>
       <div className='title' onClick={() => navigate('/home')}>
-        Fake Stack Overflow
+        StackApp
       </div>
 
       <input
         id='searchBar'
-        placeholder='Search questions, tags, users...'
+        placeholder='Search questions, tags...'
         type='text'
         value={val}
         onChange={handleInputChange}
