@@ -1,8 +1,11 @@
 .bookmarks-page {
-  padding: 2rem;
+  /* match the general content pages instead of centering/narrowing */
+  padding: 2.5rem 3rem 3rem;
+
   background-color: var(--color-bg-page);
   font-family: Arial, sans-serif;
   min-height: 100vh;
+
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -15,8 +18,22 @@
 }
 
 .bookmarks-title {
-  font-size: 2rem;
-  color: var(--color-text-primary);
+  font-size: 2.1rem;
+  font-weight: 700;
+  color: #536dff;
+  margin: 0 0 0.75rem;
+  position: relative;
+}
+
+.bookmarks-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -0.35rem;
+  width: 60px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6c5ce7, #a855f7);
 }
 
 .bookmark-section-title {
@@ -50,7 +67,7 @@
 
 .bookmark-name {
   font-size: 1.2rem;
-  color: var(--color-primary);
+  color: var(--color-text-primary);
   margin-bottom: 0.3rem;
   font-weight: 600;
 }
@@ -79,4 +96,15 @@
   font-size: 1rem;
   color: var(--color-text-tertiary);
   margin-top: 2rem;
+}
+
+.bookmark-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.bookmark-card-header .bookmark-name {
+  margin-bottom: 0;
 }

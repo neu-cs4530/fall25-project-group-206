@@ -1,131 +1,180 @@
-/* Root layout for notifications views (feed + preferences) */
+/* Shell – match Collections / Communities / Bookmarks */
 .notifications-page {
-  padding: 2rem;
+  /* match layout of Collections / Communities / Bookmarks / Users */
+  padding: 2.5rem 3rem 3rem;
+
   font-family: Arial, sans-serif;
-  max-width: 900px;
-  margin: 0 auto;
+  background-color: var(--color-bg-page);
+  min-height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0rem;
 }
 
-/* Header: title on the left, buttons on the right */
+
+/* Header: title + controls */
 .notifications-header {
+  width: 100%;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column; /* title above controls */
+  align-items: flex-start;
+  gap: 0.6rem;
   margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .notifications-header h2 {
   margin: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #536dff;
+  position: relative;
 }
 
+.notifications-header h2::after {
+  content: '';
+  display: block;
+  margin-top: 0.25rem;
+  width: 3.75rem;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--color-primary-gradient);
+}
+
+/* Header controls row */
 .notifications-header-buttons {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-sm);
 }
 
-.notifications-header-buttons button {
-  padding: 0.35rem 0.75rem;
-  border-radius: 4px;
-  border: 1px solid #cbd5e1;
-  background-color: #ffffff;
-  font-size: 0.85rem;
+/* Generic header buttons (Reload / Back / Digest / Preferences) */
+.notifications-header-buttons button,
+.notifications-refresh,
+.notifications-save {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
+  background-color: var(--color-bg-card);
+  color: var(--color-text-secondary);
   cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
 }
 
-.notifications-header-buttons button:hover {
-  background-color: #f1f5f9;
+.notifications-header-buttons button:hover,
+.notifications-refresh:hover,
+.notifications-save:not(:disabled):hover {
+  background-color: var(--color-hover);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
-/* Simple refresh button class used on the feed */
-.notifications-refresh {
-  padding: 0.4rem 0.8rem;
-  border: 1px solid #1e293b;
-  background-color: #fff;
-  cursor: pointer;
-  border-radius: 4px;
-  font-size: 0.9rem;
+.notifications-save {
+  border-color: var(--color-primary);
+  background: var(--color-primary-gradient);
+  color: var(--color-text-white);
+  box-shadow: var(--shadow-primary);
 }
 
-.notifications-refresh:hover {
-  background-color: #f1f5f9;
+.notifications-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* Error + empty states */
 .notifications-error {
-  padding: 1rem;
-  background-color: #fee2e2;
-  border: 1px solid #fecaca;
-  border-radius: 4px;
   display: flex;
-  gap: 0.5rem;
   align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius-md);
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  box-shadow: var(--shadow-sm);
 }
 
 .notifications-empty {
-  color: #64748b;
-  margin-top: 0.5rem;
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  color: var(--color-text-tertiary);
 }
 
-/* Feed list + cards */
+/* Feed + digest list + cards */
 .notifications-list {
   list-style: none;
-  padding: 0;
   margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.6rem; /* tighter row spacing */
 }
 
 .notification-card {
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
-  background-color: #ffffff;
+  padding: 0.7rem 0.95rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
   cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
 }
 
 .notification-card:hover {
-  background-color: #f8fafc;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .notification-message {
   font-size: 0.95rem;
-  margin-bottom: 0.25rem;
-  color: #0f172a;
+  margin-bottom: 0.2rem;
+  color: var(--color-text-primary);
 }
 
 .notification-meta {
-  font-size: 0.8rem;
-  color: #64748b;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
   align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--color-text-tertiary);
 }
 
 .notification-separator {
   margin: 0 0.15rem;
 }
 
+/* Location / type / priority badges */
 .notification-location,
-.notification-type {
-  padding: 0.1rem 0.35rem;
-  border-radius: 999px;
-  border: 1px solid #cbd5f5;
-  background-color: #eff6ff;
-  font-size: 0.75rem;
-}
-
-/* Priority pill on each notification card */
+.notification-type,
 .notification-priority {
-  padding: 0.1rem 0.4rem;
-  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--radius-full);
   font-size: 0.75rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-light);
 }
 
-/* Priority badge colors (feed view) */
+/* Priority badge colors */
 .badge-priority-high {
   border-color: #f97316;
   background-color: #ffedd5;
@@ -141,7 +190,7 @@
   background-color: #e5e7eb;
 }
 
-/* Slight variations for different badges */
+/* Location/type badge variants */
 .badge-collection {
   border-color: #a5b4fc;
   background-color: #eef2ff;
@@ -167,98 +216,157 @@
   background-color: #ffedd5;
 }
 
-/* New badge colors */
 .badge-following {
-  border-color: #10b981; /* Green */
+  border-color: #10b981;
   background-color: #d1fae5;
 }
 
 .badge-new-message {
-  border-color: #fbbf24; /* Yellow */
+  border-color: #fbbf24;
   background-color: #fef3c7;
 }
 
 .badge-milestone {
-  border-color: #4ade80; /* Bright Green */
-  background-color: #d1fae5; /* Light Green */
+  border-color: #4ade80;
+  background-color: #d1fae5;
 }
 
 .badge-question-answered {
-  border-color: #ef4444; /* Red */
+  border-color: #ef4444;
   background-color: #fee2e2;
 }
 
 .badge-activity {
-  border-color: #3b82f6; /* Blue */
+  border-color: #3b82f6;
   background-color: #e0f2fe;
 }
 
 .badge-system {
-  border-color: #3b82f6; /* Blue */
-  background-color: #e0f2fe; /* Light Blue */
+  border-color: #3b82f6;
+  background-color: #e0f2fe;
 }
 
-/* Direct message location badge */
 .badge-direct {
-  border-color: #fb7185;      /* rose */
-  background-color: #ffe4e6;  /* light rose */
+  border-color: #fb7185;
+  background-color: #ffe4e6;
 }
 
-/* "user" targetType badge (for direct messages, follows, etc.) */
 .badge-user {
-  border-color: #6366f1;      /* indigo */
-  background-color: #e0e7ff;  /* light indigo */
+  border-color: #6366f1;
+  background-color: #e0e7ff;
 }
 
-/* Priority filter buttons on the feed view */
+/* PRIORITY FILTER BUTTONS */
 .notifications-priority-filters {
   display: flex;
-  gap: 0.25rem;
-  margin-right: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.35rem;
 }
 
 .notifications-filter {
-  padding: 0.25rem 0.6rem;
-  border-radius: 999px;
-  border: 1px solid #cbd5e1;
-  background-color: #ffffff;
+  min-width: 90px;
+  padding: 0.38rem 0.85rem;
   font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-light);
+  background-color: var(--color-bg-card);
+  color: var(--color-text-secondary);
   cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.notifications-filter:hover {
+  background-color: var(--color-hover);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
 .notifications-filter.active {
-  background-color: #0f172a;
-  color: #ffffff;
-  border-color: #0f172a;
+  background: var(--color-primary-gradient);
+  color: var(--color-text-white);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-primary);
+  transform: translateY(-1px);
 }
 
-/* Sections on the preferences page */
+/* PREFERENCES SECTIONS – card layout but tighter spacing */
 .notifications-section {
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
+  margin-top: 0.6rem;              /* less vertical gap */
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;           /* slightly smaller padding */
+  box-shadow: var(--shadow-sm);
 }
 
 .notifications-section h3 {
-  margin: 0 0 0.25rem 0;
+  margin: 0 0 0.3rem 0;
   font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-primary);
 }
 
 .notifications-section p {
-  margin: 0 0 0.75rem 0;
-  color: #475569;
+  margin: 0 0 0.7rem 0;
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+/* DND row */
+.notif-pref-row,
+.notif-pref-row-heading {
+  font-size: 0.9rem;
+}
+
+.notif-pref-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+}
+
+.notif-pref-row + .notif-pref-row {
+  border-top: 1px solid var(--color-border-light);
+}
+
+.notif-pref-row label {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.notif-pref-row input[type='checkbox'] {
+  margin: 0;
+}
+
+.notif-pref-row-status {
+  font-size: 0.8rem;
+  color: var(--color-text-tertiary);
+}
+
+/* Heading row inside the scroll-list ("Other muted ...") */
+.notif-pref-row-heading {
+  margin-top: 0.4rem;
+  padding-top: 0.3rem;
+  border-top: 1px dashed var(--color-border-light);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
 }
 
 /* Scrollable muted lists */
 .notif-pref-scroll {
-  max-height: 240px;
+  max-height: 220px;
   overflow-y: auto;
-  margin-top: 0.5rem;
+  margin-top: 0.45rem;
   padding: 0.5rem 0.75rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  background-color: #f9fafb;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-light);
 }
 
 .notif-pref-list {
@@ -267,70 +375,101 @@
   padding: 0;
 }
 
-.notif-pref-row {
+/* Priority tier hide toggles */
+.notifications-priority-mute-tiers {
+  margin: 0.6rem 0 0.9rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-light);
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.notifications-priority-mute-tiers label {
+  display: flex;
   align-items: center;
-  padding: 0.25rem 0;
   font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  gap: 0.45rem;
 }
 
-.notif-pref-row + .notif-pref-row {
-  border-top: 1px solid #e5e7eb;
+.notifications-priority-mute-tiers input[type='checkbox'] {
+  margin: 0;
 }
 
-.notif-pref-row label {
-  cursor: pointer;
+/* Silent hours row */
+.notifications-dnd-hours {
+  margin-top: 0.6rem;
 }
 
-.notif-pref-row input[type='checkbox'] {
-  margin-right: 0.35rem;
+.notifications-dnd-hours-inputs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
 }
 
-.notif-pref-row-heading {
-  margin-top: 0.5rem;
-  font-weight: 600;
+.notifications-dnd-hours-inputs input[type='time'] {
+  padding: 0.2rem 0.35rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
   font-size: 0.85rem;
-  color: #6b7280;
 }
 
-.notif-pref-row-status {
+.notifications-dnd-hours-inputs button {
+  padding: 0.28rem 0.7rem;
   font-size: 0.8rem;
-  color: #6b7280;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
+  background-color: var(--color-bg-card);
+  cursor: pointer;
+  transition: all var(--transition-base);
 }
 
-/* Priority section layout (preferences page) */
+.notifications-dnd-hours-inputs button:hover:not(:disabled) {
+  background-color: var(--color-hover);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* Priority section on preferences */
 .notifications-priority-section {
-  margin-top: 2rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid #e5e7eb;
+  margin-top: 1.1rem;
 }
 
 .notifications-priority-default {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
-  margin: 0.75rem 0 1rem;
+  gap: 0.7rem;
+  margin: 0.6rem 0 0.9rem;
   font-size: 0.9rem;
 }
 
 .notifications-priority-label {
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--color-text-secondary);
 }
 
 .notifications-priority-default select {
   padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
   font-size: 0.9rem;
+  background-color: var(--color-bg-card);
 }
 
+/* Priority grid */
 .notifications-priority-grid {
-  margin-top: 0.75rem;
+  margin-top: 0.6rem;
 }
 
 .notifications-priority-grid-header {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.45rem;
   font-size: 0.9rem;
-  color: #4b5563;
+  color: var(--color-text-tertiary);
 }
 
 .notifications-priority-grid table {
@@ -341,88 +480,43 @@
 
 .notifications-priority-grid th,
 .notifications-priority-grid td {
-  border: 1px solid #e5e7eb;
-  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--color-border-light);
+  padding: 0.3rem 0.45rem;
   text-align: center;
+  background: var(--color-bg-light);
 }
 
 .notifications-priority-grid th:first-child,
 .notifications-priority-grid td:first-child {
   text-align: left;
-  background-color: #f9fafb;
+  background-color: var(--color-bg-card);
   font-weight: 600;
+  color: var(--color-text-secondary);
 }
 
 .notifications-priority-grid select {
   width: 100%;
-  padding: 0.15rem 0.25rem;
+  padding: 0.2rem 0.35rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
+  background-color: var(--color-bg-card);
   font-size: 0.85rem;
 }
 
-/* Save button row */
-.notifications-actions {
-  margin-top: 1.5rem;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.notifications-save {
-  padding: 0.45rem 0.9rem;
-  border-radius: 4px;
-  border: 1px solid #0f172a;
-  background-color: #0f172a;
-  color: #ffffff;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.notifications-save:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-.notifications-save:not(:disabled):hover {
-  background-color: #111827;
-}
-
-/* Priority grid cell styles */
-.notifications-priority-cell select {
-  width: 100%;
-}
-
-/* Impossible category/location combos */
+/* Disabled cells in the matrix */
 .notifications-priority-cell--disabled {
   background-color: #f5f5f5;
-  color: #888;
-  text-align: center;
+  color: #9ca3af;
 }
 
 .notifications-priority-cell--disabled .notifications-priority-na {
   display: inline-block;
   font-size: 0.9rem;
-  color: #aaa;
 }
 
-/* Priority tier hiding block (three checkboxes) */
-.notifications-priority-mute-tiers {
-  margin: 0.75rem 0 1rem;
-  padding: 0.75rem 0.9rem;
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
-  background-color: #f9fafb;
-
+/* Save button row */
+.notifications-actions {
+  margin-top: 1.25rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.notifications-priority-mute-tiers label {
-  display: flex;
-  align-items: center;
-  font-size: 0.9rem;
-  color: #374151;
-}
-
-.notifications-priority-mute-tiers input[type='checkbox'] {
-  margin-right: 0.45rem;
+  justify-content: flex-end;
 }
