@@ -8,28 +8,35 @@
  * @param username - The username to log in with
  * @param password - The password to log in with (defaults to 'password123')
  */
-export const loginUser = (username: string, password: string = 'securePass123!') => {
-  cy.visit('http://localhost:4530');
-  cy.contains('Welcome to FakeStackOverflow!');
-  cy.get('#username-input').type(username);
-  cy.get('#password-input').type(password);
-  cy.contains('Submit').click();
+export const loginUser = (
+  username: string,
+  password: string = "securePass123!"
+) => {
+  cy.visit("http://localhost:4530");
+  cy.contains("Welcome to CodeStack!");
+  cy.get("#username-input").type(username);
+  cy.get("#password-input").type(password);
+  cy.contains("Submit").click();
   // Wait for redirect to home page
-  cy.url().should('include', '/home');
+  cy.url().should("include", "/home");
 };
 
 /**
  * Seeds the database with test data
  */
 export const seedDatabase = () => {
-  cy.exec('npx ts-node ../server/seedData/populateDB.ts ' + Cypress.env('MONGODB_URI'));
+  cy.exec(
+    "npx ts-node ../server/seedData/populateDB.ts " + Cypress.env("MONGODB_URI")
+  );
 };
 
 /**
  * Clears the database
  */
 export const cleanDatabase = () => {
-  cy.exec('npx ts-node ../server/seedData/deleteDB.ts ' + Cypress.env('MONGODB_URI'));
+  cy.exec(
+    "npx ts-node ../server/seedData/deleteDB.ts " + Cypress.env("MONGODB_URI")
+  );
 };
 
 /**
@@ -51,8 +58,8 @@ export const teardownTest = () => {
  * Navigates to the Ask Question page
  */
 export const goToAskQuestion = () => {
-  cy.contains('Ask a Question').click();
-  cy.url().should('include', '/new/question');
+  cy.contains("Ask a Question").click();
+  cy.url().should("include", "/new/question");
 };
 
 /**
@@ -63,10 +70,10 @@ export const goToAskQuestion = () => {
  */
 export const createQuestion = (title: string, text: string, tags: string) => {
   goToAskQuestion();
-  cy.get('#formTitleInput').type(title);
-  cy.get('#formTextInput').type(text);
-  cy.get('#formTagInput').type(tags);
-  cy.contains('Post Question').click();
+  cy.get("#formTitleInput").type(title);
+  cy.get("#formTextInput").type(text);
+  cy.get("#formTagInput").type(tags);
+  cy.contains("Post Question").click();
 };
 
 /**
@@ -75,8 +82,8 @@ export const createQuestion = (title: string, text: string, tags: string) => {
  */
 export const goToAnswerQuestion = (questionTitle: string) => {
   cy.contains(questionTitle).click();
-  cy.contains('Answer Question').click();
-  cy.url().should('include', '/new/answer');
+  cy.contains("Answer Question").click();
+  cy.url().should("include", "/new/answer");
 };
 
 /**
@@ -84,8 +91,8 @@ export const goToAnswerQuestion = (questionTitle: string) => {
  * @param answerText - The answer content
  */
 export const createAnswer = (answerText: string) => {
-  cy.get('#answerTextInput').type(answerText);
-  cy.contains('Post Answer').click();
+  cy.get("#answerTextInput").type(answerText);
+  cy.contains("Post Answer").click();
 };
 
 /**
@@ -93,7 +100,7 @@ export const createAnswer = (answerText: string) => {
  * @param searchTerm - The term to search for
  */
 export const performSearch = (searchTerm: string) => {
-  cy.get('#searchBar').type(`${searchTerm}{enter}`);
+  cy.get("#searchBar").type(`${searchTerm}{enter}`);
 };
 
 /**
@@ -108,15 +115,15 @@ export const clickFilter = (filterName: string) => {
  * Navigates back to the Questions page
  */
 export const goToQuestions = () => {
-  cy.contains('Questions').click();
-  cy.url().should('include', '/home');
+  cy.contains("Questions").click();
+  cy.url().should("include", "/home");
 };
 
 /**
  * Navigates back to the Collections page
  */
 export const goToCollections = () => {
-  cy.contains('Collections').click();
+  cy.contains("Collections").click();
 };
 
 /**
@@ -125,35 +132,43 @@ export const goToCollections = () => {
  * @param text - Question content
  * @param tags - Space-separated tags
  */
-export const createCommunity = (title: string, desc: string, isPrivate: boolean) => {
-  cy.get('.new-community-button').click();
+export const createCommunity = (
+  title: string,
+  desc: string,
+  isPrivate: boolean
+) => {
+  cy.get(".new-community-button").click();
   // Use expected classnames instead of placeholder selectors
-  cy.get('.new-community-input').eq(0).type(title);
-  cy.get('.new-community-input').eq(1).type(desc);
-  if (isPrivate) {cy.get('.new-community-checkbox-label input[type="checkbox"]').check();};
-  cy.get('.new-community-submit').click();
+  cy.get(".new-community-input").eq(0).type(title);
+  cy.get(".new-community-input").eq(1).type(desc);
+  if (isPrivate) {
+    cy.get('.new-community-checkbox-label input[type="checkbox"]').check();
+  }
+  cy.get(".new-community-submit").click();
 };
 
 /**
  * Navigates back to the Communities page
  */
 export const goToCommunities = () => {
-  cy.contains('Communities').click();
+  cy.contains("Communities").click();
 };
 
 /**
  * Navigate to a Community Card
  */
-export const viewCommunityCard = (CommunityName:string) => {
-  cy.contains('.community-card-title', CommunityName).closest('.community-card').contains('button', 'View Community').click();
+export const viewCommunityCard = (CommunityName: string) => {
+  cy.contains(".community-card-title", CommunityName)
+    .closest(".community-card")
+    .contains("button", "View Community")
+    .click();
 };
-
 
 /**
  * Waits for questions to load and verifies the page is ready
  */
 export const waitForQuestionsToLoad = () => {
-  cy.get('.postTitle').should('exist');
+  cy.get(".postTitle").should("exist");
 };
 
 /**
@@ -161,7 +176,12 @@ export const waitForQuestionsToLoad = () => {
  * @param questionTitle - The title of the question to click on
  */
 export const openSaveToCollectionModal = (questionTitle: string) => {
-  cy.get('.question_mid').contains('.postTitle', questionTitle).parents('.question_mid').parents('.question').find('.collections-btn').click();
+  cy.get(".question_mid")
+    .contains(".postTitle", questionTitle)
+    .parents(".question_mid")
+    .parents(".question")
+    .find(".collections-btn")
+    .click();
 };
 
 /**
@@ -169,7 +189,11 @@ export const openSaveToCollectionModal = (questionTitle: string) => {
  * @param collectionTitle - The title of the question to click on
  */
 export const toggleSaveQuestion = (collectionTitle: string) => {
-  cy.get('.collection-list').contains('.collection-name', collectionTitle).parents('.collection-row').find('.save-btn').click();
+  cy.get(".collection-list")
+    .contains(".collection-name", collectionTitle)
+    .parents(".collection-row")
+    .find(".save-btn")
+    .click();
 };
 
 /**
@@ -177,7 +201,10 @@ export const toggleSaveQuestion = (collectionTitle: string) => {
  * @param questionTitle - The title of the question to click on
  * @param collectionTitle - The title of the collection to save to
  */
-export const toggleSaveQuestionToCollection = (questionTitle:string, collectionTitle: string) => {
+export const toggleSaveQuestionToCollection = (
+  questionTitle: string,
+  collectionTitle: string
+) => {
   openSaveToCollectionModal(questionTitle);
   toggleSaveQuestion(collectionTitle);
 };
@@ -188,11 +215,16 @@ export const toggleSaveQuestionToCollection = (questionTitle:string, collectionT
  * @param communityDesc - The description of the community
  * @param communityMembers - The members of the community
  */
-export const verifyCommunityDetailsDisplayed = (communityName: string, communityDesc: string, communityMembers: Array<string>) => {
-  cy.contains('.community-title', communityName).should('be.visible');
-  cy.contains('.community-description', communityDesc).should('be.visible');
-  cy.get('.member-item').each(($el, index, $list) => {
-      cy.wrap($el).should("contain", communityMembers[index]);});
+export const verifyCommunityDetailsDisplayed = (
+  communityName: string,
+  communityDesc: string,
+  communityMembers: Array<string>
+) => {
+  cy.contains(".community-title", communityName).should("be.visible");
+  cy.contains(".community-description", communityDesc).should("be.visible");
+  cy.get(".member-item").each(($el, index, $list) => {
+    cy.wrap($el).should("contain", communityMembers[index]);
+  });
 };
 
 /**
@@ -201,10 +233,14 @@ export const verifyCommunityDetailsDisplayed = (communityName: string, community
  * @param communityDesc - The description of the community
  * @param communityMembers - The members of the community
  */
-export const verifyCommunityDetailsNotDisplayed = (communityName: string, communityDesc: string, communityMembers: Array<string>) => {
-  cy.contains('.community-title', communityName).should('not.exist');
-  cy.contains('.community-description', communityDesc).should('not.exist');
-  cy.get('.member-item').should('not.exist');
+export const verifyCommunityDetailsNotDisplayed = (
+  communityName: string,
+  communityDesc: string,
+  communityMembers: Array<string>
+) => {
+  cy.contains(".community-title", communityName).should("not.exist");
+  cy.contains(".community-description", communityDesc).should("not.exist");
+  cy.get(".member-item").should("not.exist");
 };
 
 /**
@@ -212,7 +248,11 @@ export const verifyCommunityDetailsNotDisplayed = (communityName: string, commun
  * @param collectionTitle - The title of the collection to click on
  */
 export const verifyQuestionSaved = (collectionTitle: string) => {
-  cy.get('.collection-list').contains('.collection-name', collectionTitle).parents('.collection-row').get('.status-tag').should('have.class', 'saved');
+  cy.get(".collection-list")
+    .contains(".collection-name", collectionTitle)
+    .parents(".collection-row")
+    .get(".status-tag")
+    .should("have.class", "saved");
 };
 
 /**
@@ -220,7 +260,11 @@ export const verifyQuestionSaved = (collectionTitle: string) => {
  * @param collectionTitle - The title of the collection to click on
  */
 export const verifyQuestionUnsaved = (collectionTitle: string) => {
-  cy.get('.collection-list').contains('.collection-name', collectionTitle).parents('.collection-row').get('.status-tag').should('have.class', 'unsaved');
+  cy.get(".collection-list")
+    .contains(".collection-name", collectionTitle)
+    .parents(".collection-row")
+    .get(".status-tag")
+    .should("have.class", "unsaved");
 };
 
 /**
@@ -228,9 +272,9 @@ export const verifyQuestionUnsaved = (collectionTitle: string) => {
  * @param expectedTitles - Array of question titles in expected order
  */
 export const verifyQuestionOrder = (expectedTitles: string[]) => {
-  cy.get('.postTitle').should('have.length', expectedTitles.length);
-  cy.get('.postTitle').each(($el, index) => {
-    cy.wrap($el).should('contain', expectedTitles[index]);
+  cy.get(".postTitle").should("have.length", expectedTitles.length);
+  cy.get(".postTitle").each(($el, index) => {
+    cy.wrap($el).should("contain", expectedTitles[index]);
   });
 };
 
@@ -239,13 +283,16 @@ export const verifyQuestionOrder = (expectedTitles: string[]) => {
  * @param expectedAnswers - Array of expected answer counts
  * @param expectedViews - Array of expected view counts
  */
-export const verifyQuestionStats = (expectedAnswers: string[], expectedViews: string[]) => {
-  cy.get('.postStats').each(($el, index) => {
+export const verifyQuestionStats = (
+  expectedAnswers: string[],
+  expectedViews: string[]
+) => {
+  cy.get(".postStats").each(($el, index) => {
     if (index < expectedAnswers.length) {
-      cy.wrap($el).should('contain', expectedAnswers[index]);
+      cy.wrap($el).should("contain", expectedAnswers[index]);
     }
     if (index < expectedViews.length) {
-      cy.wrap($el).should('contain', expectedViews[index]);
+      cy.wrap($el).should("contain", expectedViews[index]);
     }
   });
 };
@@ -255,7 +302,7 @@ export const verifyQuestionStats = (expectedAnswers: string[], expectedViews: st
  * @param errorMessage - The error message to check for
  */
 export const verifyErrorMessage = (errorMessage: string) => {
-  cy.contains(errorMessage).should('be.visible');
+  cy.contains(errorMessage).should("be.visible");
 };
 
 /**
@@ -263,7 +310,10 @@ export const verifyErrorMessage = (errorMessage: string) => {
  * @param count - Expected number of questions
  */
 export const verifyQuestionCount = (count: number) => {
-  cy.get('#question_count').should('contain', `${count} question${count !== 1 ? 's' : ''}`);
+  cy.get("#question_count").should(
+    "contain",
+    `${count} question${count !== 1 ? "s" : ""}`
+  );
 };
 
 /**
@@ -272,9 +322,9 @@ export const verifyQuestionCount = (count: number) => {
  * @param texts - Array of texts in expected order
  */
 export const verifyElementsInOrder = (selector: string, texts: string[]) => {
-  cy.get(selector).should('have.length', texts.length);
+  cy.get(selector).should("have.length", texts.length);
   texts.forEach((text, index) => {
-    cy.get(selector).eq(index).should('contain', text);
+    cy.get(selector).eq(index).should("contain", text);
   });
 };
 
@@ -284,17 +334,17 @@ export const verifyElementsInOrder = (selector: string, texts: string[]) => {
  * Navigates to the My Collections page
  */
 export const goToMyCollections = () => {
-  cy.contains('My Collections').click();
-  cy.url().should('include', '/collections');
+  cy.contains("My Collections").click();
+  cy.url().should("include", "/collections");
 };
 
 /**
  * Navigates to the new collection creation page from My Collections.
  */
 export const goToCreateCollection = () => {
-  cy.get('.collections-create-btn').click({ force: true });
-  cy.url().should('include', '/new/collection');
-  cy.get('.new-collection-page').should('exist');
+  cy.get(".collections-create-btn").click({ force: true });
+  cy.url().should("include", "/new/collection");
+  cy.get(".new-collection-page").should("exist");
 };
 
 /**
@@ -306,13 +356,11 @@ export const createNewCollection = (
   isPrivate: boolean = false
 ) => {
   // Fill using expected classnames instead of placeholders
-  cy.get('.new-collection-input').eq(0)
-    .should('exist')
-    .clear()
-    .type(name);
+  cy.get(".new-collection-input").eq(0).should("exist").clear().type(name);
 
-  cy.get('.new-collection-input').eq(1)
-    .should('exist')
+  cy.get(".new-collection-input")
+    .eq(1)
+    .should("exist")
     .clear()
     .type(description);
 
@@ -327,7 +375,7 @@ export const createNewCollection = (
   });
 
   // Submit the form
-  cy.get('.new-collection-btn').should('exist').click({ force: true });
+  cy.get(".new-collection-btn").should("exist").click({ force: true });
 };
 
 /**
@@ -337,15 +385,17 @@ export const createNewCollection = (
 export const deleteCollection = (name: string) => {
   goToMyCollections();
 
-   cy.get('.collection-card').contains('.collection-name', name).then(($nameEl) => {
-    // Go back to a stable parent context before clicking
-    cy.wrap($nameEl)
-      .closest('.collection-card')
-      .find('.delete-collection-button')
-      .click({ force: true });
-  });
+  cy.get(".collection-card")
+    .contains(".collection-name", name)
+    .then(($nameEl) => {
+      // Go back to a stable parent context before clicking
+      cy.wrap($nameEl)
+        .closest(".collection-card")
+        .find(".delete-collection-button")
+        .click({ force: true });
+    });
   // Verify deletion
-  cy.get('.collection-name').should('not.contain', name);
+  cy.get(".collection-name").should("not.contain", name);
 };
 
 /**
@@ -353,7 +403,7 @@ export const deleteCollection = (name: string) => {
  * @param name - name of the collection to verify
  */
 export const verifyCollectionVisible = (name: string) => {
-  cy.contains(name).should('exist');
+  cy.contains(name).should("exist");
 };
 
 /**
@@ -361,9 +411,9 @@ export const verifyCollectionVisible = (name: string) => {
  * @param collectionName - Name of the collection to verify.
  */
 export const verifyCollectionExists = (collectionName: string) => {
-  cy.get('.collections-list').should('exist');
-  cy.get('.collection-card').should('exist');
-  cy.get('.collection-name').contains(collectionName).should('be.visible');
+  cy.get(".collections-list").should("exist");
+  cy.get(".collection-card").should("exist");
+  cy.get(".collection-name").contains(collectionName).should("be.visible");
 };
 
 /**
@@ -371,9 +421,11 @@ export const verifyCollectionExists = (collectionName: string) => {
  * @param name - Name of the collection to open
  */
 export const goToCollection = (name: string) => {
-  cy.get('.collection-card').contains('.collection-name', name).click({ force: true });
-  cy.url().should('include', '/collections/');
-  cy.get('.collection-page').should('exist');
+  cy.get(".collection-card")
+    .contains(".collection-name", name)
+    .click({ force: true });
+  cy.url().should("include", "/collections/");
+  cy.get(".collection-page").should("exist");
 };
 
 /**
@@ -382,13 +434,16 @@ export const goToCollection = (name: string) => {
  * @param name - Expected collection name
  * @param username - Expected username (optional)
  */
-export const verifyCollectionPageDetails = (name: string, username?: string) => {
-  cy.get('.collection-title').should('contain', name);
-  cy.get('.collection-description').should('exist');
-  cy.get('.collection-meta').should('exist');
-  cy.get('.questions-list').should('exist');
+export const verifyCollectionPageDetails = (
+  name: string,
+  username?: string
+) => {
+  cy.get(".collection-title").should("contain", name);
+  cy.get(".collection-description").should("exist");
+  cy.get(".collection-meta").should("exist");
+  cy.get(".questions-list").should("exist");
 
   if (username) {
-    cy.get('.collection-meta').should('contain', username);
+    cy.get(".collection-meta").should("contain", username);
   }
 };

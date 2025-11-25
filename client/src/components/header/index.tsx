@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import useHeader from '../../hooks/useHeader';
 import './index.css';
 import useUserContext from '../../hooks/useUserContext';
+import logo from './logo.png';
 
 /**
  * Header component that renders the main title and a search bar.
@@ -16,7 +17,7 @@ const Header = () => {
   return (
     <div id='header' className='header'>
       <div className='title' onClick={() => navigate('/home')}>
-        CodeStack
+        <img src={logo} alt='StackApp Logo' className='header-logo' />
       </div>
 
       <input

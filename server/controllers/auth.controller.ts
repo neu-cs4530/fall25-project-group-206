@@ -185,24 +185,9 @@ const authController = () => {
     )(req, res);
   };
 
-  /**
-   * POST /api/auth/logout
-   * ----------------------
-   * Ends user session and logs out the authenticated user.
-   *
-   * Response:
-   * - { message: "Logged out successfully" }
-   */
-  const logout = (req: Request, res: Response) => {
-    req.logout(() => {
-      res.status(200).json({ message: 'Logged out successfully' });
-    });
-  };
-
   // Route Bindings
   router.get('/google', googleAuth);
   router.get('/google/callback', googleCallback);
-  router.post('/logout', logout);
 
   return router;
 };

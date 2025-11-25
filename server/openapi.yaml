@@ -1474,18 +1474,6 @@ paths:
   #       '500':
   #         $ref: '#/components/responses/ErrorResponse'
 
-  # /auth/logout:
-  #   post:
-  #     tags:
-  #       - Auth
-  #     summary: Logs out the current authenticated user.
-  #     description: |
-  #       Ends the session and clears the Passport login state.
-  #       Returns a success message if logout completes.
-  #     responses:
-  #       '200':
-  #         description: Successfully logged out.
-
 components:
   schemas:
     # --------------------

@@ -84,8 +84,10 @@ try {
       validateRequests: true,
       validateResponses: true,
       ignoreUndocumented: true,
-      // ignorePaths: (req: { path: string }) =>
-      //   req.path === '/api/auth/google' || req.path === '/api/auth/google/callback',
+      ignorePaths: (req: { path: string }) =>
+        req.path === '/api/auth/google' ||
+        req.path === '/api/auth/google/callback' ||
+        req.path === '/query/scope',
       formats: {
         'object-id': (v: string) => /^[0-9a-fA-F]{24}$/.test(v),
       },
