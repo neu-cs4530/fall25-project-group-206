@@ -53,7 +53,7 @@ const ERROR_EMPTY_ANSWER = 'Answer text cannot be empty';
 const ERROR_EMPTY_TEXT = 'Question text cannot be empty';
 
 // User interface text
-const WELCOME_MESSAGE = 'Welcome to FakeStackOverflow!';
+const WELCOME_MESSAGE = 'Welcome to CodeStack!';
 const ASK_QUESTION_BUTTON = 'Ask a Question';
 const POST_QUESTION_BUTTON = 'Post Question';
 const ANSWER_QUESTION_BUTTON = 'Answer Question';
