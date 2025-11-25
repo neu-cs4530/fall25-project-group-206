@@ -214,7 +214,7 @@ const ProfileSettings: React.FC = () => {
                 <p>Only the profile owner can modify messaging settings.</p>
               )}
             </TabPanel>
-            {/* SECURITY (2FA) */}
+            {/* SECURITY (2FA) & Google SSO */}
             <TabPanel id='security' active={active}>
               {canEditProfile && (
                 <>
@@ -236,24 +236,39 @@ const ProfileSettings: React.FC = () => {
                         : 'Enable 2FA to add an extra layer of security to your account.'}
                     </p>
                   </div>
-                  <div className='google-sso-section' style={{ marginTop: '20px' }}>
-                    <label>
-                      <input
-                        type='checkbox'
-                        checked={googleSSODisabled}
-                        onChange={async e => {
-                          const disabled = e.target.checked;
-                          setGoogleSSODisabled(disabled);
-                          await handleUpdateGoogleSSOSetting(!disabled);
-                        }}
-                      />
-                      Disable Google Single Sign-On (SSO)
-                    </label>
-                    <p className='info-text'>
-                      {googleSSODisabled
-                        ? 'Google SSO is currently disabled.'
-                        : 'Google SSO is currently enabled.'}
-                    </p>
+                  <div style={{ marginTop: '20px' }}>
+                    {!googleSSODisabled ? (
+                      <div className='google-sso-section'>
+                        <label>
+                          <input
+                            type='checkbox'
+                            checked={googleSSODisabled}
+                            onChange={async e => {
+                              const disabled = e.target.checked;
+                              await handleUpdateGoogleSSOSetting(!disabled);
+                            }}
+                          />
+                          Disable Google Single Sign-On (SSO)
+                        </label>
+
+                        <p className='info-text'>
+                          {!googleSSODisabled
+                            ? 'Google SSO is currently enabled.'
+                            : 'Google SSO is currently disabled.'}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className='google-sso-section'>
+                        Your Google Account is not currently linked:
+                        <button
+                          onClick={() => {
+                            handleUpdateGoogleSSOSetting(true);
+                            window.location.href = '/api/auth/google';
+                          }}>
+                          Connect Google SSO
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </>
               )}

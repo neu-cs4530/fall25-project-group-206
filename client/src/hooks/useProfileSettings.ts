@@ -149,7 +149,6 @@ const useProfileSettings = () => {
    */
   const handleUpdateGoogleSSOSetting = async (newValue: boolean) => {
     if (!username) return;
-
     try {
       const updatedUser = await updateGoogleSSOSetting(username, newValue);
       setUserData(updatedUser);
