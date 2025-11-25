@@ -84,7 +84,7 @@ function describeQuestionLocation(
   communitiesById: Map<string, DatabaseCommunity>,
   collectionsByQuestionId: Map<string, string[]>,
 ): string {
-  // 1️⃣ Try to use a collection name if this notification involves a collection
+  // Try to use a collection name if this notification involves a collection
   //    (either collection-only or collection/community).
   if (location === 'collection' || location === 'collection/community') {
     const collectionNames = collectionsByQuestionId.get(questionIdStr);
@@ -97,7 +97,7 @@ function describeQuestionLocation(
     }
   }
 
-  // 2️⃣ Otherwise, fall back to community name if we have one.
+  // Otherwise, fall back to community name if we have one.
   const rawCommunityId = question.community as ObjectId | undefined | null;
   if (rawCommunityId) {
     const community = communitiesById.get(rawCommunityId.toString());
@@ -107,7 +107,7 @@ function describeQuestionLocation(
     }
   }
 
-  // 3️⃣ Generic fallbacks based on location.
+  // Generic fallbacks based on location.
   if (location === 'collection') return 'your collection';
   if (location === 'collection/community') return 'your collection and community';
   return 'your community';
@@ -147,7 +147,7 @@ function buildQuestionNotification(
     targetType: 'Question',
     location,
     category: 'backfill',
-    digestMeta, // <- strongly typed, no any
+    digestMeta,
   };
 }
 
