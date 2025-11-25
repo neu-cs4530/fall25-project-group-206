@@ -11,7 +11,6 @@ import bcrypt from 'bcrypt';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -151,7 +150,7 @@ export const loginUser = async (
       const knownDevices = user.knownDevices || [];
       if (!knownDevices.includes(deviceId)) {
         await UserModel.findOneAndUpdate({ _id: user._id }, { $push: { knownDevices: deviceId } });
-        await sendNewDeviceEmail(user.email, `IP: ${ip}, Browser: ${userAgent}`);
+        await sendNewDeviceEmail(user.email, user.username);
       }
     }
 
@@ -515,34 +514,38 @@ export const getDeviceId = (ip: string, userAgent: string): string => {
  * Uses SMTP2GO via standard SMTP credentials.
  *
  * @param to - The recipient's email address.
- * @param deviceInfo - The IP + user agent of the new device.
+ * @param username - The recipient's username.
  */
-export const sendNewDeviceEmail = async (to: string, deviceInfo: string) => {
+export const sendNewDeviceEmail = async (to: string, username: string) => {
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+    const payload = {
+      service_id: process.env.EMAILJS_SERVICEID,
+      template_id: process.env.EMAILJS_TEMPLATEID,
+      user_id: process.env.EMAILJS_PUBLIC_KEY,
+      template_params: {
+        email: to,
+        user: username,
       },
+    };
+
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
     });
 
-    await transporter.sendMail({
-      from: '"Your App" <no-reply@yourapp.com>',
-      to,
-      subject: 'New Device Sign-In Detected',
-      text: `We detected a sign-in from a new device: ${deviceInfo}. If this wasn't you, secure your account immediately.`,
-      html: `
-        <p>We detected a sign-in from a new device:</p>
-        <p><b>${deviceInfo}</b></p>
-        <p>If this wasn't you, secure your account immediately.</p>
-      `,
-    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      return { error: `Error sending email: ${errorText}` };
+    }
 
     return { success: true };
-  } catch (error) {
-    return { error: `Error occurred when sending email: ${error}` };
+  } catch (err) {
+    if (err instanceof Error) {
+      return { error: `Error sending email: ${err.message}` };
+    }
+    return { error: 'Unknown error sending email' };
   }
 };
