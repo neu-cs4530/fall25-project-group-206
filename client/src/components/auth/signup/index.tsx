@@ -23,7 +23,7 @@ const Signup = () => {
     <div className='container'>
       <div className='auth-card'>
         <h2>Create Account</h2>
-        <h3>Join FakeStackOverflow today</h3>
+        <h3>Join CodeStack today</h3>
 
         <form onSubmit={handleSubmit}>
           <div className='form-group'>

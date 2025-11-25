@@ -376,7 +376,7 @@ export const updateMessagingSetting = async (
 export const generate2FASecret = async (username: string) => {
   try {
     const secret = speakeasy.generateSecret({
-      name: `FakeStackOverflow (${username})`,
+      name: `CodeStack (${username})`,
       length: 32,
     });
 
