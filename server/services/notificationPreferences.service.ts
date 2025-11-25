@@ -1,5 +1,4 @@
 // FILE: server/services/notificationPreferences.service.ts
-/* eslint no-console: "off" */
 
 import mongoose from 'mongoose';
 import NotificationPreferencesModel, {

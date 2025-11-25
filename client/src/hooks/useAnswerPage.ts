@@ -62,8 +62,7 @@ const useAnswerPage = () => {
 
       await addComment(targetId, targetType, comment);
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Error adding comment:', error);
+      // do nothing
     }
   };
 
@@ -76,13 +75,13 @@ const useAnswerPage = () => {
         const res = await getQuestionById(questionID, user.username);
         setQuestion(res || null);
       } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error('Error fetching question:', error);
+        // do nothing
       }
     };
 
-    // eslint-disable-next-line no-console
-    fetchData().catch(e => console.log(e));
+    fetchData().catch(() => {
+      // do nothing
+    });
   }, [questionID, user.username]);
 
   useEffect(() => {

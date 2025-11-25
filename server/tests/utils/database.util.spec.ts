@@ -3,6 +3,7 @@ import QuestionModel from '../../models/questions.model';
 import AnswerModel from '../../models/answers.model';
 import ChatModel from '../../models/chat.model';
 import UserModel from '../../models/users.model';
+import CollectionModel from '../../models/collection.model';
 
 jest.mock('../../models/questions.model');
 jest.mock('../../models/answers.model');
@@ -11,10 +12,95 @@ jest.mock('../../models/messages.model');
 jest.mock('../../models/users.model');
 jest.mock('../../models/tags.model');
 jest.mock('../../models/comments.model');
+jest.mock('../../models/collection.model');
 
 describe('populateDocument', () => {
   afterEach(() => {
     jest.clearAllMocks();
+  });
+
+  it('should fetch and populate a collection document', async () => {
+    const mockQuestion = {
+      _id: 'questionId',
+      title: 'Sample question',
+    };
+
+    // When populateQuestion runs internally, it uses QuestionModel.findOne().populate(...)
+    (QuestionModel.findOne as jest.Mock).mockReturnValue({
+      populate: jest.fn().mockResolvedValue(mockQuestion),
+    });
+
+    const mockCollectionDoc = {
+      _id: 'collectionId',
+      questions: ['questionId' as any], // string works fine; toString() returns 'questionId'
+      toObject: jest.fn().mockReturnValue({
+        _id: 'collectionId',
+        name: 'Test collection',
+        questions: ['questionId'],
+      }),
+    };
+
+    (CollectionModel.findOne as jest.Mock).mockResolvedValue(mockCollectionDoc);
+
+    const result = await populateDocument('collectionId', 'collection');
+
+    expect(CollectionModel.findOne).toHaveBeenCalledWith({ _id: 'collectionId' });
+    expect(result).toEqual({
+      ...mockCollectionDoc.toObject(),
+      questions: [mockQuestion],
+    });
+  });
+
+  it('should return an error message if collection document is not found', async () => {
+    (CollectionModel.findOne as jest.Mock).mockResolvedValue(null);
+
+    const collectionID = 'invalidCollectionId';
+    const result = await populateDocument(collectionID, 'collection');
+
+    expect(result).toEqual({
+      error: `Error when fetching and populating a document: Failed to fetch and populate collection with ID: ${collectionID}`,
+    });
+  });
+
+  it('should return an error when a question inside a collection is not found', async () => {
+    const mockCollectionDoc = {
+      _id: 'collectionId',
+      questions: ['missingQuestionId' as any],
+      toObject: jest.fn().mockReturnValue({
+        _id: 'collectionId',
+        name: 'Test collection',
+        questions: ['missingQuestionId'],
+      }),
+    };
+
+    (CollectionModel.findOne as jest.Mock).mockResolvedValue(mockCollectionDoc);
+
+    // Internal populateQuestion will end up getting null
+    (QuestionModel.findOne as jest.Mock).mockReturnValue({
+      populate: jest.fn().mockResolvedValue(null),
+    });
+
+    const result = await populateDocument('collectionId', 'collection');
+
+    expect(result).toEqual({
+      error: 'Error when fetching and populating a document: Question not found',
+    });
+  });
+
+  it('should return an error message when id is falsy', async () => {
+    const result = await populateDocument('', 'question');
+
+    expect(result).toEqual({
+      error: 'Error when fetching and populating a document: Provided ID is undefined.',
+    });
+  });
+
+  it('should return an error message if type is invalid', async () => {
+    const invalidType = 'invalidType' as 'question' | 'answer' | 'chat';
+    const result = await populateDocument('someId', invalidType);
+    expect(result).toEqual({
+      error: 'Error when fetching and populating a document: Invalid type provided.',
+    });
   });
 
   it('should fetch and populate a question document', async () => {

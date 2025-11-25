@@ -102,8 +102,7 @@ const chatController = (socket: FakeSOSocket) => {
       try {
         await notifyOnDirectMessage(newMessage as DatabaseMessage, updatedChat as DatabaseChat);
       } catch (notifyErr: unknown) {
-        // eslint-disable-next-line no-console
-        console.error('Error sending direct message notification:', (notifyErr as Error).message);
+        // do nothing
       }
 
       res.json(populatedChat);
