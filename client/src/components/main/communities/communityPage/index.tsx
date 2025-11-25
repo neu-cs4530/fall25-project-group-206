@@ -14,6 +14,10 @@ const CommunityPage = () => {
     return <div className='loading'>Loading...</div>;
   }
 
+  /**
+   * Renders the community page layout with questions and sidebar information.
+   * @returns JSX.Element representing the community page.
+   */
   return (
     <div className='community-page-layout'>
       <main className='questions-section'>

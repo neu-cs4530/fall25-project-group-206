@@ -1,7 +1,8 @@
+// client/src/components/main/bookmarkButton/index.tsx
 import './index.css';
 import { MouseEvent } from 'react';
 import { Bookmark, BookmarkCheck } from 'lucide-react';
-import useBookmarkToggle from '../../../hooks/useBookmarkToggle';
+import useBookmarkToggle, { ToggleResult } from '../../../hooks/useBookmarkToggle';
 
 interface BookmarkButtonProps {
   targetId: string;
@@ -11,6 +12,9 @@ interface BookmarkButtonProps {
   confirmOnRemove?: boolean;
   /** Optional custom confirmation message. */
   confirmMessage?: string;
+
+  /** Optional callback fired after the toggle finishes. */
+  onToggleComplete?: (result: ToggleResult) => void;
 }
 
 /**
@@ -22,6 +26,7 @@ const BookmarkButton = ({
   targetType,
   confirmOnRemove = false,
   confirmMessage = 'Remove this from your bookmarks?',
+  onToggleComplete,
 }: BookmarkButtonProps) => {
   const { isBookmarked, loading, handleToggleBookmark } = useBookmarkToggle(targetId, targetType);
 
@@ -36,7 +41,11 @@ const BookmarkButton = ({
       }
     }
 
-    await handleToggleBookmark();
+    const result = await handleToggleBookmark();
+
+    if (onToggleComplete) {
+      onToggleComplete(result);
+    }
   };
 
   return (

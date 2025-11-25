@@ -58,6 +58,24 @@ describe('Bookmark Controller', () => {
       expect(response.text).toContain('Invalid bookmark request body.');
     });
 
+    // Bookmark removed case
+    test('should return 200 and emit when bookmark is removed', async () => {
+      (toggleBookmark as jest.Mock).mockResolvedValueOnce({ removed: true });
+
+      const response = await request(app).post(baseUrl).send({
+        username: 'test_user',
+        targetId: 'abc123',
+        targetType: 'Community',
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ removed: true });
+      expect(mockSocket.emit).toHaveBeenCalledWith('bookmarkUpdate', {
+        type: 'toggled',
+        bookmark: { removed: true },
+      });
+    });
+
     // Service returns error
     test('should return 500 if toggleBookmark returns error', async () => {
       (toggleBookmark as jest.Mock).mockResolvedValueOnce({ error: 'Database error' });

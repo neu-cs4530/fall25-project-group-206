@@ -27,6 +27,11 @@ type NotificationLocationKey = Extract<
 const getEffectivePriority = (priority?: NotificationPriority): NotificationPriority =>
   priority ?? 'normal';
 
+/**
+ * NotificationPreferencesPanel component allows users to view and modify their notification preferences.
+ * @param param0 Props object
+ * @returns JSX element representing the notification preferences panel
+ */
 const NotificationPreferencesPanel = ({ onClose }: Props) => {
   const {
     prefs,

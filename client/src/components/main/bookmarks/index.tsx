@@ -1,8 +1,11 @@
+// client/src/components/main/bookmarks/index.tsx
 import './index.css';
+import { useEffect, useState } from 'react';
 import useBookmarksPage from '../../../hooks/useBookmarksPage';
 import { useNavigate } from 'react-router-dom';
 import useUserContext from '../../../hooks/useUserContext';
 import BookmarkButton from '../bookmarkButton';
+import { PopulatedDatabaseBookmark } from '@fake-stack-overflow/shared';
 
 /**
  * BookmarksPage component displays all bookmarks for the logged-in user.
@@ -13,23 +16,29 @@ const BookmarksPage = () => {
   const { collections, communities, users, loading } = useBookmarksPage();
   const navigate = useNavigate();
 
+  // Local state so we can remove cards when unbookmarked
+  const [collectionBookmarks, setCollectionBookmarks] =
+    useState<PopulatedDatabaseBookmark[]>(collections);
+  const [communityBookmarks, setCommunityBookmarks] =
+    useState<PopulatedDatabaseBookmark[]>(communities);
+
+  // Keep in sync when the hook refetches
+  useEffect(() => {
+    setCollectionBookmarks(collections);
+  }, [collections]);
+
+  useEffect(() => {
+    setCommunityBookmarks(communities);
+  }, [communities]);
+
   if (loading) {
     return <div className='bookmarks-page'>Loading bookmarks...</div>;
   }
 
-  /**
-   * Handles click on a collection bookmark to navigate to its page.
-   * @param collectionId - The ID of the collection.
-   * @param owner - The owner of the collection.
-   */
   const handleCollectionClick = (collectionId: string, owner: string) => {
     navigate(`/collections/${owner}/${collectionId}`);
   };
 
-  /**
-   * Handles click on a community bookmark to navigate to its page.
-   * @param communityId - The ID of the community.
-   */
   const handleCommunityClick = (communityId: string) => {
     navigate(`/communities/${communityId}`);
   };
@@ -37,15 +46,15 @@ const BookmarksPage = () => {
   return (
     <div className='bookmarks-page'>
       <div className='bookmarks-header'>
-        <h1 className='bookmarks-title'>{user.username}'s Bookmarks</h1>
+        <h1 className='bookmarks-title'>{user.username}&apos;s Bookmarks</h1>
       </div>
 
       {/* COLLECTIONS SECTION */}
-      {collections.length > 0 && (
+      {collectionBookmarks.length > 0 && (
         <>
           <h2 className='bookmark-section-title'>Collections</h2>
           <div className='bookmarks-list'>
-            {collections.map(bookmark => {
+            {collectionBookmarks.map(bookmark => {
               const c = bookmark.populatedTarget as {
                 _id?: string;
                 username?: string;
@@ -69,6 +78,15 @@ const BookmarksPage = () => {
                       targetType='Collection'
                       confirmOnRemove
                       confirmMessage='Remove this collection from your bookmarks?'
+                      onToggleComplete={result => {
+                        if (result === 'removed') {
+                          setCollectionBookmarks(prev =>
+                            prev.filter(
+                              b => b.targetId.toString() !== bookmark.targetId.toString(),
+                            ),
+                          );
+                        }
+                      }}
                     />
                   </div>
 
@@ -84,11 +102,11 @@ const BookmarksPage = () => {
       )}
 
       {/* COMMUNITIES SECTION */}
-      {communities.length > 0 && (
+      {communityBookmarks.length > 0 && (
         <>
           <h2 className='bookmark-section-title'>Communities</h2>
           <div className='bookmarks-list'>
-            {communities.map(bookmark => {
+            {communityBookmarks.map(bookmark => {
               const comm = bookmark.populatedTarget as {
                 _id?: string;
                 name?: string;
@@ -111,6 +129,15 @@ const BookmarksPage = () => {
                       targetType='Community'
                       confirmOnRemove
                       confirmMessage='Remove this community from your bookmarks?'
+                      onToggleComplete={result => {
+                        if (result === 'removed') {
+                          setCommunityBookmarks(prev =>
+                            prev.filter(
+                              b => b.targetId.toString() !== bookmark.targetId.toString(),
+                            ),
+                          );
+                        }
+                      }}
                     />
                   </div>
 
@@ -126,9 +153,9 @@ const BookmarksPage = () => {
       )}
 
       {/* FALLBACK */}
-      {collections.length === 0 && communities.length === 0 && users.length === 0 && (
-        <p className='no-bookmarks'>No bookmarks yet.</p>
-      )}
+      {collectionBookmarks.length === 0 &&
+        communityBookmarks.length === 0 &&
+        users.length === 0 && <p className='no-bookmarks'>No bookmarks yet.</p>}
     </div>
   );
 };

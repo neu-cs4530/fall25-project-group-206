@@ -1,6 +1,10 @@
 import './index.css';
 import useNewCommunityPage from '../../../../hooks/useNewCommunityPage';
 
+/**
+ * NewCommunityPage component provides a form to create a new community.
+ * @returns JSX.Element representing the new community page.
+ */
 const NewCommunityPage = () => {
   const {
     name,

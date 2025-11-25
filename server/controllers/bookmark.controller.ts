@@ -1,26 +1,15 @@
+// server/controllers/bookmark.controller.ts
 import express, { Response } from 'express';
-import { ToggleBookmarkRequest, GetBookmarksByUserRequest, FakeSOSocket } from '../types/types';
+import { FakeSOSocket, ToggleBookmarkRequest, GetBookmarksByUserRequest } from '../types/types';
 import { toggleBookmark, getBookmarksByUsername } from '../services/bookmark.service';
+import { DatabaseBookmark } from '@fake-stack-overflow/shared';
 
-/**
- * Controller for handling bookmark-related routes.
- * - Add or remove bookmarks
- * - Retrieve bookmarks by username
- */
 const bookmarkController = (socket: FakeSOSocket) => {
   const router = express.Router();
 
   /**
    * POST /api/bookmark/toggle
    * Toggles a bookmark for a user on a specific target.
-   * Request Body:
-   * - username: string
-   * - targetId: string
-   * - targetType: 'Collection' | 'Community' | 'User'
-   * Responses:
-   * - 200: The updated bookmark state
-   * - 400: Invalid request body
-   * - 500: Error toggling bookmark
    */
   router.post('/toggle', async (req: ToggleBookmarkRequest, res: Response): Promise<void> => {
     try {
@@ -37,13 +26,35 @@ const bookmarkController = (socket: FakeSOSocket) => {
         throw new Error(result.error);
       }
 
-      // Emit bookmark update to connected clients
+      // Case 1: bookmark was removed → must match { removed: boolean } schema
+      if ('removed' in result) {
+        const payload = { removed: Boolean(result.removed) };
+
+        socket.emit('bookmarkUpdate', {
+          type: 'toggled',
+          bookmark: payload,
+        });
+
+        res.status(200).json(payload);
+        return;
+      }
+
+      // Case 2: bookmark was created → must match DatabaseBookmark schema
+      // At this point `result` is narrowed to DatabaseBookmark by TS
+      const bookmark: DatabaseBookmark = {
+        _id: result._id,
+        username: result.username,
+        targetId: result.targetId,
+        targetType: result.targetType,
+        createdAt: result.createdAt,
+      };
+
       socket.emit('bookmarkUpdate', {
         type: 'toggled',
-        bookmark: result,
+        bookmark: bookmark,
       });
 
-      res.status(200).json(result);
+      res.status(200).json(bookmark);
     } catch (error) {
       res.status(500).send(`Error toggling bookmark: ${(error as Error).message}`);
     }
@@ -51,13 +62,6 @@ const bookmarkController = (socket: FakeSOSocket) => {
 
   /**
    * GET /api/bookmark/getByUsername/:username
-   * Retrieves all bookmarks for a specific user, optionally filtered by target type.
-   * Query Parameters:
-   * - targetType (optional): 'Collection' | 'Community' | 'User'
-   * Responses:
-   * - 200: Array of populated bookmarks
-   * - 400: Missing username in request
-   * - 500: Error retrieving bookmarks
    */
   router.get(
     '/getByUsername/:username',
