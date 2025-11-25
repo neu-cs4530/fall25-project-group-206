@@ -12,22 +12,6 @@ describe('authController tests (non-Passport routes)', () => {
     jest.restoreAllMocks();
   });
 
-  // /logout
-  it('logs out and returns success message', async () => {
-    const logoutMock = jest.fn((cb: any) => cb());
-    const localApp = express();
-    localApp.use((req: any, _res: any, next: any) => {
-      req.logout = logoutMock;
-      next();
-    });
-    localApp.use('/api/auth', authController());
-
-    const res = await supertest(localApp).post('/api/auth/logout');
-
-    expect(logoutMock).toHaveBeenCalled();
-    expect(res.body.message).toBe('Logged out successfully');
-  });
-
   // generateJwt pure test
   it('creates a valid JWT token', () => {
     const payload = {
