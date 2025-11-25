@@ -123,6 +123,170 @@ describe('passport serializer/deserializer tests', () => {
     });
   });
 
+  describe('Google OAuth strategy verify callback', () => {
+    const email = 'googleuser@example.com';
+    const baseProfile = { emails: [{ value: email }] } as any;
+
+    type ServiceMocks = {
+      getUserByEmail: jest.Mock;
+      getUserByUsername: jest.Mock;
+      saveUser: jest.Mock;
+    };
+
+    const setupStrategy = async (
+      overrides: Partial<ServiceMocks> = {},
+    ): Promise<{ strategy: any } & ServiceMocks> => {
+      // Base mocks: simulate no existing user so we hit the "create user" branch by default
+      const getUserByEmail =
+        overrides.getUserByEmail ?? jest.fn().mockResolvedValue({ error: 'not found' });
+      const getUserByUsername =
+        overrides.getUserByUsername ?? jest.fn().mockResolvedValue({ error: 'not found' });
+      const saveUser =
+        overrides.saveUser ??
+        jest.fn().mockResolvedValue({
+          _id: new mongoose.Types.ObjectId(),
+          username: email,
+          email,
+          dateJoined: new Date(),
+          followers: [],
+          following: [],
+          isGoogleSSO: true,
+        } as any);
+
+      jest.doMock('../../services/user.service', () => ({
+        getUserByEmail,
+        getUserByUsername,
+        saveUser,
+      }));
+
+      process.env.GOOGLE_CLIENT_ID = 'client-id';
+      process.env.GOOGLE_CLIENT_SECRET = 'client-secret';
+      process.env.CLIENT_URL = 'http://client.test';
+
+      const passportReal = await import('passport');
+      await import('../../controllers/auth.controller');
+
+      const internal = passportReal as unknown as {
+        _strategies?: Record<string, any>;
+      };
+
+      const strategy = internal._strategies?.google;
+      if (!strategy) {
+        throw new Error('Google strategy not registered');
+      }
+
+      return { strategy, getUserByEmail, getUserByUsername, saveUser };
+    };
+
+    it('calls done with error when Google does not return an email', async () => {
+      const { strategy } = await setupStrategy();
+
+      await new Promise<void>(resolve => {
+        strategy._verify(
+          'access-token',
+          'refresh-token',
+          { emails: [] },
+          (err: Error | null, user: unknown) => {
+            expect(err).toBeInstanceOf(Error);
+            expect(err?.message).toBe('No email returned from Google');
+            expect(user).toBeUndefined();
+            resolve();
+          },
+        );
+      });
+    });
+
+    it('logs in an existing Google SSO user found by email', async () => {
+      const existingUser = {
+        _id: new mongoose.Types.ObjectId(),
+        username: email,
+        email,
+        dateJoined: new Date(),
+        followers: [],
+        following: [],
+        isGoogleSSO: true,
+      };
+
+      const { strategy, getUserByEmail, getUserByUsername, saveUser } = await setupStrategy({
+        getUserByEmail: jest.fn().mockResolvedValue(existingUser),
+      });
+
+      await new Promise<void>(resolve => {
+        strategy._verify(
+          'access-token',
+          'refresh-token',
+          baseProfile,
+          (err: Error | null, user: unknown) => {
+            expect(err).toBeNull();
+            expect(user).toEqual(existingUser);
+            resolve();
+          },
+        );
+      });
+
+      expect(getUserByEmail).toHaveBeenCalledWith(email);
+      expect(getUserByUsername).not.toHaveBeenCalled();
+      expect(saveUser).not.toHaveBeenCalled();
+    });
+
+    it('rejects login when existing user has Google SSO disabled', async () => {
+      const disabledUser = {
+        _id: new mongoose.Types.ObjectId(),
+        username: email,
+        email,
+        dateJoined: new Date(),
+        followers: [],
+        following: [],
+        isGoogleSSO: false,
+      };
+
+      const { strategy } = await setupStrategy({
+        getUserByEmail: jest.fn().mockResolvedValue(disabledUser),
+      });
+
+      await new Promise<void>(resolve => {
+        strategy._verify(
+          'access-token',
+          'refresh-token',
+          baseProfile,
+          (err: Error | null, user: unknown) => {
+            expect(err).toBeInstanceOf(Error);
+            expect(err?.message).toBe('Google SSO has been disabled for this account');
+            expect(user).toBeUndefined();
+            resolve();
+          },
+        );
+      });
+    });
+
+    it('creates a new Google SSO user when none exists', async () => {
+      const { strategy, getUserByEmail, getUserByUsername, saveUser } = await setupStrategy();
+
+      await new Promise<void>(resolve => {
+        strategy._verify(
+          'access-token',
+          'refresh-token',
+          baseProfile,
+          (err: Error | null, user: any) => {
+            expect(err).toBeNull();
+            expect(user).toEqual(
+              expect.objectContaining({
+                username: email,
+                email,
+                isGoogleSSO: true,
+              }),
+            );
+            resolve();
+          },
+        );
+      });
+
+      expect(getUserByEmail).toHaveBeenCalledWith(email);
+      expect(getUserByUsername).toHaveBeenCalledWith(email);
+      expect(saveUser).toHaveBeenCalled();
+    });
+  });
+
   it('passport.deserializeUser looks up user by username', async () => {
     jest.doMock('../../services/user.service', () => ({
       getUserByUsername: jest.fn().mockResolvedValue({ username: 'testuser' }),

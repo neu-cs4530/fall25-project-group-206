@@ -58,8 +58,7 @@ const answerController = (socket: FakeSOSocket) => {
           );
         }
       } catch (notifyErr) {
-        // eslint-disable-next-line no-console
-        console.error('[notifications] notifyOnNewAnswer failed', notifyErr);
+        // do nothing
       }
 
       res.json(ansFromDb);

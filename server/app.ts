@@ -1,5 +1,3 @@
-/* eslint no-console: "off" */
-
 // The server should run on localhost port 8000.
 import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
@@ -47,21 +45,23 @@ const socket: FakeSOSocket = new Server(server, {
 registerSocketServer(socket);
 
 function connectDatabase() {
-  return mongoose.connect(MONGO_URL).catch(err => console.log('MongoDB connection error: ', err));
+  return mongoose.connect(MONGO_URL).catch(() => {
+    // do nothing
+  });
 }
 
 function startServer() {
   connectDatabase();
   server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    // do nothing
   });
 }
 
 socket.on('connection', socket => {
-  console.log('A user connected ->', socket.id);
+  // do nothing
 
   socket.on('disconnect', () => {
-    console.log('User disconnected');
+    // do nothing
   });
 });
 
@@ -70,7 +70,7 @@ process.on('SIGINT', async () => {
   socket.close();
 
   server.close(() => {
-    console.log('Server closed.');
+    // do nothing
     process.exit(0);
   });
 });
@@ -107,7 +107,7 @@ try {
     }
   });
 } catch (e) {
-  console.error('Failed to load or initialize OpenAPI Validator:', e);
+  // do nothing
 }
 
 app.use(
@@ -143,6 +143,5 @@ app.use('/api/auth', authController());
 
 const openApiDocument = yaml.parse(fs.readFileSync('./openapi.yaml', 'utf8'));
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
-console.log('Swagger UI is available at /api/docs');
 
 export { app, server, startServer };

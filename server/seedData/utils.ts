@@ -88,9 +88,6 @@ export async function processCollection<T, D, R = T>(
     const { key } = resolvedDocs[index];
     insertedDocs[collectionName].set(key, doc._id);
   });
-
-  // eslint-disable-next-line no-console
-  console.log(`Inserted ${inserted.length} documents into ${collectionName}`);
 }
 
 /**

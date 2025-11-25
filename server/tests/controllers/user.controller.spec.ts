@@ -776,6 +776,18 @@ describe('Test userController', () => {
       });
     });
 
+    it('should return 400 when username is missing for 2FA generate', async () => {
+      const res = await supertest(app).post('/api/user/2fa/generate').send({});
+
+      expect(res.status).toBe(400);
+
+      const openApiError = JSON.parse(res.text);
+      expect(openApiError.message).toBe('Request Validation Failed');
+      expect(openApiError.errors[0].path).toBe('/body/username');
+
+      expect(generate2FASecretSpy).not.toHaveBeenCalled();
+    });
+
     describe('POST /api/user/2fa/enable', () => {
       it('should enable 2FA and return updated user', async () => {
         const updated = { ...mockSafeUser, twoFactorEnabled: true };
@@ -864,6 +876,72 @@ describe('Test userController', () => {
 
         expect(res.status).toBe(500);
         expect(res.text).toContain('Error verifying 2FA');
+      });
+    });
+
+    describe('PATCH /updateGoogleSSOSetting', () => {
+      beforeEach(() => {
+        jest.resetAllMocks();
+      });
+
+      it('should successfully update Google SSO setting and call updateUser with correct args', async () => {
+        const body = { username: mockUser.username, isGoogleSSO: false };
+
+        updatedUserSpy.mockResolvedValueOnce({ ...mockSafeUser, isGoogleSSO: false } as any);
+
+        const res = await supertest(app).patch('/api/user/updateGoogleSSOSetting').send(body);
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ ...mockUserJSONResponse, isGoogleSSO: false });
+        expect(updatedUserSpy).toHaveBeenCalledTimes(1);
+        expect(updatedUserSpy).toHaveBeenCalledWith(mockUser.username, { isGoogleSSO: false });
+      });
+
+      it('should return 400 when username is missing and NOT call updateUser', async () => {
+        const body = { isGoogleSSO: true };
+
+        const res = await supertest(app).patch('/api/user/updateGoogleSSOSetting').send(body);
+
+        expect(res.status).toBe(400);
+        expect(res.text).toContain('Invalid username or isGoogleSSO');
+        expect(updatedUserSpy).not.toHaveBeenCalled();
+      });
+
+      it('should return 400 when isGoogleSSO is not a boolean and NOT call updateUser', async () => {
+        const body: any = { username: mockUser.username, isGoogleSSO: 'yes' };
+
+        const res = await supertest(app).patch('/api/user/updateGoogleSSOSetting').send(body);
+
+        expect(res.status).toBe(400);
+        expect(res.text).toContain('Invalid username or isGoogleSSO');
+        expect(updatedUserSpy).not.toHaveBeenCalled();
+      });
+
+      it('should return 400 when disabling SSO for a Google-based account (username contains "@")', async () => {
+        const body = { username: 'user@gmail.com', isGoogleSSO: false };
+
+        const res = await supertest(app).patch('/api/user/updateGoogleSSOSetting').send(body);
+
+        expect(res.status).toBe(400);
+        expect(res.text).toContain(
+          'Google SSO cannot be disabled for accounts created with Google login.',
+        );
+        expect(updatedUserSpy).not.toHaveBeenCalled();
+      });
+
+      it('should return 500 when updateUser returns an error', async () => {
+        const body = { username: mockUser.username, isGoogleSSO: false };
+
+        updatedUserSpy.mockResolvedValueOnce({ error: 'Error updating user' } as any);
+
+        const res = await supertest(app).patch('/api/user/updateGoogleSSOSetting').send(body);
+
+        expect(res.status).toBe(500);
+        expect(res.text).toContain(
+          'Error when updating Google SSO setting: Error: Error updating user',
+        );
+        expect(updatedUserSpy).toHaveBeenCalledTimes(1);
+        expect(updatedUserSpy).toHaveBeenCalledWith(mockUser.username, { isGoogleSSO: false });
       });
     });
   });

@@ -17,12 +17,6 @@ export function registerSocketServer(socketServer: FakeSOSocket): void {
  */
 export default function emitNotification(username: string): void {
   if (!io) {
-    // Safe guard: do not crash if called before registration
-    // eslint-disable-next-line no-console
-    console.warn(
-      '[realtime] emitNotification called before socket server registered. Username:',
-      username,
-    );
     return;
   }
 

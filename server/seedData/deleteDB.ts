@@ -1,5 +1,3 @@
-/* eslint no-console: "off" */
-
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
@@ -10,12 +8,6 @@ if (!MONGO_URL) {
   throw new Error('MONGODB_URI not set in environment variables');
 }
 
-mongoose.connect(`${MONGO_URL}/fake_so`);
-
-const db = mongoose.connection;
-
-db.on('error', console.error.bind(console, 'MongoDB connection error:'));
-
 /**
  * Clears all collections from the connected MongoDB database.
  *
@@ -23,26 +15,19 @@ db.on('error', console.error.bind(console, 'MongoDB connection error:'));
  */
 const clearDatabase = async (): Promise<void> => {
   try {
-    // Wait for the connection to be established
-    await mongoose.connection.once('open', async () => {
-      // Clear each collection
-      await db.dropDatabase();
+    // Connect resolves when the connection is open
+    await mongoose.connect(`${MONGO_URL}/fake_so`);
 
-      console.log('Database cleared');
-      if (db) db.close();
-    });
-  } catch (err) {
-    console.log(`ERROR: ${err}`);
-    if (db) db.close();
+    // Drop the entire database
+    await mongoose.connection.dropDatabase();
+  } finally {
+    // Always attempt to close the connection; safe even if already closed
+    await mongoose.connection.close();
   }
 };
 
-clearDatabase()
-  .then(() => {
-    console.log('Processing complete');
-  })
-  .catch(err => {
-    console.log(`ERROR: ${err}`);
-  });
-
-console.log('Processing ...');
+clearDatabase().catch(err => {
+  // Signal failure without logging
+  process.exitCode = 1;
+  throw err;
+});

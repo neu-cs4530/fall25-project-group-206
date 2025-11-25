@@ -137,8 +137,7 @@ const questionController = (socket: FakeSOSocket) => {
       try {
         await notifyOnNewQuestion(populatedQuestion as PopulatedDatabaseQuestion);
       } catch (notifyErr) {
-        // eslint-disable-next-line no-console
-        console.error('[notifications] notifyOnNewQuestion failed', notifyErr);
+        // do nothing
       }
 
       res.json(populatedQuestion);

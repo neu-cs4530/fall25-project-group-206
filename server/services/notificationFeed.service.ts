@@ -1,5 +1,3 @@
-/* eslint no-console: "off" */
-
 import { ObjectId } from 'mongodb';
 import BookmarkModel from '../models/bookmark.model';
 import CommunityModel from '../models/community.model';
@@ -120,20 +118,13 @@ export const buildNotificationsFromBookmarks = async (
   username: string,
 ): Promise<NotificationItem[] | { error: string }> => {
   try {
-    console.log(`[NOTIF][Bookmarks] Building notifications from bookmarks for user="${username}"`);
-
     // 1. Only bookmarks that can contribute to the feed
     const bookmarks = await BookmarkModel.find({
       username,
       targetType: { $in: ['Collection', 'Community'] },
     });
 
-    console.log(
-      `[NOTIF][Bookmarks] Found ${bookmarks?.length ?? 0} bookmark(s) for user="${username}"`,
-    );
-
     if (!bookmarks || bookmarks.length === 0) {
-      console.log('[NOTIF][Bookmarks] No bookmarks found, returning empty array.');
       return [];
     }
 
@@ -148,10 +139,6 @@ export const buildNotificationsFromBookmarks = async (
       }
     }
 
-    console.log(
-      `[NOTIF][Bookmarks] Collection IDs=${collectionTargetIds.length}, Community IDs=${communityObjectIds.length}`,
-    );
-
     // 2. Hydrate collections and communities in parallel
     const [collections, communities] = await Promise.all([
       // Collections: use populateDocument so questions/answers are already populated
@@ -159,9 +146,6 @@ export const buildNotificationsFromBookmarks = async (
         collectionTargetIds.map(async id => {
           const result = await populateDocument(id, 'collection');
           if ('error' in result) {
-            console.log(
-              `[NOTIF][Bookmarks] populateDocument error for collection id="${id}": ${result.error}`,
-            );
             return null;
           }
           return result as PopulatedDatabaseCollection;
