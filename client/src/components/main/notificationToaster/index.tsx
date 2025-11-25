@@ -3,6 +3,10 @@ import './index.css';
 import { useNavigate } from 'react-router-dom';
 import { useNotificationToast } from '../../../contexts/NotificationToastContext';
 
+/**
+ * NotificationToaster component displays active notifications as toast messages.
+ * @returns JSX.Element representing the notification toaster.
+ */
 const NotificationToaster = () => {
   const { activeNotification, clearNotification } = useNotificationToast();
   const navigate = useNavigate();

@@ -1,16 +1,16 @@
+// client/src/hooks/useBookmarkToggle.ts
 import { useEffect, useState } from 'react';
 import { toggleBookmark, getBookmarksByUsername } from '../services/bookmarkService';
 import useUserContext from './useUserContext';
 
-/**
- * Custom hook to manage bookmark toggling for various target types.
- * @param targetId - The ID of the target to bookmark/unbookmark.
- * @param targetType - The type of the target (e.g., 'Question', 'Answer', 'Collection', 'Community', 'User').
- * @returns isBookmarked - Boolean indicating if the target is currently bookmarked.
- * @returns loading - Boolean indicating if the toggle operation is in progress.
- * @returns handleToggleBookmark - Function to toggle the bookmark state.
- **/
+export type ToggleResult = 'added' | 'removed' | 'noop';
 
+/**
+ * Custom hook to manage bookmark toggling for a given target item.
+ * @param targetId The ID of the target item to toggle bookmark for
+ * @param targetType The type of the target item
+ * @returns An object containing bookmark state, loading state, and a toggle function
+ */
 const useBookmarkToggle = (
   targetId: string,
   targetType: 'Question' | 'Answer' | 'Collection' | 'Community' | 'User',
@@ -24,6 +24,11 @@ const useBookmarkToggle = (
     const fetchInitialState = async () => {
       if (!user?.username) return;
 
+      // Only these types are actually stored in Bookmark collection
+      if (!['Collection', 'Community', 'User'].includes(targetType)) {
+        return;
+      }
+
       try {
         const bookmarks = await getBookmarksByUsername(
           user.username,
@@ -31,10 +36,9 @@ const useBookmarkToggle = (
         );
 
         const alreadyBookmarked = bookmarks.some(b => b.targetId?.toString() === targetId);
-
         setIsBookmarked(alreadyBookmarked);
-      } catch (error) {
-        // ignored, non-critical error
+      } catch {
+        // non-critical, ignore
       }
     };
 
@@ -42,25 +46,38 @@ const useBookmarkToggle = (
   }, [user?.username, targetId, targetType]);
 
   /**
-   * Toggles a bookmark for the current user on a specific target.
-   * - If the user is not logged in, the function exits early.
-   * - Sends a request to add or remove the bookmark depending on its current state.
-   * - Updates the local state and loading status accordingly.
-   *
-   * @returns {Promise<void>} - Resolves when the toggle operation completes.
-   **/
+   * Toggles the bookmark state for the target item.
+   * @returns A promise that resolves to the result of the toggle action ('added', 'removed', or 'noop')
+   */
+  const handleToggleBookmark = async (): Promise<ToggleResult> => {
+    if (!user?.username) return 'noop';
 
-  const handleToggleBookmark = async () => {
-    if (!user?.username) return;
+    // Guard against unsupported types for the backend
+    if (!['Collection', 'Community', 'User'].includes(targetType)) {
+      return 'noop';
+    }
 
     try {
       setLoading(true);
-      await toggleBookmark(
+
+      const result = await toggleBookmark(
         user.username,
         targetId,
         targetType as 'Collection' | 'Community' | 'User',
       );
-      setIsBookmarked(prev => !prev);
+
+      // Server-side unbookmark
+      if (result && typeof result === 'object' && 'removed' in result && result.removed) {
+        setIsBookmarked(false);
+        return 'removed';
+      }
+
+      // Otherwise, we treat it as successfully added
+      setIsBookmarked(true);
+      return 'added';
+    } catch {
+      // On error, do not change local state
+      return 'noop';
     } finally {
       setLoading(false);
     }

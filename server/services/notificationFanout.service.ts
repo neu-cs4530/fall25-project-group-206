@@ -91,6 +91,18 @@ async function computeRecipientsForQuestion(
       : Promise.resolve([]),
   ]);
 
+  // 🔒 If the community is PRIVATE, only participants who bookmarked it get notifications.
+  let filteredCommunityBookmarks = communityBookmarks;
+  const communityVisibility = question.community?.visibility;
+  const communityParticipants = (question.community?.participants ?? []).filter(
+    (p): p is string => typeof p === 'string',
+  );
+
+  if (communityVisibility === 'PRIVATE' && communityParticipants.length > 0) {
+    const participantSet = new Set(communityParticipants);
+    filteredCommunityBookmarks = communityBookmarks.filter(b => participantSet.has(b.username));
+  }
+
   // 3. Merge into username -> flags
   const byUser = new Map<string, { inCollection: boolean; inCommunity: boolean }>();
 
@@ -106,7 +118,8 @@ async function computeRecipientsForQuestion(
     entry.inCollection = true;
   }
 
-  for (const b of communityBookmarks) {
+  // ⬇️ Use filteredCommunityBookmarks here
+  for (const b of filteredCommunityBookmarks) {
     const entry = ensureEntry(b.username);
     entry.inCommunity = true;
   }

@@ -213,21 +213,11 @@ async function fetchQuestionsForCommunities(
 }
 
 /**
- * Core backfill builder.
- *
- * It:
- *  1. Builds a combined set of questions from:
- *      - questions in the given collections (already populated)
- *      - questions belonging to the given communities (looked up via QuestionModel)
- *  2. Tracks where each question appears (collection / community / both).
- *  3. For each question:
- *      - emits one "asked question" notification
- *      - emits one notification per answer
- *  4. Sorts notifications newest → oldest.
- *
- * This function does NOT write to the DB. It only returns a list of
- * NotificationItem objects that the controller can return to the client
- * or optionally persist later.
+ * buildBackfillNotificationsForUser constructs backfill notifications
+ * for a user based on their collections and communities.
+ * @param collections - Array of PopulatedDatabaseCollection objects.
+ * @param communities - Array of DatabaseCommunity objects.
+ * @returns Array of NotificationItem objects representing backfill notifications.
  */
 export default async function buildBackfillNotificationsForUser(
   collections: PopulatedDatabaseCollection[],
@@ -251,7 +241,7 @@ export default async function buildBackfillNotificationsForUser(
   // Map of questionId -> question object (merged from collections + communities).
   const questionById = new Map<string, PopulatedDatabaseQuestion>();
 
-  // 1️⃣ From collections: questions are already populated in PopulatedDatabaseCollection.
+  // From collections: questions are already populated in PopulatedDatabaseCollection.
   for (const collection of collections) {
     for (const q of collection.questions as PopulatedDatabaseQuestion[]) {
       const idStr = (q._id as ObjectId).toString();
@@ -274,7 +264,7 @@ export default async function buildBackfillNotificationsForUser(
     }
   }
 
-  // 2️⃣ From communities: fetch questions (and their answers) by community id.
+  // From communities: fetch questions (and their answers) by community id.
   const communityQuestions = await fetchQuestionsForCommunities(communities);
 
   for (const q of communityQuestions) {
@@ -290,7 +280,7 @@ export default async function buildBackfillNotificationsForUser(
     questionById.set(idStr, q);
   }
 
-  // 3️⃣ Build notifications per question.
+  // Build notifications per question.
   for (const [qid, flags] of locations.entries()) {
     const question = questionById.get(qid);
     if (!question) continue;
@@ -314,7 +304,7 @@ export default async function buildBackfillNotificationsForUser(
     );
   }
 
-  // 4️⃣ Sort newest → oldest
+  // Sort newest → oldest
   notifications.sort((a, b) => b.eventDate.getTime() - a.eventDate.getTime());
 
   return notifications;

@@ -18,18 +18,27 @@ export const toggleBookmark = async (
   targetType: 'Collection' | 'Community' | 'User',
 ): Promise<DatabaseBookmark | { removed: boolean } | { error: string }> => {
   try {
-    const existing = await BookmarkModel.findOne({ username, targetId, targetType });
+    const targetObjectId = new ObjectId(targetId);
+
+    const existing = await BookmarkModel.findOne({
+      username,
+      targetId: targetObjectId,
+      targetType,
+    }).exec();
 
     if (existing) {
-      await BookmarkModel.deleteOne({ _id: existing._id });
+      await BookmarkModel.deleteOne({ _id: existing._id }).exec();
       return { removed: true };
     }
 
-    const newBookmark = await BookmarkModel.create({
+    const newBookmarkDoc = await BookmarkModel.create({
       username,
-      targetId: new ObjectId(targetId),
+      targetId: targetObjectId,
       targetType,
     });
+
+    // toObject is typed if the model is typed as DatabaseBookmark in the model file
+    const newBookmark = newBookmarkDoc.toObject() as DatabaseBookmark;
 
     return newBookmark;
   } catch (error) {

@@ -154,9 +154,10 @@ export const buildNotificationsFromBookmarks = async (
 
       // Communities: raw DB fetch; tests mock `find` directly
       communityObjectIds.length
-        ? (CommunityModel.find({ _id: { $in: communityObjectIds } }) as unknown as Promise<
-            DatabaseCommunity[]
-          >)
+        ? (CommunityModel.find({
+            _id: { $in: communityObjectIds },
+            $or: [{ visibility: 'PUBLIC' }, { visibility: 'PRIVATE', participants: username }],
+          }) as unknown as Promise<DatabaseCommunity[]>)
         : Promise.resolve([] as DatabaseCommunity[]),
     ]);
 
