@@ -13,7 +13,7 @@ import useLoginContext from '../../hooks/useLoginContext';
 const Layout = () => {
   const navigate = useNavigate();
   const { setUser } = useLoginContext();
-  const { showModal, countdown, handleStayLoggedIn } = useSessionTimeout(30, 5); // 30 min timeout, 2 min warning
+  const { showModal, countdown, handleStayLoggedIn } = useSessionTimeout(30, 2); // 30 min timeout, 2 min warning
 
   const handleLogout = () => {
     setUser(null);
