@@ -24,6 +24,7 @@ import {
 } from '../services/user.service';
 import NotificationModel from '../models/notification.model';
 import emitNotification from '../utils/realtime';
+import bcrypt from 'bcrypt';
 
 const userController = (socket: FakeSOSocket) => {
   const router: Router = express.Router();
@@ -169,7 +170,8 @@ const userController = (socket: FakeSOSocket) => {
    */
   const resetPassword = async (req: UserRequest, res: Response): Promise<void> => {
     try {
-      const updatedUser = await updateUser(req.body.username, { password: req.body.password });
+      const hashedPassword = await bcrypt.hash(req.body.password, 10);
+      const updatedUser = await updateUser(req.body.username, { password: hashedPassword });
 
       if ('error' in updatedUser) {
         throw Error(updatedUser.error);

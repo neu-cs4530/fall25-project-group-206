@@ -4,6 +4,7 @@ import { app } from '../../app';
 import * as util from '../../services/user.service';
 import { SafeDatabaseUser, User } from '../../types/types';
 import NotificationModel from '../../models/notification.model';
+import bcrypt from 'bcrypt';
 
 jest.mock('../../utils/realtime', () => {
   const emitMock = jest.fn();
@@ -259,7 +260,12 @@ describe('Test userController', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ ...mockUserJSONResponse });
-      expect(updatedUserSpy).toHaveBeenCalledWith(mockUser.username, { password: 'newPassword' });
+      const updateObject = updatedUserSpy.mock.calls[0][1];
+      const hashedPassword = updateObject.password;
+      expect(hashedPassword).toBeDefined();
+      expect(typeof hashedPassword).toBe('string');
+      const matches = await bcrypt.compare('newPassword', hashedPassword as string);
+      expect(matches).toBe(true);
     });
 
     it('should return 400 for request missing username', async () => {
