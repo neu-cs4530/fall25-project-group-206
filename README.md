@@ -70,6 +70,15 @@ A class diagram for the schema definition is shown below:
 | `/getUsers`        | GET    | Fetch all users                |
 | `/deleteUser/`     | DELETE | Delete a user by username      |
 | `/updateBiography` | PATCH  | Update user biography          |
+| `/:username/followers` | GET | Get user's followers list |
+| `/:username/following` | GET | Get user's following list |
+| `/toggleFollow` | POST | Toggle follow/unfollow a user |
+| `/updateMessagingSetting` | PATCH | Update messaging preferences |
+| `/2fa/generate` | POST | Generate 2FA secret and QR code |
+| `/2fa/enable` | POST | Enable 2FA with token verification |
+| `/2fa/disable` | POST | Disable 2FA for a user |
+| `/2fa/verify` | POST | Verify 2FA token during login |
+| `/updateGoogleSSOSetting` | PATCH | Update's a user's GoogleSSO preference (enable/disable) |
 
 ### `/chat`
 
